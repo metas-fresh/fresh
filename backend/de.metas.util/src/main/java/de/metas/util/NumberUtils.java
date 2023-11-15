@@ -28,7 +28,10 @@ import lombok.NonNull;
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.Optional;
+import java.util.stream.IntStream;
 
 /**
  * Number Utils
@@ -204,7 +207,7 @@ public final class NumberUtils
 		return integerValue;
 	}
 
-	public static int asIntOrZero(final Object value)
+	public static int asIntOrZero(@Nullable final Object value)
 	{
 		return asInt(value, 0);
 	}
@@ -249,7 +252,13 @@ public final class NumberUtils
 		{
 			try
 			{
-				final BigDecimal bd = new BigDecimal(value.toString());
+				final String valueStr = StringUtils.trimBlankToNull(value.toString());
+				if (valueStr == null)
+				{
+					return defaultValue;
+				}
+
+				final BigDecimal bd = new BigDecimal(valueStr);
 				return bd.intValue();
 			}
 			catch (final NumberFormatException e)
@@ -282,5 +291,45 @@ public final class NumberUtils
 		return Optional.ofNullable(value)
 				.filter(v1 -> v1 > 0)
 				.orElse(null);
+	}
+
+	@NonNull
+	public static String toStringWithCustomDecimalSeparator(@NonNull final BigDecimal value, final char separator)
+	{
+		final DecimalFormatSymbols symbols = new DecimalFormatSymbols();
+		symbols.setDecimalSeparator(separator);
+
+		final int scale = value.scale();
+		final String format;
+
+		if (scale > 0)
+		{
+			final StringBuilder formatBuilder = new StringBuilder("0.");
+
+			IntStream.range(0, scale)
+					.forEach(ignored -> formatBuilder.append("0"));
+
+			format = formatBuilder.toString();
+		}
+		else
+		{
+			format = "0";
+		}
+
+		final DecimalFormat formatter = new DecimalFormat(format, symbols);
+
+		return formatter.format(value);
+	}
+
+	@Nullable
+	public static BigDecimal zeroToNull(@Nullable final BigDecimal value)
+	{
+		return value != null && value.signum() != 0 ? value : null;
+	}
+
+	public static boolean equalsByCompareTo(@Nullable final BigDecimal value1, @Nullable final BigDecimal value2)
+	{
+		//noinspection NumberEquality
+		return (value1 == value2) || (value1 != null && value1.compareTo(value2) == 0);
 	}
 }

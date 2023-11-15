@@ -13,7 +13,6 @@ import de.metas.document.engine.IDocument;
 import de.metas.document.engine.IDocumentBL;
 import de.metas.i18n.AdMessageId;
 import de.metas.i18n.AdMessageKey;
-import de.metas.i18n.IADMessageDAO;
 import de.metas.i18n.IMsgBL;
 import de.metas.i18n.Language;
 import de.metas.impex.InputDataSourceId;
@@ -142,7 +141,6 @@ public class InvoiceCandBLCreateInvoices implements IInvoiceGenerator
 	private final transient IDocumentBL docActionBL = Services.get(IDocumentBL.class);
 	private final transient ITrxManager trxManager = Services.get(ITrxManager.class);
 	private final transient IWFExecutionFactory wfExecutionFactory = Services.get(IWFExecutionFactory.class);
-	private final transient IADMessageDAO msgDAO = Services.get(IADMessageDAO.class);
 	private final transient IMsgBL msgBL = Services.get(IMsgBL.class);
 	private final transient IMatchInvBL matchInvBL = Services.get(IMatchInvBL.class);
 	private final transient IOrderDAO orderDAO = Services.get(IOrderDAO.class);
@@ -1039,7 +1037,7 @@ public class InvoiceCandBLCreateInvoices implements IInvoiceGenerator
 				if (userId != USERINCHARGE_NA)
 				{
 					note = create(ctx, I_AD_Note.class, ITrx.TRXNAME_None);
-					note.setAD_Message_ID(msgDAO.retrieveIdByValue(ctx, MSG_INVOICE_CAND_BL_PROCESSING_ERROR_0P)
+					note.setAD_Message_ID(msgBL.getIdByAdMessage(MSG_INVOICE_CAND_BL_PROCESSING_ERROR_0P)
 												  .map(AdMessageId::getRepoId)
 												  .orElse(-1));
 

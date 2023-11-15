@@ -1,19 +1,17 @@
 package org.eevolution.mrp.api.impl;
 
-import java.util.function.Predicate;
-
-import org.adempiere.util.lang.ObjectUtils;
-import org.compiere.model.I_M_Product;
-import org.compiere.model.I_M_Warehouse;
-import org.compiere.util.Env;
-import org.eevolution.model.I_AD_Note;
-
 import de.metas.i18n.AdMessageId;
 import de.metas.i18n.AdMessageKey;
-import de.metas.i18n.IADMessageDAO;
+import de.metas.i18n.IMsgBL;
 import de.metas.material.planning.pporder.LiberoException;
 import de.metas.util.Check;
 import de.metas.util.Services;
+import org.adempiere.util.lang.ObjectUtils;
+import org.compiere.model.I_M_Product;
+import org.compiere.model.I_M_Warehouse;
+import org.eevolution.model.I_AD_Note;
+
+import java.util.function.Predicate;
 
 public class MRPNoteMatcher implements Predicate<I_AD_Note>
 {
@@ -86,7 +84,7 @@ public class MRPNoteMatcher implements Predicate<I_AD_Note>
 		}
 		else
 		{
-			this._mrpCodeMessageId = Services.get(IADMessageDAO.class).retrieveIdByValue(Env.getCtx(), AdMessageKey.of(mrpCode))
+			this._mrpCodeMessageId = Services.get(IMsgBL.class).getIdByAdMessage(AdMessageKey.of(mrpCode))
 					.map(AdMessageId::getRepoId)
 					.orElse(-1);
 			Check.assume(_mrpCodeMessageId > 0, LiberoException.class, "AD_Message_ID > 0 for Value={}", mrpCode);

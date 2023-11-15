@@ -1,7 +1,7 @@
 package de.metas.ui.web.window.model.lookup;
 
 import com.google.common.base.MoreObjects;
-import de.metas.cache.CCache.CCacheStats;
+import de.metas.cache.CCacheStats;
 import de.metas.ui.web.window.datatypes.LookupValue;
 import de.metas.ui.web.window.datatypes.LookupValuesList;
 import de.metas.ui.web.window.datatypes.LookupValuesPage;

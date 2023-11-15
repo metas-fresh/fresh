@@ -16,18 +16,16 @@
  *****************************************************************************/
 package org.compiere.model;
 
-import java.sql.ResultSet;
-import java.util.Properties;
-
+import de.metas.i18n.AdMessageId;
+import de.metas.i18n.AdMessageKey;
+import de.metas.i18n.IMsgBL;
+import de.metas.util.Services;
 import org.adempiere.util.lang.impl.TableRecordReference;
 import org.compiere.util.DB;
 
-import de.metas.i18n.AdMessageId;
-import de.metas.i18n.AdMessageKey;
-import de.metas.i18n.IADMessageDAO;
-import de.metas.util.Services;
-
 import javax.annotation.Nullable;
+import java.sql.ResultSet;
+import java.util.Properties;
 
 /**
  *  Note Model
@@ -98,7 +96,7 @@ public class MNote extends X_AD_Note
 	
 	private static int retrieveAdMessageRepoIdByValue(final Properties ctx, final String adMessage)
 	{
-		final AdMessageId adMessageId = Services.get(IADMessageDAO.class).retrieveIdByValue(ctx, AdMessageKey.of(adMessage)).orElse(null);
+		final AdMessageId adMessageId = Services.get(IMsgBL.class).getIdByAdMessage(AdMessageKey.of(adMessage)).orElse(null);
 		return AdMessageId.toRepoId(adMessageId);
 	}
 
@@ -176,21 +174,6 @@ public class MNote extends X_AD_Note
 			super.setAD_Message_ID(AD_Message_ID);
 		}
 	}	//	setAD_Message_ID
-
-	/**
-	 * 	Get Message
-	 *	@return message
-	 */
-	public String getMessage()
-	{
-		final I_AD_Message msg = getAD_Message();
-		if (msg == null)
-		{
-			return null;
-		}
-		
-		return msg.getMsgText();
-	}	//	getMessage
 
 	/**
 	 * 	Set Client Org

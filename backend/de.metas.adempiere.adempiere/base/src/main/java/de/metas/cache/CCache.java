@@ -16,7 +16,7 @@
  *****************************************************************************/
 package de.metas.cache;
 
-import com.google.common.base.MoreObjects;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader.InvalidCacheLoadException;
@@ -27,23 +27,22 @@ import com.google.common.util.concurrent.ExecutionError;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import de.metas.logging.LogManager;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.Singular;
 import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.util.lang.IAutoCloseable;
 import org.adempiere.util.lang.impl.TableRecordReference;
-import org.compiere.util.Util;
+import org.compiere.util.Trace;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -59,7 +58,6 @@ import java.util.stream.Collectors;
  *
  * @param <K> Key
  * @param <V> Value
- *
  * @author Jorg Janke
  * @version $Id: CCache.java,v 1.2 2006/07/30 00:54:35 jjanke Exp $
  */
@@ -68,17 +66,17 @@ public class CCache<K, V> implements CacheInterface
 	/**
 	 * Creates a new LRU cache
 	 *
-	 * @param cacheName cache name; shall respect the current naming conventions, see {@link #extractTableNameForCacheName(String)}
-	 * @param maxSize LRU cache maximum size
+	 * @param cacheName          cache name; shall respect the current naming conventions, see {@link #extractTableNameForCacheName(String)}
+	 * @param maxSize            LRU cache maximum size
 	 * @param expireAfterMinutes if positive, the entries will expire after given number of minutes
 	 * @return new cache instance
 	 */
 	public static <K, V> CCache<K, V> newLRUCache(final String cacheName, final int maxSize, final int expireAfterMinutes)
 	{
-		return CCache.<K, V> builder()
+		return CCache.<K, V>builder()
 				.cacheName(cacheName)
 				// .tableName(null) // auto-detect tableName
-				.initialCapacity(maxSize) // FIXME this is confusing because in case of LRU, initialCapacity is used as maxSize
+				.maximumSize(maxSize)
 				.expireMinutes(expireAfterMinutes)
 				.cacheMapType(CacheMapType.LRU)
 				.build();
@@ -88,11 +86,11 @@ public class CCache<K, V> implements CacheInterface
 	 * Similar to {@link #newLRUCache(String, int, int)}.
 	 *
 	 * @param cacheName cache name; shall respect the current naming conventions, see {@link #extractTableNameForCacheName(String)}
-	 * @   
+	 * @
 	 */
 	public static <K, V> CCache<K, V> newCache(final String cacheName, final int initialCapacity, final int expireAfterMinutes)
 	{
-		return CCache.<K, V> builder()
+		return CCache.<K, V>builder()
 				.cacheName(cacheName)
 				// .tableName(null) // auto-detect tableName
 				.initialCapacity(initialCapacity)
@@ -115,87 +113,82 @@ public class CCache<K, V> implements CacheInterface
 		LRU,
 	}
 
-	/**
-	 * If active, following informations will be stored:
-	 * <ul>
-	 * <li>{@link #debugId} - unique JVM object ID
-	 * <li>{@link #debugAquireStacktrace} - stack trace for when the cache object was instantiated
-	 * </ul>
-	 */
-	private static final boolean DEBUG = false;
-
 	private static final Logger logger = LogManager.getLogger(CCache.class);
 
-	/** Internal map that is used as cache */
-	private final Cache<K, V> cache;
+	@NonNull private final CCacheConfig config;
+
+	/**
+	 * Internal map that is used as cache
+	 */
+	@NonNull private final Cache<K, V> cache;
 
 	static final AtomicLong NEXT_CACHE_ID = new AtomicLong(1);
-	/** unique cache ID, mainly used for tracking, logging and debugging */
-	private final long cacheId;
+	/**
+	 * unique cache ID, mainly used for tracking, logging and debugging
+	 */
+	@Getter private final long cacheId;
 
-	private final String cacheName;
-	private final ImmutableSet<CacheLabel> labels;
+	@NonNull @Getter private final String cacheName;
+	@NonNull @Getter private final ImmutableSet<CacheLabel> labels;
 
-	/** Expire after minutes */
-	private final int expireMinutes;
 	public static final int EXPIREMINUTES_Never = 0;
-	/** Just reset */
+	/**
+	 * Just reset
+	 */
 	private boolean m_justReset = true;
 
-	/** Can provide a collection of cache keys for a given record reference. */
+	/**
+	 * Can provide a collection of cache keys for a given record reference.
+	 */
 	private final Optional<CachingKeysMapper<K>> invalidationKeysMapper;
 
-	/**
-	 * If {@link #DEBUG} is enabled, this variable contains the object's identity code (see {@link System#identityHashCode(Object)}).
-	 */
-	private final String debugId;
+	@Nullable private final String debugAcquireStacktrace;
 
-	/**
-	 * If {@link #DEBUG} is enabled, this variable contains the constructor's stack trace (when this object was created)
-	 */
-	private final String debugAquireStacktrace;
-
-	private final CacheAdditionListener<K, V> additionListener;
+	@Nullable private final CacheAdditionListener<K, V> additionListener;
 
 	/**
 	 * Metasfresh Cache - expires after 2 hours
 	 *
-	 * @param name (table) name of the cache
+	 * @param name            (table) name of the cache
 	 * @param initialCapacity initial capacity
 	 */
 	public CCache(final String name, final int initialCapacity)
 	{
 		this(name, initialCapacity, 120);
-	}	// CCache
+	}    // CCache
 
 	/**
 	 * Metasfresh Cache
 	 *
-	 * @param name (table) name of the cache
+	 * @param name            (table) name of the cache
 	 * @param initialCapacity initial capacity
-	 * @param expireMinutes expire after minutes (0=no expire)
+	 * @param expireMinutes   expire after minutes (0=no expire)
 	 */
 	public CCache(final String name, final int initialCapacity, final int expireMinutes)
 	{
 		this(name, // cache name
 				null, // auto-detect tableName
 				null, // additionalTableNamesToResetFor
+				null, // additionalLabels
 				initialCapacity,
+				null,
 				expireMinutes,
-				CacheMapType.HashMap,
-				(CachingKeysMapper<K>)null,
-				(CacheRemovalListener<K, V>)null,
-				(CacheAdditionListener<K, V>)null);
+				null,
+				null,
+				null,
+				null);
 	}
 
 	@Builder
 	protected CCache(
-			final String cacheName,
-			final String tableName,
-			@Singular("additionalTableNameToResetFor") final Set<String> additionalTableNamesToResetFor,
-			final Integer initialCapacity,
-			final Integer expireMinutes,
-			final CacheMapType cacheMapType,
+			@Nullable final String cacheName,
+			@Nullable final String tableName,
+			@Nullable @Singular("additionalTableNameToResetFor") final Set<String> additionalTableNamesToResetFor,
+			@Nullable @Singular("additionalLabel") final Set<CacheLabel> additionalLabels,
+			@Nullable final Integer initialCapacity,
+			@Nullable final Integer maximumSize,
+			@Nullable final Integer expireMinutes,
+			@Nullable final CacheMapType cacheMapType,
 			@Nullable final CachingKeysMapper<K> invalidationKeysMapper,
 			@Nullable final CacheRemovalListener<K, V> removalListener,
 			@Nullable final CacheAdditionListener<K, V> additionListener)
@@ -206,12 +199,22 @@ public class CCache<K, V> implements CacheInterface
 		this.additionListener = additionListener;
 
 		final String tableNameEffective;
+		boolean isNoCacheName = false;
 		if (cacheName == null)
 		{
 			if (tableName == null)
 			{
-				this.cacheName = "$NoCacheName$" + cacheId;
-				tableNameEffective = "$NoTableName$" + cacheId;
+				if (additionalTableNamesToResetFor != null && additionalTableNamesToResetFor.size() == 1)
+				{
+					tableNameEffective = additionalTableNamesToResetFor.iterator().next();
+					this.cacheName = tableNameEffective;
+				}
+				else
+				{
+					this.cacheName = "$NoCacheName$" + cacheId;
+					tableNameEffective = CacheLabel.NO_TABLENAME_PREFIX + cacheId;
+					isNoCacheName = true;
+				}
 			}
 			else
 			{
@@ -226,14 +229,7 @@ public class CCache<K, V> implements CacheInterface
 			if (tableName == null)
 			{
 				final String extractedTableName = extractTableNameForCacheName(cacheName);
-				if (extractedTableName != null)
-				{
-					tableNameEffective = extractedTableName;
-				}
-				else
-				{
-					tableNameEffective = cacheName;
-				}
+				tableNameEffective = extractedTableName != null ? extractedTableName : cacheName;
 			}
 			else
 			{
@@ -241,41 +237,78 @@ public class CCache<K, V> implements CacheInterface
 			}
 		}
 
-		this.labels = buildCacheLabels(tableNameEffective, additionalTableNamesToResetFor);
+		this.labels = buildCacheLabels(tableNameEffective, additionalTableNamesToResetFor, additionalLabels);
 
-		this.expireMinutes = expireMinutes != null ? expireMinutes : EXPIREMINUTES_Never;
-		this.cache = buildGuavaCache(
-				cacheMapType != null ? cacheMapType : CacheMapType.HashMap,
-				initialCapacity != null ? initialCapacity : 0,
-				this.expireMinutes,
-				removalListener);
-
-		if (DEBUG)
+		final CCacheConfigDefaults configDefaults = CacheMgt.get().getConfigDefaults();
+		final CacheMapType cacheMapTypeEffective = cacheMapType != null ? cacheMapType : configDefaults.getCacheMapType();
+		final CCacheConfig.CCacheConfigBuilder configBuilder = CCacheConfig.builder()
+				.cacheMapType(cacheMapTypeEffective)
+				.expireMinutes(expireMinutes != null && expireMinutes >= 0 ? expireMinutes : configDefaults.getExpireMinutes());
+		if (cacheMapTypeEffective == CacheMapType.HashMap)
 		{
-			final Exception ex = new Exception("Aquire stack trace");
-			this.debugAquireStacktrace = Util.dumpStackTraceToString(ex);
-			this.debugId = Integer.toHexString(System.identityHashCode(this));
+			configBuilder.initialCapacity(initialCapacity != null && initialCapacity >= 0 ? initialCapacity : configDefaults.getInitialCapacity());
+		}
+		else if (cacheMapTypeEffective == CacheMapType.LRU)
+		{
+			final Integer maximumSizeEffective = maximumSize != null ? maximumSize : initialCapacity;
+			configBuilder.maximumSize(maximumSizeEffective != null && maximumSizeEffective >= 0 ? maximumSizeEffective : configDefaults.getMaximumSize());
 		}
 		else
 		{
-			this.debugAquireStacktrace = null; // N/A
-			this.debugId = null; // N/A
+			throw new AdempiereException("Unknown CacheMapType: " + cacheMapTypeEffective);
 		}
+		this.config = configBuilder.build();
+
+		this.cache = newGuavaCache(this.config, removalListener);
+
+		this.debugAcquireStacktrace = configDefaults.isCaptureStacktrace() || isNoCacheName ? Trace.toOneLineStackTraceString() : null;
+
+		this.allowDisablingCacheByThreadLocal = ThreadLocalCacheController.computeAllowDisablingCache(this.cacheName, this.labels);
 
 		//
 		// Register it to CacheMgt
 		CacheMgt.get().register(this);
-	}	// CCache
+	}
+
+	private static <K, V> Cache<K, V> newGuavaCache(
+			@NonNull final CCacheConfig config,
+			@Nullable final CacheRemovalListener<K, V> removalListener)
+	{
+		final CacheBuilder<Object, Object> cacheBuilder = CacheBuilder.newBuilder().recordStats();
+		if (config.getInitialCapacity() > 0)
+		{
+			cacheBuilder.initialCapacity(config.getInitialCapacity());
+		}
+		if (config.getMaximumSize() > 0)
+		{
+			cacheBuilder.maximumSize(config.getMaximumSize());
+		}
+		if (config.getExpireMinutes() > 0)
+		{
+			cacheBuilder.expireAfterWrite(config.getExpireMinutes(), TimeUnit.MINUTES);
+		}
+		if (removalListener != null)
+		{
+			//noinspection ResultOfMethodCallIgnored
+			cacheBuilder.removalListener(notification -> {
+				@SuppressWarnings("unchecked") final K key = (K)notification.getKey();
+				@SuppressWarnings("unchecked") final V value = (V)notification.getValue();
+				removalListener.itemRemoved(key, value);
+			});
+		}
+
+		return cacheBuilder.build();
+	}
 
 	/**
 	 * Extracts TableName from given <code>cacheName</code>.
-	 *
+	 * <p>
 	 * NOTE: we assume cacheName has following format: TableName#by#ColumnName1#ColumnName2...
 	 *
 	 * @return tableName or null
 	 */
-	// NOTE: public for testing
 	@Nullable
+	@VisibleForTesting
 	public static String extractTableNameForCacheName(final String cacheName)
 	{
 		if (cacheName == null || cacheName.isEmpty())
@@ -297,112 +330,45 @@ public class CCache<K, V> implements CacheInterface
 		return tableName;
 	}
 
-	private static ImmutableSet<CacheLabel> buildCacheLabels(@NonNull final String tableName, final Set<String> additionalTableNamesToResetFor)
+	@NonNull
+	private static ImmutableSet<CacheLabel> buildCacheLabels(
+			@NonNull final String tableName,
+			@Nullable final Set<String> additionalTableNamesToResetFor,
+			@Nullable final Set<CacheLabel> additionalLabels)
 	{
-		final ImmutableSet.Builder<CacheLabel> builder = ImmutableSet.<CacheLabel> builder();
+		final ImmutableSet.Builder<CacheLabel> builder = ImmutableSet.builder();
 		builder.add(CacheLabel.ofTableName(tableName));
 
-		if (additionalTableNamesToResetFor != null)
+		if (additionalTableNamesToResetFor != null && !additionalTableNamesToResetFor.isEmpty())
 		{
 			additionalTableNamesToResetFor.stream()
 					.map(CacheLabel::ofTableName)
 					.forEach(builder::add);
 		}
 
+		if (additionalLabels != null && !additionalLabels.isEmpty())
+		{
+			builder.addAll(additionalLabels);
+		}
+
 		return builder.build();
-	}
-
-	private static final <K, V> Cache<K, V> buildGuavaCache(
-			@NonNull final CacheMapType cacheMapType,
-			final int initialCapacity,
-			final int expireMinutes,
-			@Nullable final CacheRemovalListener<K, V> removalListener)
-	{
-		CacheBuilder<Object, Object> cacheBuilder = CacheBuilder.newBuilder();
-		if (cacheMapType == CacheMapType.HashMap)
-		{
-			cacheBuilder = cacheBuilder
-					.initialCapacity(initialCapacity);
-		}
-		else if (cacheMapType == CacheMapType.LRU)
-		{
-			cacheBuilder = cacheBuilder
-					.maximumSize(initialCapacity); // FIXME: this is confusing
-		}
-		else
-		{
-			throw new AdempiereException("Unknown CacheMapType: " + cacheMapType);
-		}
-
-		if (expireMinutes > 0)
-		{
-			cacheBuilder = cacheBuilder.expireAfterWrite(expireMinutes, TimeUnit.MINUTES);
-		}
-
-		if (removalListener != null)
-		{
-			cacheBuilder.removalListener(notif -> {
-				@SuppressWarnings("unchecked")
-				final K key = (K)notif.getKey();
-
-				@SuppressWarnings("unchecked")
-				final V value = (V)notif.getValue();
-
-				removalListener.itemRemoved(key, value);
-			});
-		}
-		return cacheBuilder.build();
-	}
-
-	/**
-	 * @return unique cache ID
-	 */
-	@Override
-	public final long getCacheId()
-	{
-		return cacheId;
-	}
-
-	public final String getCacheName()
-	{
-		return cacheName;
-	}	// getName
-
-	@Override
-	public Set<CacheLabel> getLabels()
-	{
-		return labels;
 	}
 
 	/**
 	 * Cache was just reset.
-	 *
+	 * <p>
 	 * NOTE:
 	 * <ul>
 	 * <li>this flag is set to <code>false</code> after any change operation (e.g. {@link #put(Object, Object)})
-	 * <li>this flag is set to <code>false</code> programatically by calling {@link #setUsed()}
 	 * <li>this flag is set to <code>true</code> after {@link #reset()}
 	 *
 	 * @return true if it was just reset
 	 */
-	public final boolean isReset()
-	{
-		return m_justReset;
-	}	// isReset
-
-	/**
-	 * Resets the Reset flag
-	 *
-	 * @see #isReset()
-	 */
-	public final void setUsed()
-	{
-		m_justReset = false;
-	}	// setUsed
+	public final boolean isReset() {return m_justReset;}
 
 	/**
 	 * Reset Cache.
-	 *
+	 * <p>
 	 * It is the same as calling {@link #clear()} but this method will return how many items were cleared.
 	 *
 	 * @return number of items cleared
@@ -411,7 +377,7 @@ public class CCache<K, V> implements CacheInterface
 	@Override
 	public long reset()
 	{
-		try (final IAutoCloseable cacheIdMDC = CacheMDC.putCache(this))
+		try (final IAutoCloseable ignored = CacheMDC.putCache(this))
 		{
 			final long no = cache.size();
 			clear();
@@ -430,20 +396,22 @@ public class CCache<K, V> implements CacheInterface
 		cache.cleanUp();
 
 		m_justReset = true;
-	}	// clear
+	}    // clear
 
 	@Override
 	public long resetForRecordId(@NonNull final TableRecordReference recordRef)
 	{
-		try (final IAutoCloseable cacheIdMDC = CacheMDC.putCache(this))
+		try (final IAutoCloseable ignored = CacheMDC.putCache(this))
 		{
-			if (!invalidationKeysMapper.isPresent())
+			if (invalidationKeysMapper.isPresent())
 			{
-				// NOTE: reseting only by "key" is not supported, so we are reseting everything
+				return resetForRecordIdUsingKeysMapper(recordRef, invalidationKeysMapper.get());
+			}
+			else
+			{
+				// NOTE: resetting only by "key" is not supported, so we are resetting everything
 				return reset();
 			}
-
-			return resetForRecordIdUsingKeysMapper(recordRef, invalidationKeysMapper.get());
 		}
 	}
 
@@ -483,10 +451,9 @@ public class CCache<K, V> implements CacheInterface
 				.append(", size=").append(size)
 				.append(", id=").append(cacheId);
 
-		if (DEBUG)
+		if (this.debugAcquireStacktrace != null)
 		{
-			sb.append("\ncacheId=").append(debugId);
-			sb.append("\n").append(this.debugAquireStacktrace);
+			sb.append("\n").append(this.debugAcquireStacktrace);
 		}
 
 		//
@@ -496,7 +463,7 @@ public class CCache<K, V> implements CacheInterface
 		final String firstEntries = cache.asMap().entrySet()
 				.stream()
 				.limit(sampleSize)
-				.map(entry -> String.valueOf(entry.getKey()) + "=" + entry.getValue())
+				.map(entry -> entry.getKey() + "=" + entry.getValue())
 				.collect(Collectors.joining("\n\t"));
 		if (!firstEntries.isEmpty())
 		{
@@ -512,7 +479,7 @@ public class CCache<K, V> implements CacheInterface
 
 	public boolean containsKey(final K key)
 	{
-		try (final IAutoCloseable cacheIdMDC = CacheMDC.putCache(this))
+		try (final IAutoCloseable ignored = CacheMDC.putCache(this))
 		{
 			return cache.getIfPresent(key) != null;
 		}
@@ -520,7 +487,7 @@ public class CCache<K, V> implements CacheInterface
 
 	public V remove(final K key)
 	{
-		try (final IAutoCloseable cacheIdMDC = CacheMDC.putCache(this))
+		try (final IAutoCloseable ignored = CacheMDC.putCache(this))
 		{
 			final V value = cache.getIfPresent(key);
 			cache.invalidate(key);
@@ -531,7 +498,7 @@ public class CCache<K, V> implements CacheInterface
 
 	public void removeAll(final Iterable<K> keys)
 	{
-		try (final IAutoCloseable cacheIdMDC = CacheMDC.putCache(this))
+		try (final IAutoCloseable ignored = CacheMDC.putCache(this))
 		{
 			cache.invalidateAll(keys);
 		}
@@ -543,7 +510,7 @@ public class CCache<K, V> implements CacheInterface
 	@Nullable
 	public V get(final K key)
 	{
-		try (final IAutoCloseable cacheIdMDC = CacheMDC.putCache(this))
+		try (final IAutoCloseable ignored = CacheMDC.putCache(this))
 		{
 			final V result = cache.getIfPresent(key);
 			logger.debug("get - key={}; result={}", key, result);
@@ -553,7 +520,7 @@ public class CCache<K, V> implements CacheInterface
 
 	/**
 	 * Gets cached value by <code>key</code>.
-	 *
+	 * <p>
 	 * For more informations, see {@link #get(Object, Callable)}.
 	 */
 	public V get(final K key, final Supplier<V> valueInitializer)
@@ -563,7 +530,7 @@ public class CCache<K, V> implements CacheInterface
 			return cache.getIfPresent(key);
 		}
 
-		return get(key, new Callable<V>()
+		return get(key, new Callable<>()
 		{
 			@Override
 			public String toString()
@@ -572,7 +539,7 @@ public class CCache<K, V> implements CacheInterface
 			}
 
 			@Override
-			public V call() throws Exception
+			public V call()
 			{
 				return valueInitializer.get();
 			}
@@ -581,19 +548,23 @@ public class CCache<K, V> implements CacheInterface
 
 	/**
 	 * Gets cached value by <code>key</code>.
-	 *
+	 * <p>
 	 * If value is not present in case it will try to initialize it by using <code>valueInitializer</code>.
-	 *
+	 * <p>
 	 * If the <code>valueInitializer</code> returns null then this method will return <code>null</code> and the value will NOT be cached.
 	 *
-	 * @param key
 	 * @param valueInitializer optional cache initializer.
 	 * @return cached value or <code>null</code>
 	 */
 	public V get(final K key, final Callable<V> valueInitializer)
 	{
-		try (final IAutoCloseable cacheIdMDC = CacheMDC.putCache(this))
+		try (final IAutoCloseable ignored = CacheMDC.putCache(this))
 		{
+			if (isNoCache())
+			{
+				remove(key);
+			}
+
 			if (valueInitializer == null)
 			{
 				return cache.getIfPresent(key);
@@ -633,7 +604,7 @@ public class CCache<K, V> implements CacheInterface
 	 */
 	public V getOrLoad(final K key, final Callable<V> valueLoader)
 	{
-		try (final IAutoCloseable cacheIdMDC = CacheMDC.putCache(this))
+		try (final IAutoCloseable ignored = CacheMDC.putCache(this))
 		{
 			return get(key, valueLoader);
 		}
@@ -641,7 +612,7 @@ public class CCache<K, V> implements CacheInterface
 
 	public V getOrLoad(final K key, @NonNull final Function<K, V> valueLoader)
 	{
-		try (final IAutoCloseable cacheIdMDC = CacheMDC.putCache(this))
+		try (final IAutoCloseable ignored = CacheMDC.putCache(this))
 		{
 			final Callable<V> callable = () -> valueLoader.apply(key);
 			return get(key, callable);
@@ -650,24 +621,27 @@ public class CCache<K, V> implements CacheInterface
 
 	/**
 	 * Gets all values which are identified by given keys.
-	 *
+	 * <p>
 	 * For those keys which were not found in cache, the <code>valuesLoader</code> will be called <b>one time</b> with all missing keys.
 	 * The expected return of <code>valuesLoader</code> is a key/value map of all those values loaded.
-	 *
+	 * <p>
 	 * The values which were just loaded will be also added to cache.
 	 *
-	 * @param keys
-	 * @param valuesLoader
 	 * @return values (IMPORTANT: order is not guaranteed)
 	 */
 	public Collection<V> getAllOrLoad(final Collection<K> keys, final Function<Set<K>, Map<K, V>> valuesLoader)
 	{
-		try (final IAutoCloseable cacheIdMDC = CacheMDC.putCache(this))
+		try (final IAutoCloseable ignored = CacheMDC.putCache(this))
 		{
 			if (keys.isEmpty())
 			{
 				logger.debug("getAllOrLoad - Given keys is empty; -> return empty list");
 				return ImmutableList.of();
+			}
+
+			if (isNoCache())
+			{
+				removeAll(keys);
 			}
 
 			//
@@ -693,7 +667,7 @@ public class CCache<K, V> implements CacheInterface
 			// Load the missing keys if any
 			if (keysToLoad.isEmpty())
 			{
-				logger.debug("getAllOrLoad - all keys had cached values; nothing to load", keysToLoad);
+				logger.debug("getAllOrLoad - all keys had cached values; nothing to load");
 			}
 			else
 			{
@@ -718,15 +692,11 @@ public class CCache<K, V> implements CacheInterface
 
 	/**
 	 * Return the value, if present, otherwise throw an exception to be created by the provided supplier.
-	 *
-	 * @param key
-	 * @param exceptionSupplier
-	 * @return value; not null
-	 * @throws E
 	 */
+	@NonNull
 	public <E extends Throwable> V getOrElseThrow(final K key, final Supplier<E> exceptionSupplier) throws E
 	{
-		try (final IAutoCloseable cacheIdMDC = CacheMDC.putCache(this))
+		try (final IAutoCloseable ignored = CacheMDC.putCache(this))
 		{
 			final V value = get(key);
 			if (value == null)
@@ -739,7 +709,7 @@ public class CCache<K, V> implements CacheInterface
 
 	public void put(final K key, final V value)
 	{
-		try (final IAutoCloseable cacheIdMDC = CacheMDC.putCache(this))
+		try (final IAutoCloseable ignored = CacheMDC.putCache(this))
 		{
 			m_justReset = false;
 			if (value == null)
@@ -770,7 +740,7 @@ public class CCache<K, V> implements CacheInterface
 	 */
 	public void putAll(final Map<? extends K, ? extends V> map)
 	{
-		try (final IAutoCloseable cacheIdMDC = CacheMDC.putCache(this))
+		try (final IAutoCloseable ignored = CacheMDC.putCache(this))
 		{
 			cache.putAll(map);
 
@@ -787,7 +757,7 @@ public class CCache<K, V> implements CacheInterface
 	public boolean isEmpty()
 	{
 		return cache.size() == 0;
-	}	// isEmpty
+	}    // isEmpty
 
 	/**
 	 * @see java.util.Map#keySet()
@@ -795,7 +765,7 @@ public class CCache<K, V> implements CacheInterface
 	public Set<K> keySet()
 	{
 		return cache.asMap().keySet();
-	}	// keySet
+	}    // keySet
 
 	/**
 	 * @see java.util.Map#size()
@@ -804,7 +774,7 @@ public class CCache<K, V> implements CacheInterface
 	public long size()
 	{
 		return cache.size();
-	}	// size
+	}    // size
 
 	/**
 	 * @see java.util.Map#values()
@@ -812,13 +782,13 @@ public class CCache<K, V> implements CacheInterface
 	public Collection<V> values()
 	{
 		return cache.asMap().values();
-	}	// values
+	}    // values
 
 	@Override
 	protected final void finalize() throws Throwable
 	{
 		// NOTE: to avoid memory leaks we need to programatically clear our internal state
-		try (final IAutoCloseable cacheIdMDC = CacheMDC.putCache(this))
+		try (final IAutoCloseable ignored = CacheMDC.putCache(this))
 		{
 			logger.debug("Running finalize");
 			if (cache != null)
@@ -828,81 +798,24 @@ public class CCache<K, V> implements CacheInterface
 		}
 	}
 
-	/**
-	 * @return cache statistics
-	 */
 	public CCacheStats stats()
 	{
-		return new CCacheStats(cacheId, cacheName, cache.size(), cache.stats());
+		final CacheStats guavaStats = cache.stats();
+		return CCacheStats.builder()
+				.cacheId(cacheId)
+				.name(cacheName)
+				.labels(labels)
+				.config(config)
+				.debugAcquireStacktrace(debugAcquireStacktrace)
+				//
+				.size(cache.size())
+				.hitCount(guavaStats.hitCount())
+				.missCount(guavaStats.missCount())
+				.build();
 	}
 
-	@SuppressWarnings("serial")
-	public static final class CCacheStats implements Serializable
+	private boolean isNoCache()
 	{
-		// NOTE: must be Json serializable!!!
-
-		private final long cacheId;
-		private final String name;
-		private final long size;
-		private final CacheStats guavaStats;
-
-		private CCacheStats(final long cacheId, final String name, final long size, final CacheStats guavaStats)
-		{
-			this.cacheId = cacheId;
-			this.name = name;
-			this.size = size;
-			this.guavaStats = guavaStats;
-		}
-
-		@Override
-		public String toString()
-		{
-			return MoreObjects.toStringHelper(this)
-					.add("name", name)
-					.add("size", size)
-					.add("guavaStats", guavaStats)
-					.add("cacheId", cacheId)
-					.toString();
-		}
-
-		@Override
-		public int hashCode()
-		{
-			return Objects.hash(cacheId, name, size, guavaStats);
-		}
-
-		@Override
-		public boolean equals(final Object obj)
-		{
-			if (obj instanceof CCacheStats)
-			{
-				final CCacheStats other = (CCacheStats)obj;
-				return cacheId == other.cacheId
-						&& name.equals(other.name)
-						&& size == other.size
-						&& guavaStats.equals(other.guavaStats);
-			}
-			return false;
-		}
-
-		public long getCacheId()
-		{
-			return cacheId;
-		}
-
-		public String getName()
-		{
-			return name;
-		}
-
-		public long getSize()
-		{
-			return size;
-		}
-
-		public CacheStats getGuavaStats()
-		{
-			return guavaStats;
-		}
+		return allowDisablingCacheByThreadLocal && ThreadLocalCacheController.instance.isNoCache();
 	}
-}	// CCache
+}

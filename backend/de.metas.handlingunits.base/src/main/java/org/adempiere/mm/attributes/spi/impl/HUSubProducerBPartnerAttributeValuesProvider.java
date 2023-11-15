@@ -1,10 +1,17 @@
 package org.adempiere.mm.attributes.spi.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Properties;
-
+import com.google.common.collect.ImmutableList;
+import de.metas.cache.CCache;
+import de.metas.cache.CCacheStats;
+import de.metas.handlingunits.attribute.IHUAttributesBL;
+import de.metas.handlingunits.model.I_M_HU;
+import de.metas.i18n.IMsgBL;
+import de.metas.i18n.ITranslatableString;
+import de.metas.interfaces.I_C_BP_Relation;
+import de.metas.util.Check;
+import de.metas.util.GuavaCollectors;
+import de.metas.util.Services;
+import lombok.NonNull;
 import org.adempiere.ad.trx.api.ITrx;
 import org.adempiere.mm.attributes.AttributeValueId;
 import org.adempiere.mm.attributes.api.IAttributeDAO;
@@ -24,21 +31,11 @@ import org.compiere.util.KeyNamePair;
 import org.compiere.util.NamePair;
 import org.compiere.util.Util.ArrayKey;
 
-import com.google.common.collect.ImmutableList;
-
-import de.metas.cache.CCache;
-import de.metas.cache.CCache.CCacheStats;
-import de.metas.handlingunits.attribute.IHUAttributesBL;
-import de.metas.handlingunits.model.I_M_HU;
-import de.metas.i18n.IMsgBL;
-import de.metas.i18n.ITranslatableString;
-import de.metas.interfaces.I_C_BP_Relation;
-import de.metas.util.Check;
-import de.metas.util.GuavaCollectors;
-import de.metas.util.Services;
-import lombok.NonNull;
-
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Properties;
 
 /*
  * #%L

@@ -22,9 +22,8 @@ package org.adempiere.mm.attributes.spi;
  * #L%
  */
 
-import java.util.List;
-import java.util.Set;
-
+import com.google.common.collect.ImmutableSet;
+import de.metas.cache.CCacheStats;
 import org.adempiere.mm.attributes.AttributeValueId;
 import org.adempiere.mm.attributes.api.IAttributeSet;
 import org.adempiere.mm.attributes.api.IAttributesBL;
@@ -33,9 +32,8 @@ import org.compiere.model.X_M_Attribute;
 import org.compiere.util.Evaluatee;
 import org.compiere.util.NamePair;
 
-import com.google.common.collect.ImmutableSet;
-
-import de.metas.cache.CCache.CCacheStats;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Implementations of this interface are providing a fixed set of values for a given attribute.

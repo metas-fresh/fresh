@@ -1,13 +1,11 @@
 package org.adempiere.ad.element.api;
 
-import java.util.List;
-
+import de.metas.util.ISingletonService;
 import org.compiere.model.I_AD_Column;
 import org.compiere.model.I_AD_Element;
-import org.compiere.model.I_AD_Field;
 import org.compiere.model.I_AD_UI_Element;
 
-import de.metas.util.ISingletonService;
+import java.util.List;
 
 /*
  * #%L
@@ -33,11 +31,9 @@ import de.metas.util.ISingletonService;
 
 public interface IADElementDAO extends ISingletonService
 {
-	public List<I_AD_UI_Element> retrieveChildUIElements(I_AD_Element element);
+	List<I_AD_UI_Element> retrieveChildUIElements(I_AD_Element element);
 
 	List<I_AD_Column> retrieveColumns(int elementId);
-
-	List<I_AD_Field> retrieveFields(String columnName);
 
 	void makeElementMandatoryInApplicationDictionaryTables();
 

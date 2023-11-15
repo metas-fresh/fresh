@@ -16,9 +16,9 @@
  *****************************************************************************/
 package de.metas.cache;
 
-import java.util.Set;
-
 import org.adempiere.util.lang.impl.TableRecordReference;
+
+import java.util.Set;
 
 /**
  * Adempiere Cache Interface
@@ -28,6 +28,9 @@ import org.adempiere.util.lang.impl.TableRecordReference;
  */
 public interface CacheInterface
 {
+	/**
+	 * @return unique cache ID
+	 */
 	long getCacheId();
 
 	/**

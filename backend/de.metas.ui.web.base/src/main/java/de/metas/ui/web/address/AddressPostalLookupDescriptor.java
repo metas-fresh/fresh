@@ -1,8 +1,6 @@
 package de.metas.ui.web.address;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import de.metas.cache.CCache.CCacheStats;
 import de.metas.i18n.ITranslatableString;
 import de.metas.i18n.TranslatableStrings;
 import de.metas.ui.web.window.datatypes.LookupValue;
@@ -27,7 +25,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -90,12 +87,6 @@ public class AddressPostalLookupDescriptor implements LookupDescriptor, LookupDa
 	public void cacheInvalidate()
 	{
 		countryLookup.cacheInvalidate();
-	}
-
-	@Override
-	public List<CCacheStats> getCacheStats()
-	{
-		return ImmutableList.of();
 	}
 
 	@Override

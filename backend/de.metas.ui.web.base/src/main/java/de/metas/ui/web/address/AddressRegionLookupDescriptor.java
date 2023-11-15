@@ -3,7 +3,7 @@ package de.metas.ui.web.address;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import de.metas.cache.CCache;
-import de.metas.cache.CCache.CCacheStats;
+import de.metas.cache.CCacheStats;
 import de.metas.location.ICountryDAO;
 import de.metas.ui.web.window.datatypes.LookupValue;
 import de.metas.ui.web.window.datatypes.LookupValue.IntegerLookupValue;

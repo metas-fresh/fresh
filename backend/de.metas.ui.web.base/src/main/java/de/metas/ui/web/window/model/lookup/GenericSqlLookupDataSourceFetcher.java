@@ -25,7 +25,7 @@ package de.metas.ui.web.window.model.lookup;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import de.metas.adempiere.service.impl.TooltipType;
-import de.metas.cache.CCache.CCacheStats;
+import de.metas.common.util.CoalesceUtil;
 import de.metas.logging.LogManager;
 import de.metas.ui.web.view.descriptor.SqlAndParams;
 import de.metas.ui.web.window.WindowConstants;
@@ -34,13 +34,13 @@ import de.metas.ui.web.window.datatypes.LookupValue;
 import de.metas.ui.web.window.datatypes.LookupValuesList;
 import de.metas.ui.web.window.datatypes.LookupValuesPage;
 import de.metas.ui.web.window.datatypes.WindowId;
-import de.metas.ui.web.window.descriptor.LookupDescriptor;
 import de.metas.ui.web.window.descriptor.sql.SqlForFetchingLookupById;
 import de.metas.ui.web.window.descriptor.sql.SqlForFetchingLookups;
-import de.metas.ui.web.window.descriptor.sql.SqlLookupDescriptor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
-import org.adempiere.ad.service.impl.LookupDAO.SQLNamePairIterator;
+import org.adempiere.ad.service.impl.LookupDAO;
+import org.adempiere.ad.table.api.TableName;
 import org.adempiere.ad.validationRule.INamePairPredicate;
 import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.util.comparator.FixedOrderByKeyComparator;
@@ -53,51 +53,50 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+import static de.metas.common.util.CoalesceUtil.firstGreaterThanZero;
+
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class GenericSqlLookupDataSourceFetcher implements LookupDataSourceFetcher
 {
-	@NonNull
-	private final TooltipType tooltipType;
-
-	public static GenericSqlLookupDataSourceFetcher of(final LookupDescriptor lookupDescriptor)
-	{
-		return new GenericSqlLookupDataSourceFetcher(lookupDescriptor);
-	}
-
 	private static final Logger logger = LogManager.getLogger(GenericSqlLookupDataSourceFetcher.class);
+	public static final int DEFAULT_PAGE_SIZE = 1000;
 
-	private final @NonNull String lookupTableName;
+	@NonNull private final String lookupTableName;
+	@Getter private final boolean numericKey;
+	@Getter @NonNull private final SqlForFetchingLookups sqlForFetchingLookups;
+	@Getter @NonNull private final SqlForFetchingLookupById sqlForFetchingLookupById;
+	@Nullable private final INamePairPredicate postQueryPredicate;
+	@Getter @NonNull private final Optional<WindowId> zoomIntoWindowId;
+	@NonNull private final TooltipType tooltipType;
+
+	private final int pageLength;
+
+	//
+	// Computed:
 	private final @NonNull Optional<String> lookupTableNameAsOptional;
-	@Getter
-	private final boolean numericKey;
-	private final int entityTypeIndex;
-
-	private final SqlForFetchingLookups sqlForFetchingExpression;
-	private final SqlForFetchingLookupById sqlForFetchingLookupByIdExpression;
-	private final INamePairPredicate postQueryPredicate;
-
 	private final boolean isTranslatable;
 
-	@Getter
-	private final Optional<WindowId> zoomIntoWindowId;
-
-	private GenericSqlLookupDataSourceFetcher(@NonNull final LookupDescriptor lookupDescriptor)
+	@Builder
+	private GenericSqlLookupDataSourceFetcher(
+			@NonNull final TableName lookupTableName,
+			@NonNull final SqlForFetchingLookups sqlForFetchingLookups,
+			@NonNull final SqlForFetchingLookupById sqlForFetchingLookupById,
+			@Nullable final INamePairPredicate postQueryPredicate,
+			@NonNull final Optional<WindowId> zoomIntoWindowId,
+			@NonNull final TooltipType tooltipType,
+			@Nullable final Integer pageLength)
 	{
-		final SqlLookupDescriptor sqlLookupDescriptor = lookupDescriptor.cast(SqlLookupDescriptor.class);
+		this.lookupTableName = lookupTableName.getAsString();
+		this.numericKey = sqlForFetchingLookupById.isNumericKey();
+		this.sqlForFetchingLookups = sqlForFetchingLookups;
+		this.sqlForFetchingLookupById = sqlForFetchingLookupById;
+		this.postQueryPredicate = postQueryPredicate;
+		this.zoomIntoWindowId = zoomIntoWindowId;
+		this.tooltipType = tooltipType;
+		this.pageLength = CoalesceUtil.coalesceNotNull(pageLength, -1);
 
-		lookupTableNameAsOptional = sqlLookupDescriptor.getTableName();
-		lookupTableName = lookupTableNameAsOptional.orElseThrow(() -> new AdempiereException("No table name defined for " + lookupDescriptor));
-		numericKey = sqlLookupDescriptor.isNumericKey();
-		entityTypeIndex = sqlLookupDescriptor.getEntityTypeIndex();
-		sqlForFetchingExpression = sqlLookupDescriptor.getSqlForFetchingExpression();
-		sqlForFetchingLookupByIdExpression = sqlLookupDescriptor.getSqlForFetchingLookupByIdExpression();
-		postQueryPredicate = sqlLookupDescriptor.getPostQueryPredicate();
-
-		isTranslatable = sqlForFetchingLookupByIdExpression.requiresParameter(LookupDataSourceContext.PARAM_AD_Language.getName());
-
-		zoomIntoWindowId = lookupDescriptor.getZoomIntoWindowId();
-
-		tooltipType = sqlLookupDescriptor.getTooltipType();
+		this.lookupTableNameAsOptional = Optional.of(this.lookupTableName);
+		this.isTranslatable = this.sqlForFetchingLookupById.requiresParameter(LookupDataSourceContext.PARAM_AD_Language.getName());
 	}
 
 	@Override
@@ -106,7 +105,7 @@ public class GenericSqlLookupDataSourceFetcher implements LookupDataSourceFetche
 		return MoreObjects.toStringHelper(this)
 				.omitNullValues()
 				.add("lookupTableName", lookupTableName)
-				.add("sqlForFetchingExpression", sqlForFetchingExpression)
+				.add("sqlForFetchingLookups", sqlForFetchingLookups)
 				.add("postQueryPredicate", postQueryPredicate)
 				.toString();
 	}
@@ -136,17 +135,11 @@ public class GenericSqlLookupDataSourceFetcher implements LookupDataSourceFetche
 	}
 
 	@Override
-	public List<CCacheStats> getCacheStats()
-	{
-		return ImmutableList.of();
-	}
-
-	@Override
 	public final LookupDataSourceContext.Builder newContextForFetchingById(@Nullable final Object id)
 	{
 		return LookupDataSourceContext.builder(lookupTableName)
 				.putFilterById(IdsToFilter.ofSingleValue(id))
-				.setRequiredParameters(sqlForFetchingLookupByIdExpression.getParameters());
+				.setRequiredParameters(sqlForFetchingLookupById.getParameters());
 	}
 
 	@Override
@@ -161,7 +154,7 @@ public class GenericSqlLookupDataSourceFetcher implements LookupDataSourceFetche
 	{
 		return LookupDataSourceContext.builder(lookupTableName)
 				.putPostQueryPredicate(postQueryPredicate)
-				.setRequiredParameters(sqlForFetchingExpression.getParameters());
+				.setRequiredParameters(sqlForFetchingLookups.getParameters());
 	}
 
 	/**
@@ -171,15 +164,17 @@ public class GenericSqlLookupDataSourceFetcher implements LookupDataSourceFetche
 	public LookupValuesPage retrieveEntities(final LookupDataSourceContext evalCtxParam)
 	{
 		final int offset = evalCtxParam.getOffset(0);
-		final int pageLength = evalCtxParam.getLimit(1000);
+		final int pageLength = firstGreaterThanZero(this.pageLength, evalCtxParam.getLimit(DEFAULT_PAGE_SIZE));
+
 		final LookupDataSourceContext evalCtxEffective = evalCtxParam
 				.withOffset(offset)
 				.withLimit(pageLength < Integer.MAX_VALUE ? pageLength + 1 : pageLength); // add 1 to pageLength to be able to recognize if there are more items
 
-		final String sqlForFetching = sqlForFetchingExpression.evaluate(evalCtxEffective);
+		final String sqlForFetching = this.sqlForFetchingLookups.evaluate(evalCtxEffective);
+		final int entityTypeIndex = sqlForFetchingLookups.getEntityTypeIndex();
 		final String adLanguage = isTranslatable ? evalCtxEffective.getAD_Language() : null;
 
-		try (final SQLNamePairIterator data = new SQLNamePairIterator(sqlForFetching, numericKey, entityTypeIndex))
+		try (final LookupDAO.SQLNamePairIterator data = new LookupDAO.SQLNamePairIterator(sqlForFetching, numericKey, entityTypeIndex))
 		{
 			DebugProperties debugProperties = null;
 			if (WindowConstants.isProtocolDebugging())
@@ -207,7 +202,7 @@ public class GenericSqlLookupDataSourceFetcher implements LookupDataSourceFetche
 	@Override
 	public final LookupValue retrieveLookupValueById(final @NonNull LookupDataSourceContext evalCtx)
 	{
-		final SqlAndParams sqlAndParams = sqlForFetchingLookupByIdExpression.evaluate(evalCtx).orElse(null);
+		final SqlAndParams sqlAndParams = this.sqlForFetchingLookupById.evaluate(evalCtx).orElse(null);
 		if (sqlAndParams == null)
 		{
 			throw new AdempiereException("No ID provided in " + evalCtx);
@@ -238,7 +233,7 @@ public class GenericSqlLookupDataSourceFetcher implements LookupDataSourceFetche
 	@Override
 	public LookupValuesList retrieveLookupValueByIdsInOrder(@NonNull final LookupDataSourceContext evalCtx)
 	{
-		final SqlAndParams sqlAndParams = sqlForFetchingLookupByIdExpression.evaluate(evalCtx).orElse(null);
+		final SqlAndParams sqlAndParams = this.sqlForFetchingLookupById.evaluate(evalCtx).orElse(null);
 		if (sqlAndParams == null)
 		{
 			return LookupValuesList.EMPTY;

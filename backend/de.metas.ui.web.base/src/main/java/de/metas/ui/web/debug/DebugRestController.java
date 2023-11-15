@@ -28,10 +28,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import de.metas.cache.CCache;
 import de.metas.cache.CacheMgt;
 import de.metas.cache.model.CacheInvalidateMultiRequest;
 import de.metas.cache.model.CacheInvalidateRequest;
+import de.metas.cache.rest.JsonCacheResetRequest;
+import de.metas.cache.rest.JsonCacheResetResponse;
 import de.metas.event.Topic;
 import de.metas.event.Type;
 import de.metas.logging.LogManager;
@@ -40,15 +41,12 @@ import de.metas.notification.UserNotificationRequest;
 import de.metas.notification.UserNotificationRequest.TargetRecordAction;
 import de.metas.notification.UserNotificationRequest.UserNotificationRequestBuilder;
 import de.metas.notification.UserNotificationTargetType;
-import de.metas.security.IUserRolePermissionsDAO;
+import de.metas.ui.web.admin.CacheRestController;
 import de.metas.ui.web.base.model.I_T_WEBUI_ViewSelection;
 import de.metas.ui.web.comments.ViewRowCommentsSummary;
 import de.metas.ui.web.config.WebConfig;
-import de.metas.ui.web.debug.JSONCacheResetResult.JSONCacheResetResultBuilder;
 import de.metas.ui.web.exceptions.EntityNotFoundException;
 import de.metas.ui.web.kpi.data.KPIDataProvider;
-import de.metas.ui.web.menu.MenuTreeRepository;
-import de.metas.ui.web.process.ProcessRestController;
 import de.metas.ui.web.session.UserSession;
 import de.metas.ui.web.view.IView;
 import de.metas.ui.web.view.IViewsRepository;
@@ -57,7 +55,6 @@ import de.metas.ui.web.view.ViewId;
 import de.metas.ui.web.view.ViewProfileId;
 import de.metas.ui.web.view.ViewResult;
 import de.metas.ui.web.view.ViewRowOverridesHelper;
-import de.metas.ui.web.view.descriptor.annotation.ViewColumnHelper;
 import de.metas.ui.web.view.event.ViewChangesCollector;
 import de.metas.ui.web.view.json.JSONViewResult;
 import de.metas.ui.web.websocket.WebsocketConfig;
@@ -66,15 +63,15 @@ import de.metas.ui.web.window.datatypes.DocumentIdsSelection;
 import de.metas.ui.web.window.datatypes.WindowId;
 import de.metas.ui.web.window.datatypes.json.JSONOptions;
 import de.metas.ui.web.window.model.DocumentCollection;
-import de.metas.ui.web.window.model.lookup.LookupDataSourceFactory;
 import de.metas.user.UserId;
 import de.metas.util.Check;
 import de.metas.util.GuavaCollectors;
 import de.metas.util.Services;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import org.adempiere.ad.trx.api.ITrx;
 import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.exceptions.DBException;
@@ -83,7 +80,6 @@ import org.compiere.util.DB;
 import org.compiere.util.DisplayType;
 import org.compiere.util.Env;
 import org.slf4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -107,95 +103,35 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-@ApiResponses(value = { @ApiResponse(code = 401, message = "Unauthorized") })
+@ApiResponses(value = { @ApiResponse(responseCode = "401", description = "Unauthorized") })
 @RestController
 @RequestMapping(value = DebugRestController.ENDPOINT)
+@RequiredArgsConstructor
 public class DebugRestController
 {
 	public static final String ENDPOINT = WebConfig.ENDPOINT_ROOT + "/debug";
 
-	@Autowired
-	private UserSession userSession;
-
-	@Autowired
-	private DocumentCollection documentCollection;
-
-	@Autowired
-	private MenuTreeRepository menuTreeRepo;
-
-	@Autowired
-	@Lazy
-	private IViewsRepository viewsRepo;
-
-	@Autowired
-	@Lazy
-	private SqlViewFactory sqlViewFactory;
-
-	@Autowired
-	@Lazy
-	private ProcessRestController processesController;
-
-	@Autowired
-	@Lazy
-	private ObjectMapper sharedJsonObjectMapper;
+	@NonNull private final UserSession userSession;
+	@NonNull private final DocumentCollection documentCollection;
+	@NonNull @Lazy private final IViewsRepository viewsRepo;
+	@NonNull @Lazy private final SqlViewFactory sqlViewFactory;
+	@NonNull private final CacheRestController cacheRestController;
+	@NonNull @Lazy private final ObjectMapper sharedJsonObjectMapper;
 
 	private JSONOptions newJSONOptions()
 	{
 		return JSONOptions.of(userSession);
 	}
 
-	@ApiResponses(value = { @ApiResponse(code = 200, message = "cache reset done") })
-	@RequestMapping(value = "/cacheReset", method = RequestMethod.GET)
-	public JSONCacheResetResult cacheReset(
-			@RequestParam(name = "forgetNotSavedDocuments", defaultValue = "false", required = false) final boolean forgetNotSavedDocuments)
+	@GetMapping("/cacheReset")
+	@ApiResponses({ @ApiResponse(responseCode = "200", description = "cache reset done") })
+	@Deprecated
+	public JsonCacheResetResponse cacheReset(
+			@RequestParam(name = CacheRestController.CACHE_RESET_PARAM_forgetNotSavedDocuments, defaultValue = "false", required = false) final boolean forgetNotSavedDocuments)
 	{
 		userSession.assertLoggedIn();
-
-		final JSONCacheResetResultBuilder result = JSONCacheResetResult.builder();
-
-		//
-		{
-			final long count = CacheMgt.get().reset();
-			result.log("CacheMgt: invalidate " + count + " items");
-		}
-
-		//
-		{
-			final String documentsResult = documentCollection.cacheReset(forgetNotSavedDocuments);
-			result.log("documents: " + documentsResult);
-		}
-
-		//
-		{
-			menuTreeRepo.cacheReset();
-			result.log("menuTreeRepo: cache invalidated");
-		}
-
-		//
-		{
-			processesController.cacheReset();
-			result.log("processesController: cache invalidated");
-		}
-
-		//
-		{
-			ViewColumnHelper.cacheReset();
-			result.log("viewColumnHelper: cache invalidated");
-		}
-
-		//
-		{
-			Services.get(IUserRolePermissionsDAO.class).resetLocalCache();
-			result.log("user/role permissions: cache invalidated");
-		}
-
-		//
-		{
-			System.gc();
-			result.log("system: garbage collected");
-		}
-
-		return result.build();
+		return cacheRestController.reset(new JsonCacheResetRequest()
+				.setValue(CacheRestController.CACHE_RESET_PARAM_forgetNotSavedDocuments, forgetNotSavedDocuments));
 	}
 
 	// NOTE: using String parameter because when using boolean parameter, we get following error in swagger-ui:
@@ -212,8 +148,10 @@ public class DebugRestController
 		}
 		userSession.setShowColumnNamesForCaption(showColumnNamesForCaption);
 
-		final boolean forgetNotSavedDocuments = true;
-		cacheReset(forgetNotSavedDocuments);
+		cacheRestController.reset(
+				new JsonCacheResetRequest()
+						.setValue(CacheRestController.CACHE_RESET_PARAM_forgetNotSavedDocuments, true)
+		);
 	}
 
 	@RequestMapping(value = "/allowDeprecatedRestAPI", method = RequestMethod.PUT)
@@ -260,17 +198,6 @@ public class DebugRestController
 		userSession.assertLoggedIn();
 
 		sqlViewFactory.setDefaultProfileId(WindowId.fromJson(windowIdStr), ViewProfileId.fromJson(profileIdStr));
-	}
-
-	@RequestMapping(value = "/lookups/cacheStats", method = RequestMethod.GET)
-	public List<String> getLookupCacheStats()
-	{
-		userSession.assertLoggedIn();
-
-		return LookupDataSourceFactory.instance.getCacheStats()
-				.stream()
-				.map(CCache.CCacheStats::toString)
-				.collect(GuavaCollectors.toImmutableList());
 	}
 
 	@RequestMapping(value = "/eventBus/postEvent", method = RequestMethod.GET)
@@ -445,7 +372,7 @@ public class DebugRestController
 	}
 
 	@GetMapping("http.cache.maxAge")
-	public Map<String, Object> setHttpCacheMaxAge(@RequestParam("value") @ApiParam("Cache-control's max age in seconds") final int httpCacheMaxAge)
+	public Map<String, Object> setHttpCacheMaxAge(@RequestParam("value") @Parameter(description = "Cache-control's max age in seconds") final int httpCacheMaxAge)
 	{
 		userSession.assertLoggedIn();
 
@@ -455,7 +382,7 @@ public class DebugRestController
 	}
 
 	@GetMapping("http.use.AcceptLanguage")
-	public Map<String, Object> setUseHttpAcceptLanguage(@RequestParam("value") @ApiParam("Cache-control's max age in seconds") final boolean useHttpAcceptLanguage)
+	public Map<String, Object> setUseHttpAcceptLanguage(@RequestParam("value") @Parameter(description = "Cache-control's max age in seconds") final boolean useHttpAcceptLanguage)
 	{
 		userSession.assertLoggedIn();
 
@@ -479,7 +406,7 @@ public class DebugRestController
 		final String sql = "DELETE FROM " + I_T_WEBUI_ViewSelection.Table_Name
 				+ " WHERE " + I_T_WEBUI_ViewSelection.COLUMNNAME_UUID + "=" + DB.TO_STRING(viewId.getViewId())
 				+ " AND " + I_T_WEBUI_ViewSelection.COLUMNNAME_IntKey1 + "=" + DB.buildSqlList(rowIds.toIntSet());
-		final int countDeleted = DB.executeUpdateEx(sql, ITrx.TRXNAME_None);
+		final int countDeleted = DB.executeUpdateAndThrowExceptionOnFail(sql, ITrx.TRXNAME_None);
 
 		//
 		// Clear view's cache

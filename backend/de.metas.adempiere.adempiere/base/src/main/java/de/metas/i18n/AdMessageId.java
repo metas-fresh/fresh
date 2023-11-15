@@ -22,15 +22,15 @@
 
 package de.metas.i18n;
 
-import javax.annotation.Nullable;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-
 import de.metas.util.Check;
 import de.metas.util.lang.RepoIdAware;
 import lombok.NonNull;
 import lombok.Value;
+
+import javax.annotation.Nullable;
+import java.util.Objects;
 
 @Value
 public class AdMessageId implements RepoIdAware
@@ -65,4 +65,6 @@ public class AdMessageId implements RepoIdAware
 	{
 		return id != null ? id.getRepoId() : -1;
 	}
+
+	public static boolean equals(@Nullable final AdMessageId id1, @Nullable final AdMessageId id2) {return Objects.equals(id1, id2);}
 }

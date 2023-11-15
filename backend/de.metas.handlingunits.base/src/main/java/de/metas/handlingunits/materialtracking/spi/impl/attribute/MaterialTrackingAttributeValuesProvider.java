@@ -1,36 +1,11 @@
 package de.metas.handlingunits.materialtracking.spi.impl.attribute;
 
-import static de.metas.materialtracking.model.I_M_Material_Tracking.COLUMNNAME_C_BPartner_ID;
-import static de.metas.materialtracking.model.I_M_Material_Tracking.COLUMNNAME_M_Material_Tracking_ID;
-import static de.metas.materialtracking.model.I_M_Material_Tracking.COLUMNNAME_M_Product_ID;
-import static org.adempiere.model.InterfaceWrapperHelper.load;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import javax.annotation.Nullable;
-
-import org.adempiere.mm.attributes.AttributeValueId;
-import org.adempiere.mm.attributes.api.IAttributeSet;
-import org.adempiere.mm.attributes.spi.IAttributeValuesProvider;
-import org.compiere.model.I_M_Attribute;
-import org.compiere.model.X_M_Attribute;
-import org.compiere.util.CtxName;
-import org.compiere.util.CtxNames;
-import org.compiere.util.Env;
-import org.compiere.util.Evaluatee;
-import org.compiere.util.Evaluatees;
-import org.compiere.util.KeyNamePair;
-import org.compiere.util.NamePair;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-
 import de.metas.bpartner.BPartnerId;
 import de.metas.cache.CCache;
-import de.metas.cache.CCache.CCacheStats;
+import de.metas.cache.CCacheStats;
 import de.metas.handlingunits.IHandlingUnitsBL;
 import de.metas.handlingunits.attribute.IHUAttributesBL;
 import de.metas.handlingunits.model.I_M_HU;
@@ -44,6 +19,28 @@ import de.metas.util.NumberUtils;
 import de.metas.util.Services;
 import lombok.NonNull;
 import lombok.Value;
+import org.adempiere.mm.attributes.AttributeValueId;
+import org.adempiere.mm.attributes.api.IAttributeSet;
+import org.adempiere.mm.attributes.spi.IAttributeValuesProvider;
+import org.compiere.model.I_M_Attribute;
+import org.compiere.model.X_M_Attribute;
+import org.compiere.util.CtxName;
+import org.compiere.util.CtxNames;
+import org.compiere.util.Env;
+import org.compiere.util.Evaluatee;
+import org.compiere.util.Evaluatees;
+import org.compiere.util.KeyNamePair;
+import org.compiere.util.NamePair;
+
+import javax.annotation.Nullable;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import static de.metas.materialtracking.model.I_M_Material_Tracking.COLUMNNAME_C_BPartner_ID;
+import static de.metas.materialtracking.model.I_M_Material_Tracking.COLUMNNAME_M_Material_Tracking_ID;
+import static de.metas.materialtracking.model.I_M_Material_Tracking.COLUMNNAME_M_Product_ID;
+import static org.adempiere.model.InterfaceWrapperHelper.load;
 
 /*
  * #%L

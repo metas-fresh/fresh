@@ -195,6 +195,7 @@ public abstract class JSONDocumentBase
 		setFields(fields == null ? null : Maps.uniqueIndex(fields, JSONDocumentField::getField));
 	}
 
+	@JsonIgnore
 	protected final void setFields(final Map<String, JSONDocumentField> fieldsByName)
 	{
 		this.fieldsByName = fieldsByName;

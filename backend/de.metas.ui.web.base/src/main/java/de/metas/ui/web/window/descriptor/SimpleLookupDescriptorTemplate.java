@@ -1,7 +1,5 @@
 package de.metas.ui.web.window.descriptor;
 
-import com.google.common.collect.ImmutableList;
-import de.metas.cache.CCache.CCacheStats;
 import de.metas.ui.web.window.datatypes.LookupValue;
 import de.metas.ui.web.window.datatypes.LookupValuesPage;
 import de.metas.ui.web.window.datatypes.WindowId;
@@ -11,7 +9,6 @@ import de.metas.ui.web.window.model.lookup.LookupDataSourceFetcher;
 import lombok.NonNull;
 
 import javax.annotation.Nullable;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -39,9 +36,8 @@ import java.util.Set;
 
 /**
  * Simple template implementation of {@link LookupDescriptor} and {@link LookupDataSourceFetcher}.
- * 
- * @author metas-dev <dev@metasfresh.com>
  *
+ * @author metas-dev <dev@metasfresh.com>
  */
 public abstract class SimpleLookupDescriptorTemplate implements LookupDescriptor, LookupDataSourceFetcher
 {
@@ -115,16 +111,10 @@ public abstract class SimpleLookupDescriptorTemplate implements LookupDescriptor
 	{
 		return true;
 	}
-	
+
 	@Override
 	public void cacheInvalidate()
 	{
-	}
-
-	@Override
-	public List<CCacheStats> getCacheStats()
-	{
-		return ImmutableList.of();
 	}
 
 	@Override

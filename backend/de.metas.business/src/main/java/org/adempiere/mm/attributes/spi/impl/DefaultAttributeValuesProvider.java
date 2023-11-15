@@ -1,12 +1,13 @@
 package org.adempiere.mm.attributes.spi.impl;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.annotation.concurrent.Immutable;
-
+import com.google.common.base.MoreObjects;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import de.metas.cache.CCache;
+import de.metas.cache.CCacheStats;
+import de.metas.util.Check;
+import de.metas.util.Services;
+import lombok.NonNull;
 import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.mm.attributes.AttributeListValue;
 import org.adempiere.mm.attributes.AttributeValueId;
@@ -20,15 +21,11 @@ import org.compiere.util.Evaluatees;
 import org.compiere.util.NamePair;
 import org.compiere.util.ValueNamePair;
 
-import com.google.common.base.MoreObjects;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-
-import de.metas.cache.CCache;
-import de.metas.cache.CCache.CCacheStats;
-import de.metas.util.Check;
-import de.metas.util.Services;
-import lombok.NonNull;
+import javax.annotation.concurrent.Immutable;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Implementation of {@link IAttributeValuesProvider} which is fetching the attributes from {@link IAttributeDAO}.
