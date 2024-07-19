@@ -128,6 +128,8 @@ public interface IInvoiceCandBL extends ISingletonService
 
 	IInvoiceGenerateResult generateInvoicesFromQueue(Properties ctx);
 
+	void setPaymentTermIfMissing(@NonNull I_C_Invoice_Candidate icRecord);
+
 	void setNetAmtToInvoice(I_C_Invoice_Candidate ic);
 
 	/**
