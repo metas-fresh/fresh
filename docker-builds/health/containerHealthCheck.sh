@@ -36,7 +36,7 @@ then
   echo "---------------------------------------------------------"
   echo " start log of unhealthy $containerName"
   echo "---------------------------------------------------------"
-  docker-compose -f ../compose/compose.yml logs --tail 1000 "$containerName"
+  docker compose -f ../compose/compose.yml logs --tail 1000 "$containerName"
   echo ""
   echo "---------------------------------------------------------"
   echo " end log of unhealthy $containerName"
