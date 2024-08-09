@@ -1,7 +1,7 @@
 name: cicd
 on: [push, workflow_dispatch]
 env:
-  PIPELINE_VERSION: '0.3.6'
+  PIPELINE_VERSION: '0.3.7'
 jobs:
 
   init:
@@ -661,9 +661,9 @@ jobs:
           mkdir cucumber
           docker pull metasfresh/metas-cucumber:${{ needs.init.outputs.tag-fixed }}
           docker cp "$(docker create --name tempcopytainer metasfresh/metas-cucumber:${{ needs.init.outputs.tag-fixed }}):/compose.yml" . && docker rm tempcopytainer
-          docker-compose up --abort-on-container-exit --exit-code-from cucumber 2>&1 | tee cucumber.log && echo "${PIPESTATUS[0]}" > cucumber.exit-code
-          docker commit metasfresh_db_1 metasfresh/metas-db:${{ needs.init.outputs.tag-fixed }}-postcucumber-${{ matrix.profile }}
-          docker-compose down
+          docker compose up --abort-on-container-exit --exit-code-from cucumber 2>&1 | tee cucumber.log && echo "${PIPESTATUS[0]}" > cucumber.exit-code
+          docker commit metasfresh-db-1 metasfresh/metas-db:${{ needs.init.outputs.tag-fixed }}-postcucumber-${{ matrix.profile }}
+          docker compose down
           cat cucumber.log | grep -q "BUILD SUCCESS" && echo "$?" > cucumber.mvn.exit-code || echo "$?" > cucumber.mvn.exit-code
       - name: push-results
         run: |
@@ -701,12 +701,12 @@ jobs:
         with:
           username: metasfresh
           password: ${{ secrets.DOCKERHUB_METASFRESH_RW_TOKEN }}
-      - name: start docker-compose
+      - name: start docker compose
         working-directory: docker-builds/compose/
         env:
           mfversion: ${{ needs.init.outputs.tag-fixed }}
         run: |
-          docker-compose up -d
+          docker compose up -d
       - name: Make the script files executable
         working-directory: docker-builds/health/
         if: success() || failure()
@@ -757,26 +757,26 @@ jobs:
         if: success() || failure()
         run: |
           ./apiHealthChecks.sh
-      - name: create docker-compose summary
+      - name: create docker compose summary
         working-directory: docker-builds/compose/
         if: success() || failure()
         run: |
-          docker-compose ps -a
-          docker inspect --format "{{json .State.Health }}" compose_db_1 | jq
-          docker inspect --format "{{json .State.Health }}" compose_webapi_1 | jq
-          docker inspect --format "{{json .State.Health }}" compose_app_1 | jq
-          docker inspect --format "{{json .State.Health }}" compose_rabbitmq_1 | jq
-          docker inspect --format "{{json .State.Health }}" compose_search_1 | jq
-          docker inspect --format "{{json .State.Health }}" compose_webui_1 | jq
-          docker inspect --format "{{json .State.Health }}" compose_external_1 | jq
-          docker inspect --format "{{json .State.Health }}" compose_mobile_1 | jq
-      - name: stop docker-compose
+          docker compose ps -a
+          docker inspect --format "{{json .State.Health }}" compose-db-1 | jq
+          docker inspect --format "{{json .State.Health }}" compose-webapi-1 | jq
+          docker inspect --format "{{json .State.Health }}" compose-app-1 | jq
+          docker inspect --format "{{json .State.Health }}" compose-rabbitmq-1 | jq
+          docker inspect --format "{{json .State.Health }}" compose-search-1 | jq
+          docker inspect --format "{{json .State.Health }}" compose-webui-1 | jq
+          docker inspect --format "{{json .State.Health }}" compose-external-1 | jq
+          docker inspect --format "{{json .State.Health }}" compose-mobile-1 | jq
+      - name: stop docker compose
         working-directory: docker-builds/compose/
         env:
           mfversion: ${{ needs.init.outputs.tag-fixed }}
         if: success() || failure()
         run: | 
-          docker-compose down
+          docker compose down
 
 #  redeploy:
 #    runs-on: ubuntu-latest
