@@ -33,6 +33,9 @@ import java.util.Set;
 
 import javax.annotation.OverridingMethodsMustInvokeSuper;
 
+import ch.qos.logback.classic.Level;
+import de.metas.logging.LogManager;
+import de.metas.util.Loggables;
 import org.adempiere.exceptions.AdempiereException;
 import org.compiere.util.Util;
 import org.compiere.util.Util.ArrayKey;
@@ -44,6 +47,7 @@ import de.metas.product.IProductBL;
 import de.metas.product.ProductId;
 import de.metas.util.Services;
 import lombok.NonNull;
+import org.slf4j.Logger;
 
 /**
  * Base implementation for {@link IPackingMaterialDocumentLinesBuilder}.
@@ -52,16 +56,18 @@ import lombok.NonNull;
  */
 public abstract class AbstractPackingMaterialDocumentLinesBuilder implements IPackingMaterialDocumentLinesBuilder
 {
+	private static final Logger logger = LogManager.getLogger(AbstractPackingMaterialDocumentLinesBuilder.class);
+	
 	/**
 	 * Map of "packing material key" to {@link IPackingMaterialDocumentLine}.
-	 *
-	 * For creating packing material key, see {@link #createPackingMaterialKey(int)}.
+	 * <p>
+	 * For creating packing material key, see {@link #createPackingMaterialKey(ProductId)}.
 	 */
 	private final Map<ArrayKey, IPackingMaterialDocumentLine> packingMaterialKey2packingMaterialLine = new HashMap<>();
 
 	/**
 	 * Set of sources which have no packing materials.
-	 *
+	 * <p>
 	 * We will use this set to be able to unlink those sources from existing packing material lines (if any).
 	 */
 	private final Set<IPackingMaterialDocumentLineSource> sourcesWithoutPackingMaterials = new HashSet<>();
@@ -69,13 +75,8 @@ public abstract class AbstractPackingMaterialDocumentLinesBuilder implements IPa
 	@Override
 	public boolean isEmpty()
 	{
-		// If we have already have packing material lines, consider it not empty
-		if (!packingMaterialKey2packingMaterialLine.isEmpty())
-		{
-			return false;
-		}
-
-		return true;
+		// If we already have packing material lines, consider it not empty
+		return packingMaterialKey2packingMaterialLine.isEmpty();
 	}
 
 	/**
@@ -116,6 +117,11 @@ public abstract class AbstractPackingMaterialDocumentLinesBuilder implements IPa
 		{
 			for (final I_M_HU_PackingMaterial packingMaterial : packingMaterials)
 			{
+				if (packingMaterial.getM_Product_ID() <= 0)
+				{
+					Loggables.withLogger(logger, Level.WARN).addLog("M_HU_PackingMaterial_ID={}, Name={} has no M_Product_ID; skipping", packingMaterial.getM_HU_PackingMaterial_ID(), packingMaterial.getName());
+					continue;
+				}
 				final IPackingMaterialDocumentLine packingMaterialLine = getCreatePackingMaterialDocumentLine(packingMaterial);
 				packingMaterialLine.addSourceOrderLine(source);
 			}
@@ -158,11 +164,10 @@ public abstract class AbstractPackingMaterialDocumentLinesBuilder implements IPa
 
 	/**
 	 * Create {@link IPackingMaterialDocumentLine} from given {@link I_M_HU_PackingMaterial}.
-	 *
+	 * <p>
 	 * NOTE: when implementing this method, if there are some underlying database records, please don't save it because you will be asked to save them when needed (see
 	 * {@link #createDocumentLine(IPackingMaterialDocumentLine)}).
 	 *
-	 * @param packingMaterial
 	 * @return packing material document line.
 	 */
 	protected abstract IPackingMaterialDocumentLine createPackingMaterialDocumentLine(final I_M_HU_PackingMaterial packingMaterial);
@@ -194,8 +199,6 @@ public abstract class AbstractPackingMaterialDocumentLinesBuilder implements IPa
 	 * Create/update <b>or delete</b> the given packing material line.
 	 * <p>
 	 * Also, the linked source lines will be updated.
-	 *
-	 * @param pmLine
 	 */
 	private void createUpdateDeleteDocumentLineAndUpdateSources(final IPackingMaterialDocumentLine pmLine)
 	{
@@ -224,14 +227,12 @@ public abstract class AbstractPackingMaterialDocumentLinesBuilder implements IPa
 
 	/**
 	 * Makes sure the given is <code>source</code> accepted by this builder
-	 *
-	 * @param source
 	 */
 	protected abstract void assertValid(final IPackingMaterialDocumentLineSource source);
 
 	/**
 	 * Called when we need to delete the given packing material line.
-	 *
+	 * <p>
 	 * NOTE: Here is the place to delete your underlying database models.
 	 *
 	 * @param pmLine packing material line to delete
@@ -240,7 +241,7 @@ public abstract class AbstractPackingMaterialDocumentLinesBuilder implements IPa
 
 	/**
 	 * Called when we need to create/update the given packing material line.
-	 *
+	 * <p>
 	 * NOTE: Here is the place to save your underlying database models.
 	 *
 	 * @param pmLine packing material line to create/update
@@ -249,10 +250,9 @@ public abstract class AbstractPackingMaterialDocumentLinesBuilder implements IPa
 
 	/**
 	 * Called when we need to create a link from source line to packing material line.
-	 *
+	 * <p>
 	 * NOTE: please make sure you are saving your database changes.
 	 *
-	 * @param source
 	 * @param pmLine packing material line; could be <code>null</code> in case we want to unlink any packing material lines from given <code>source</code>.
 	 */
 	protected abstract void linkSourceToDocumentLine(final IPackingMaterialDocumentLineSource source, final IPackingMaterialDocumentLine pmLine);
