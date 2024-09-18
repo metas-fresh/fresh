@@ -22,9 +22,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# ignore lock files either from npm or yarn
+# ignore lock files from npm
 package-lock.json
-*.lock
+# *.lock # yarn.lock shouldn't be excluded https://classic.yarnpkg.com/en/docs/migrating-from-npm
 
 config.js*
 src/.env
