@@ -409,7 +409,31 @@ public class EDIDesadvPackService
 				.filter(hu -> hu.getType().isLU())
 				.orElse(null);
 
+<<<<<<< HEAD
 		if (rootLU == null)
+=======
+		// topLevelHU's quantity can be bigger than the inOutLine's quantity,
+		// if there are multiple lines with the same product and if those lines were picked onto the same LU.
+		// That's why we need to invoke min(..)
+		final StockQtyAndUOMQty qtyCUsPerTopLevelHU = getQuantity(topLevelHU, productId)
+				.min(inOutBL.extractInOutLineQty(inOutLineRecord, invoicableQtyBasedOn));
+
+		final RequestParameters parameters = new RequestParameters(topLevelHU,
+																   bPartnerId,
+				qtyCUsPerTopLevelHU,
+																   productId,
+																   desadvLineRecord,
+																   inOutLineRecord,
+																   desadvLineWithPacks,
+																   invoicableQtyBasedOn,
+																   uomToStockRatio,
+																   sequences.getPackSeqNoSequence(),
+																   sequences.getPackItemLineSequence());
+
+		final EDIDesadvPack packByHUId = ediDesadvPackRepository.getPackByDesadvLineAndHUId(topLevelHU.getId());
+
+		if (packByHUId == null)
+>>>>>>> d3cb0a51c18 (Handle desadv lines with same prod picked onto same HU (#19107))
 		{
 			// we don't do HU-related stuffs if the HU is not an LU.
 			final UomId desadvUomId = UomId.ofRepoId(desadvLineRecord.getC_UOM_ID());
