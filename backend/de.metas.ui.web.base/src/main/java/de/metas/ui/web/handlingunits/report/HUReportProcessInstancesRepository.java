@@ -88,6 +88,16 @@ public class HUReportProcessInstancesRepository implements IProcessInstancesRepo
 			.expireAfterAccess(10, TimeUnit.MINUTES)
 			.build();
 
+<<<<<<< HEAD
+=======
+	private final ADProcessInstancesRepository processInstancesRepository;
+
+	public HUReportProcessInstancesRepository(@NonNull final ADProcessInstancesRepository processInstancesRepository)
+	{
+		this.processInstancesRepository = processInstancesRepository;
+	}
+
+>>>>>>> 1822b1a6b8d (port webapi startup fix from intensive_care_uat (#18767))
 	@Override
 	public String getProcessHandlerType()
 	{
