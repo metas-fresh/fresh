@@ -9,6 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
+
     <groupId>de.metas.salesorder</groupId>
     <artifactId>de-metas-salesorder</artifactId>
 
