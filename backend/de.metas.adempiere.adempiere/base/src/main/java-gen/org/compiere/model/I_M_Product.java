@@ -1669,21 +1669,21 @@ public interface I_M_Product
 	 * Set Regaltiefe.
 	 * Shelf depth required
 	 *
-	 * <br>Type: Integer
+	 * <br>Type: Amount
 	 * <br>Mandatory: false
 	 * <br>Virtual Column: false
 	 */
-	void setShelfDepth (int ShelfDepth);
+	void setShelfDepth (BigDecimal ShelfDepth);
 
 	/**
 	 * Get Regaltiefe.
 	 * Shelf depth required
 	 *
-	 * <br>Type: Integer
+	 * <br>Type: Amount
 	 * <br>Mandatory: false
 	 * <br>Virtual Column: false
 	 */
-	int getShelfDepth();
+	BigDecimal getShelfDepth();
 
 	ModelColumn<I_M_Product, Object> COLUMN_ShelfDepth = new ModelColumn<>(I_M_Product.class, "ShelfDepth", null);
 	String COLUMNNAME_ShelfDepth = "ShelfDepth";
@@ -1715,21 +1715,21 @@ public interface I_M_Product
 	 * Set Regalbreite.
 	 * Shelf width required
 	 *
-	 * <br>Type: Integer
+	 * <br>Type: Amount
 	 * <br>Mandatory: false
 	 * <br>Virtual Column: false
 	 */
-	void setShelfWidth (int ShelfWidth);
+	void setShelfWidth (BigDecimal ShelfWidth);
 
 	/**
 	 * Get Regalbreite.
 	 * Shelf width required
 	 *
-	 * <br>Type: Integer
+	 * <br>Type: Amount
 	 * <br>Mandatory: false
 	 * <br>Virtual Column: false
 	 */
-	int getShelfWidth();
+	BigDecimal getShelfWidth();
 
 	ModelColumn<I_M_Product, Object> COLUMN_ShelfWidth = new ModelColumn<>(I_M_Product.class, "ShelfWidth", null);
 	String COLUMNNAME_ShelfWidth = "ShelfWidth";

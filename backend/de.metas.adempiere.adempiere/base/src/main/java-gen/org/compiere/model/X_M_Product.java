@@ -1130,15 +1130,16 @@ public class X_M_Product extends org.compiere.model.PO implements I_M_Product, o
 	}
 
 	@Override
-	public void setShelfDepth (final int ShelfDepth)
+	public void setShelfDepth (final BigDecimal ShelfDepth)
 	{
 		set_Value (COLUMNNAME_ShelfDepth, ShelfDepth);
 	}
 
 	@Override
-	public int getShelfDepth() 
+	public BigDecimal getShelfDepth()
 	{
-		return get_ValueAsInt(COLUMNNAME_ShelfDepth);
+		final BigDecimal bd = get_ValueAsBigDecimal(COLUMNNAME_ShelfDepth);
+		return bd != null ? bd : BigDecimal.ZERO;
 	}
 
 	@Override
@@ -1155,15 +1156,16 @@ public class X_M_Product extends org.compiere.model.PO implements I_M_Product, o
 	}
 
 	@Override
-	public void setShelfWidth (final int ShelfWidth)
+	public void setShelfWidth (final BigDecimal ShelfWidth)
 	{
 		set_Value (COLUMNNAME_ShelfWidth, ShelfWidth);
 	}
 
 	@Override
-	public int getShelfWidth() 
+	public BigDecimal getShelfWidth()
 	{
-		return get_ValueAsInt(COLUMNNAME_ShelfWidth);
+		final BigDecimal bd = get_ValueAsBigDecimal(COLUMNNAME_ShelfWidth);
+		return bd != null ? bd : BigDecimal.ZERO;
 	}
 
 	@Override
