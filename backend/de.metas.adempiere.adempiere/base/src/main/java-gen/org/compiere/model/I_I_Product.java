@@ -1487,21 +1487,21 @@ public interface I_I_Product
 	 * Set Regaltiefe.
 	 * Shelf depth required
 	 *
-	 * <br>Type: Integer
+	 * <br>Type: Amount
 	 * <br>Mandatory: false
 	 * <br>Virtual Column: false
 	 */
-	void setShelfDepth (int ShelfDepth);
+	void setShelfDepth (BigDecimal ShelfDepth);
 
 	/**
 	 * Get Regaltiefe.
 	 * Shelf depth required
 	 *
-	 * <br>Type: Integer
+	 * <br>Type: Amount
 	 * <br>Mandatory: false
 	 * <br>Virtual Column: false
 	 */
-	int getShelfDepth();
+	BigDecimal getShelfDepth();
 
 	ModelColumn<I_I_Product, Object> COLUMN_ShelfDepth = new ModelColumn<>(I_I_Product.class, "ShelfDepth", null);
 	String COLUMNNAME_ShelfDepth = "ShelfDepth";
@@ -1510,21 +1510,21 @@ public interface I_I_Product
 	 * Set Regalhöhe.
 	 * Shelf height required
 	 *
-	 * <br>Type: Integer
+	 * <br>Type: Amount
 	 * <br>Mandatory: false
 	 * <br>Virtual Column: false
 	 */
-	void setShelfHeight (int ShelfHeight);
+	void setShelfHeight (BigDecimal ShelfHeight);
 
 	/**
 	 * Get Regalhöhe.
 	 * Shelf height required
 	 *
-	 * <br>Type: Integer
+	 * <br>Type: BigDecimal
 	 * <br>Mandatory: false
 	 * <br>Virtual Column: false
 	 */
-	int getShelfHeight();
+	BigDecimal getShelfHeight();
 
 	ModelColumn<I_I_Product, Object> COLUMN_ShelfHeight = new ModelColumn<>(I_I_Product.class, "ShelfHeight", null);
 	String COLUMNNAME_ShelfHeight = "ShelfHeight";
@@ -1533,21 +1533,21 @@ public interface I_I_Product
 	 * Set Regalbreite.
 	 * Shelf width required
 	 *
-	 * <br>Type: Integer
+	 * <br>Type: Amount
 	 * <br>Mandatory: false
 	 * <br>Virtual Column: false
 	 */
-	void setShelfWidth (int ShelfWidth);
+	void setShelfWidth (BigDecimal ShelfWidth);
 
 	/**
 	 * Get Regalbreite.
 	 * Shelf width required
 	 *
-	 * <br>Type: Integer
+	 * <br>Type: Amount
 	 * <br>Mandatory: false
 	 * <br>Virtual Column: false
 	 */
-	int getShelfWidth();
+	BigDecimal getShelfWidth();
 
 	ModelColumn<I_I_Product, Object> COLUMN_ShelfWidth = new ModelColumn<>(I_I_Product.class, "ShelfWidth", null);
 	String COLUMNNAME_ShelfWidth = "ShelfWidth";
@@ -1740,21 +1740,21 @@ public interface I_I_Product
 	 * Set Volume.
 	 * Volume of a product
 	 *
-	 * <br>Type: Integer
+	 * <br>Type: Amount
 	 * <br>Mandatory: false
 	 * <br>Virtual Column: false
 	 */
-	void setVolume (int Volume);
+	void setVolume (BigDecimal Volume);
 
 	/**
 	 * Get Volume.
 	 * Volume of a product
 	 *
-	 * <br>Type: Integer
+	 * <br>Type: Amount
 	 * <br>Mandatory: false
 	 * <br>Virtual Column: false
 	 */
-	int getVolume();
+	BigDecimal getVolume();
 
 	ModelColumn<I_I_Product, Object> COLUMN_Volume = new ModelColumn<>(I_I_Product.class, "Volume", null);
 	String COLUMNNAME_Volume = "Volume";

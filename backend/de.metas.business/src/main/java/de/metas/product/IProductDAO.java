@@ -118,9 +118,13 @@ public interface IProductDAO extends ISingletonService
 	@Nullable
 	ProductCategoryId retrieveProductCategoryForGroupTemplateId(@NonNull GroupTemplateId groupTemplateId);
 
+<<<<<<< HEAD
 	ImmutableSet<ProductId> retrieveStockedProductIds(@NonNull final ClientId clientId);
 
 	Optional<IssuingToleranceSpec> getIssuingToleranceSpec(@NonNull ProductId productId);
+=======
+	void save(I_M_Product record);
+>>>>>>> a8efc465e0f (Improve importing products (#19205))
 
 	@Value
 	class ProductQuery

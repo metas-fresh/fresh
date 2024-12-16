@@ -24,6 +24,9 @@ package de.metas.product.impexp;
 
 import com.google.common.collect.ImmutableMap;
 import de.metas.adempiere.model.I_M_Product;
+import de.metas.bpartner.BPartnerId;
+import de.metas.bpartner.impexp.BPCreditLimitImportRequest;
+import de.metas.bpartner.service.IBPartnerDAO;
 import de.metas.impexp.processing.IImportInterceptor;
 import de.metas.impexp.processing.ImportRecordsSelection;
 import de.metas.impexp.processing.SimpleImportProcessTemplate;
@@ -32,13 +35,16 @@ import de.metas.pricing.PriceListVersionId;
 import de.metas.pricing.ProductPriceId;
 import de.metas.pricing.service.IPriceListDAO;
 import de.metas.pricing.service.ProductPrices;
+import de.metas.product.IProductDAO;
 import de.metas.product.IProductPlanningSchemaBL;
+import de.metas.product.Product;
 import de.metas.product.ProductId;
 import de.metas.tax.api.TaxCategoryId;
 import de.metas.util.Check;
 import de.metas.util.Services;
 import lombok.NonNull;
 import org.adempiere.ad.trx.api.ITrx;
+import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.exceptions.DBException;
 import org.adempiere.model.I_M_ProductScalePrice;
 import org.adempiere.util.lang.IMutable;
@@ -76,6 +82,13 @@ public class ProductImportProcess extends SimpleImportProcessTemplate<I_I_Produc
 
 	private final IPriceListDAO priceListDAO = Services.get(IPriceListDAO.class);
 	private final IProductPlanningSchemaBL productPlanningSchemaBL = Services.get(IProductPlanningSchemaBL.class);
+	private final IProductDAO productsRepo = Services.get(IProductDAO.class);
+	private final ProductImportHelper productImporter;
+
+	public ProductImportProcess()
+	{
+		productImporter = ProductImportHelper.newInstance().setProcess(this);
+	}
 
 	@Override
 	public Class<I_I_Product> getImportModelClass()
@@ -129,21 +142,53 @@ public class ProductImportProcess extends SimpleImportProcessTemplate<I_I_Produc
 		return new X_I_Product(ctx, rs, ITrx.TRXNAME_ThreadInherited);
 	}
 
+	private ProductImportContext createNewContext(final boolean insertOnly)
+	{
+		final ProductsCache productsCache = ProductsCache.builder()
+				.productsRepo(productsRepo)
+				.build();
+
+		return ProductImportContext.builder()
+				.productsCache(productsCache)
+				.insertOnly(insertOnly)
+				.build();
+	}
+
+	private ImportRecordResult importOrUpdateProduct(final ProductImportContext context)
+	{
+		final ImportRecordResult bpartnerImportResult;
+
+		final boolean productExists = context.isCurrentProductIdSet();
+
+		if (context.isInsertOnly() && productExists)
+		{
+			//  do not update existing entries
+			return ImportRecordResult.Nothing;
+		}
+
+		bpartnerImportResult = productExists ? ImportRecordResult.Updated : ImportRecordResult.Inserted;
+
+		productImporter.importRecord(context);
+		return bpartnerImportResult;
+	}
+
 	@Override
 	protected ImportRecordResult importRecord(
-			final @NonNull IMutable<Object> state_NOTUSED,
+			final @NonNull IMutable<Object> state,
 			final @NonNull I_I_Product importRecord,
 			final boolean isInsertOnly)
 	{
 		final String trxName = ITrx.TRXNAME_ThreadInherited;
 
-		final int I_Product_ID = importRecord.getI_Product_ID();
-		int M_Product_ID = importRecord.getM_Product_ID();
-		final boolean newProduct = M_Product_ID <= 0;
-		log.debug("I_Product_ID=" + I_Product_ID + ", M_Product_ID=" + M_Product_ID);
+		// First line to import or this line does NOT have the same product value
+		// => create a new Product or update the existing one
+		ProductImportContext context = (ProductImportContext)state.getValue();
+		final ImportRecordResult productImportResult;
 
-		if (!newProduct && isInsertOnly)
+
+		if (context == null || !context.isSameProduct(importRecord))
 		{
+<<<<<<< HEAD
 			// #4994 do not update
 			return ImportRecordResult.Nothing;
 		}
@@ -159,10 +204,17 @@ public class ProductImportProcess extends SimpleImportProcessTemplate<I_I_Produc
 			M_Product_ID = product.getM_Product_ID();
 			importRecord.setM_Product_ID(M_Product_ID);
 			log.trace("Insert Product");
+=======
+			context = createNewContext(isInsertOnly);
+			context.setCurrentImportRecord(importRecord);
+			state.setValue(context);
+
+			productImportResult = importOrUpdateProduct(context);
+>>>>>>> a8efc465e0f (Improve importing products (#19205))
 		}
 		else
-		// Update Product
 		{
+<<<<<<< HEAD
 			final String sqlt = DB.convertSqlToNative("UPDATE M_PRODUCT "
 					+ "SET (Value,Name,Description,DocumentNote,Help,"
 					+ "Package_UOM_ID, PackageSize, IsSold, IsStocked, "
@@ -183,31 +235,39 @@ public class ProductImportProcess extends SimpleImportProcessTemplate<I_I_Produc
 					+ "WHERE M_Product_ID=" + M_Product_ID);
 			PreparedStatement pstmt_updateProduct = null;
 			try
+=======
+			final ProductId previousProductId = context.getCurrentProductIdOrNull();
+			context.setCurrentImportRecord(importRecord);
+
+			final ProductId productId = ProductId.ofRepoIdOrNull(importRecord.getM_Product_ID());
+			if (previousProductId == null)
+>>>>>>> a8efc465e0f (Improve importing products (#19205))
 			{
-				pstmt_updateProduct = DB.prepareStatement(sqlt, trxName);
-				final int no = pstmt_updateProduct.executeUpdate();
-				log.trace("Update Product = " + no);
+				productImportResult = importOrUpdateProduct(context);
 			}
-			catch (final SQLException ex)
+			else if (productId == null || ProductId.equals(productId,previousProductId))
 			{
-				throw new DBException("Update Product: " + ex, ex);
+				importRecord.setM_Product_ID(previousProductId.getRepoId());
+				productImportResult = ImportRecordResult.Nothing;
 			}
-			finally
+			else
 			{
-				DB.close(pstmt_updateProduct);
+				throw new AdempiereException("Same Product value as previous line but not same Product linked");
 			}
 		}
 
-		//
-		// Price List
-		createUpdateProductPrice(importRecord);
 
-		final I_M_Product productRecord = load(importRecord.getM_Product_ID(), I_M_Product.class);
-		ModelValidationEngine.get().fireImportValidate(this, importRecord, productRecord, IImportInterceptor.TIMING_AFTER_IMPORT);
+		final ProductId productId = ProductId.ofRepoIdOrNull(importRecord.getM_Product_ID());
+		if (productId != null)
+		{
+			// Price List
+			createUpdateProductPrice(importRecord);
 
-		// #3404 Create default product planning
-		productPlanningSchemaBL.createDefaultProductPlanningsForAllProducts();
-		return newProduct ? ImportRecordResult.Inserted : ImportRecordResult.Updated;
+			// #3404 Create default product planning
+			productPlanningSchemaBL.createDefaultProductPlanningsForAllProducts();
+		}
+
+		return productImportResult;
 	}
 
 	private void createUpdateProductPrice(final I_I_Product imp)
@@ -273,7 +333,7 @@ public class ProductImportProcess extends SimpleImportProcessTemplate<I_I_Produc
 
 			final I_M_ProductScalePrice productScalePrice = Optional
 					.ofNullable(priceListDAO.retrieveScalePriceForExactBreak(ProductPriceId.ofRepoId(pp.getM_ProductPrice_ID()),
-																			 scalePriceBreak))
+							scalePriceBreak))
 					.orElseGet(() -> newInstance(I_M_ProductScalePrice.class));
 
 			productScalePrice.setM_ProductPrice_ID(pp.getM_ProductPrice_ID());
@@ -294,6 +354,7 @@ public class ProductImportProcess extends SimpleImportProcessTemplate<I_I_Produc
 
 		save(pp);
 	}
+<<<<<<< HEAD
 
 	private I_M_Product createMProduct(@NonNull final I_I_Product importRecord)
 	{
@@ -330,4 +391,6 @@ public class ProductImportProcess extends SimpleImportProcessTemplate<I_I_Produc
 
 		return product;
 	}	// MProduct
+=======
+>>>>>>> a8efc465e0f (Improve importing products (#19205))
 }

@@ -816,4 +816,14 @@ public class ProductDAO implements IProductDAO
 						.create()
 						.anyMatch();
 	}
+<<<<<<< HEAD
+=======
+
+	@Override
+	public void save(I_M_Product record)
+	{
+		InterfaceWrapperHelper.save(record);
+	}
+
+>>>>>>> a8efc465e0f (Improve importing products (#19205))
 }
