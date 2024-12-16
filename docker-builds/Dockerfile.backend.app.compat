@@ -19,6 +19,7 @@ COPY --from=app /opt/metasfresh .
 
 COPY --from=backend /backend/metasfresh-dist/dist/target/dist/install dist/install/
 COPY --from=backend /backend/metasfresh-dist/dist/target/dist/sql dist/sql/
+COPY --from=backend /backend/metasfresh-dist/dist/target/dist/deploy/download dist/deploy/download/
 
 RUN touch local_settings.properties \
     && ln -s /opt/metasfresh/local_settings.properties /root/local_settings.properties \
