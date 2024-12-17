@@ -124,7 +124,6 @@ public class MaterialCockpitFilters
 		}
 
 		queryBuilder.addCompareFilter(I_MD_Cockpit.COLUMN_DateGeneral, CompareQueryFilter.Operator.GREATER_OR_EQUAL, date);
-		queryBuilder.addCompareFilter(I_MD_Cockpit.COLUMN_DateGeneral, CompareQueryFilter.Operator.LESS, date.plusDays(1));
 
 		return true;
 	}

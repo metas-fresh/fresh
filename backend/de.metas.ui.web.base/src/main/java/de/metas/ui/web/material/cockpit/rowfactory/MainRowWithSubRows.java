@@ -241,7 +241,6 @@ public class MainRowWithSubRows
 
 		final MainRowBuilder mainRowBuilder = MaterialCockpitRow.mainRowBuilder()
 				.productId(productIdAndDate.getProductId())
-				.date(productIdAndDate.getDate())
 				.qtyMaterialentnahme(mainRow.getQtyMaterialentnahme())
 				.qtyDemandPPOrder(mainRow.getQtyDemandPPOrder())
 				.qtyStockCurrent(mainRow.getQtyStockCurrent())
@@ -264,7 +263,7 @@ public class MainRowWithSubRows
 				.pmmQtyPromised(mainRow.getPmmQtyPromised())
 				.allIncludedCockpitRecordIds(mainRow.getCockpitRecordIds())
 				.allIncludedStockRecordIds(mainRow.getStockRecordIds())
-				.qtyConvertor(qtyConvertorService.getQtyConvertorIfConfigured(productIdAndDate));
+				.qtyConvertorBuilder(qtyConvertorService.getQtyConvertorIfConfigured(productIdAndDate));
 
 		for (final CountingSubRowBucket subRowBucket : countingSubRows.values())
 		{

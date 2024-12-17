@@ -121,7 +121,6 @@ public class CountingSubRowBucket
 				"productIdAndDate may not be null; mainRowBucket={}", mainRowBucket);
 
 		return MaterialCockpitRow.countingSubRowBuilder()
-				.date(productIdAndDate.getDate())
 				.productId(productIdAndDate.getProductId().getRepoId())
 				.plantId(plantId)
 				.qtyStockEstimateCount(qtyStockEstimateCount)
@@ -132,7 +131,7 @@ public class CountingSubRowBucket
 				.qtyOnHandStock(qtyOnHandStock)
 				.allIncludedCockpitRecordIds(cockpitRecordIds)
 				.allIncludedStockRecordIds(stockRecordIds)
-				.qtyConvertor(qtyConvertorService.getQtyConvertorIfConfigured(productIdAndDate))
+				.qtyConvertorBuilder(qtyConvertorService.getQtyConvertorIfConfigured(productIdAndDate))
 				.build();
 	}
 }

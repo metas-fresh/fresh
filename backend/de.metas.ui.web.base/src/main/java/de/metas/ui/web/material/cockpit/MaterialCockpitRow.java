@@ -6,6 +6,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import de.metas.common.util.CoalesceUtil;
 import de.metas.dimension.DimensionSpecGroup;
+import de.metas.handlingunits.HuPackingInstructionsVersionId;
+import de.metas.handlingunits.model.I_M_HU_PI_Item_Product;
 import de.metas.i18n.IMsgBL;
 import de.metas.material.cockpit.model.I_MD_Cockpit;
 import de.metas.material.cockpit.model.I_MD_Stock;
@@ -357,11 +359,12 @@ public class MaterialCockpitRow implements IViewRow
 			final Quantity qtyStockCurrent,
 			final Quantity qtyOnHandStock,
 			@NonNull final ProductId productId,
+			@NonNull final HuPackingInstructionsVersionId huPackingInstructionsVersionId,
 			@NonNull final LocalDate date,
 			@Singular final List<MaterialCockpitRow> includedRows,
 			@NonNull final Set<Integer> allIncludedCockpitRecordIds,
 			@NonNull final Set<Integer> allIncludedStockRecordIds,
-			@Nullable final QtyConvertor qtyConvertor)
+			@Nullable final QtyTUConvertor.QtyTUConvertorBuilder qtyConvertorBuilder)
 	{
 		this.rowType = DefaultRowType.Row;
 
@@ -392,7 +395,10 @@ public class MaterialCockpitRow implements IViewRow
 		final LookupDataSourceFactory lookupFactory = LookupDataSourceFactory.instance;
 
 		final int uomRepoId = CoalesceUtil.firstGreaterThanZero(productRecord.getPackage_UOM_ID(), productRecord.getC_UOM_ID());
-		final QtyConvertor convertor = qtyConvertor != null ? qtyConvertor : QtyConvertor.getNoOp(UomId.ofRepoId(uomRepoId));
+		final I_M_HU_PI_Item_Product huPiItemProduct = getHuPiItemProduct(productId, huPackingInstructionsVersionId);
+		final QtyConvertor convertor = qtyConvertorBuilder != null && huPiItemProduct != null
+				? qtyConvertorBuilder.packingInstruction(huPiItemProduct).build()
+				: QtyConvertor.getNoOp(UomId.ofRepoId(uomRepoId));
 
 		this.uom = () -> lookupFactory
 				.searchInTableLookup(I_C_UOM.Table_Name)
@@ -456,6 +462,11 @@ public class MaterialCockpitRow implements IViewRow
 		Check.errorIf(notOK, "Some of the given quantities have different UOMs; quantities={}", quantitiesToVerify);
 	}
 
+	private I_M_HU_PI_Item_Product getHuPiItemProduct(final ProductId productId, final HuPackingInstructionsVersionId huPackingInstructionsVersionId)
+	{
+		return null;//TODO
+	}
+
 	private static LocalDate extractDate(@NonNull final List<MaterialCockpitRow> includedRows)
 	{
 		return CollectionUtils.extractSingleElement(includedRows, row -> row.date);
@@ -469,6 +480,7 @@ public class MaterialCockpitRow implements IViewRow
 	@lombok.Builder(builderClassName = "AttributeSubRowBuilder", builderMethodName = "attributeSubRowBuilder")
 	private MaterialCockpitRow(
 			final int productId,
+			final HuPackingInstructionsVersionId huPackingInstructionsVersionId,
 			final LocalDate date,
 			@NonNull final DimensionSpecGroup dimensionGroup,
 			final Quantity pmmQtyPromised,
@@ -492,7 +504,7 @@ public class MaterialCockpitRow implements IViewRow
 			final Quantity qtyOnHandStock,
 			@NonNull final Set<Integer> allIncludedCockpitRecordIds,
 			@NonNull final Set<Integer> allIncludedStockRecordIds,
-			@Nullable final QtyConvertor qtyConvertor)
+			@Nullable final QtyTUConvertor.QtyTUConvertorBuilder qtyConvertorBuilder)
 	{
 		this.rowType = DefaultRowType.Line;
 
@@ -519,7 +531,10 @@ public class MaterialCockpitRow implements IViewRow
 		final LookupDataSourceFactory lookupFactory = LookupDataSourceFactory.instance;
 
 		final int uomRepoId = CoalesceUtil.firstGreaterThanZero(productRecord.getPackage_UOM_ID(), productRecord.getC_UOM_ID());
-		final QtyConvertor convertor = qtyConvertor != null ? qtyConvertor : QtyConvertor.getNoOp(UomId.ofRepoId(uomRepoId));
+		final I_M_HU_PI_Item_Product huPiItemProduct = getHuPiItemProduct(ProductId.ofRepoId(productId), huPackingInstructionsVersionId);
+		final QtyConvertor convertor = qtyConvertorBuilder != null && huPiItemProduct != null
+				? qtyConvertorBuilder.packingInstruction(huPiItemProduct).build()
+				: QtyConvertor.getNoOp(UomId.ofRepoId(uomRepoId));
 		this.uom = () -> lookupFactory
 				.searchInTableLookup(I_C_UOM.Table_Name)
 				.findById(convertor.getTargetUomId());
@@ -564,6 +579,7 @@ public class MaterialCockpitRow implements IViewRow
 	@lombok.Builder(builderClassName = "CountingSubRowBuilder", builderMethodName = "countingSubRowBuilder")
 	private MaterialCockpitRow(
 			final int productId,
+			final HuPackingInstructionsVersionId huPackingInstructionsVersionId,
 			final LocalDate date,
 			final int plantId,
 			@Nullable final Quantity qtyStockEstimateCount,
@@ -575,7 +591,7 @@ public class MaterialCockpitRow implements IViewRow
 			@Nullable final Quantity qtyOnHandStock,
 			@NonNull final Set<Integer> allIncludedCockpitRecordIds,
 			@NonNull final Set<Integer> allIncludedStockRecordIds,
-			@Nullable final QtyConvertor qtyConvertor)
+			@Nullable final QtyTUConvertor.QtyTUConvertorBuilder qtyConvertorBuilder)
 	{
 		this.rowType = DefaultRowType.Line;
 
@@ -612,7 +628,10 @@ public class MaterialCockpitRow implements IViewRow
 		final LookupDataSourceFactory lookupFactory = LookupDataSourceFactory.instance;
 
 		final int uomRepoId = CoalesceUtil.firstGreaterThanZero(productRecord.getPackage_UOM_ID(), productRecord.getC_UOM_ID());
-		final QtyConvertor convertor = qtyConvertor != null ? qtyConvertor : QtyConvertor.getNoOp(UomId.ofRepoId(uomRepoId));
+		final I_M_HU_PI_Item_Product huPiItemProduct = getHuPiItemProduct(ProductId.ofRepoId(productId), huPackingInstructionsVersionId);
+		final QtyConvertor convertor = qtyConvertorBuilder != null && huPiItemProduct != null
+				? qtyConvertorBuilder.packingInstruction(huPiItemProduct).build()
+				: QtyConvertor.getNoOp(UomId.ofRepoId(uomRepoId));
 		this.uom = () -> lookupFactory
 				.searchInTableLookup(I_C_UOM.Table_Name)
 				.findById(convertor.getTargetUomId());

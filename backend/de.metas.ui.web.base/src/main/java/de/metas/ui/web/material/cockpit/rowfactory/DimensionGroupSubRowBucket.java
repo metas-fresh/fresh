@@ -139,7 +139,6 @@ public class DimensionGroupSubRowBucket
 				"productIdAndDate may not be null; mainRowBucket={}", mainRowBucket);
 
 		return MaterialCockpitRow.attributeSubRowBuilder()
-				.date(productIdAndDate.getDate())
 				.productId(productIdAndDate.getProductId().getRepoId())
 
 				.dimensionGroup(dimensionSpecGroup)
@@ -159,7 +158,7 @@ public class DimensionGroupSubRowBucket
 				.qtyExpectedSurplus(getQtyExpectedSurplus())
 				.allIncludedCockpitRecordIds(cockpitRecordIds)
 				.allIncludedStockRecordIds(stockRecordIds)
-				.qtyConvertor(qtyConvertorService.getQtyConvertorIfConfigured(productIdAndDate))
+				.qtyConvertorBuilder(qtyConvertorService.getQtyConvertorIfConfigured(productIdAndDate))
 				.build();
 	}
 }

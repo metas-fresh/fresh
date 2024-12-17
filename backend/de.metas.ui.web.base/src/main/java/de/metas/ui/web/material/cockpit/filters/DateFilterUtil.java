@@ -47,7 +47,7 @@ class DateFilterUtil
 				.setFieldName(DateFilterVO.PARAM_Date)
 				.setDisplayName(Services.get(IMsgBL.class).translatable(DateFilterVO.PARAM_Date))
 				.setWidgetType(DocumentFieldWidgetType.LocalDate)
-				.setOperator(Operator.EQUAL)
+				.setOperator(Operator.GREATER_OR_EQUAL)
 				.setMandatory(true)
 				.setShowIncrementDecrementButtons(true);
 
@@ -64,7 +64,7 @@ class DateFilterUtil
 		return DocumentFilter.builder()
 				.setFilterId(DateFilterVO.FILTER_ID)
 				.setCaption(Services.get(IMsgBL.class).translatable(DateFilterVO.PARAM_Date))
-				.addParameter(DocumentFilterParam.ofNameOperatorValue(DateFilterVO.PARAM_Date, Operator.EQUAL, Env.getDate()))
+				.addParameter(DocumentFilterParam.ofNameOperatorValue(DateFilterVO.PARAM_Date, Operator.GREATER_OR_EQUAL, Env.getDate()))
 				.build();
 	}
 
