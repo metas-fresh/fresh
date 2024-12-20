@@ -145,7 +145,15 @@ public class FileUpdater
 
 		if (targetNode == null || !targetNode.isValueNode())
 		{
-			return null;
+			if (replacementSourceTree.isArray() && replacementSourceTree.size() == 1)
+			{
+
+				targetNode = replacementSourceTree.get(0).at(replacement.getJsonPath());
+			}
+			else
+			{
+				return null;
+			}
 		}
 
 		return targetNode.textValue();
