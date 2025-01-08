@@ -1,2 +1,2 @@
-docker-compose down
+docker compose down
 docker ps
