@@ -1,102 +1,72 @@
 queue_rules:
-  - name: default
-    conditions:
-      - check-success=testspace-analytics
-      - check-success=continuous-integration/jenkins/branch
-
-pull_request_rules:
-
-  ############
-  # Act on PRs
-  ############
-
-  - name: After UAT-PR is integrated, add branch-label and delete the PR-branch
-    conditions:
-      - merged-at > '2023-03-15 00:00Z' # don't jump on every merged PR throughout history
-      - or: &ALL_BASE_BRANCHES # this rule should apply to both the project-branches from above, and master
-          - or: &PROJECT_BRANCHES_UAT # look 'ma, i'm doing https://docs.mergify.com/configuration/#yaml-anchors-and-aliases !
-              # Please keep in sync with the branches at .testspace.yml
-              # UAT BRANCH. COMMENT FOR NEW CUSTOMER AUTOMATION. DO NOT EDIT THIS LINE IN ANY WAY. The script will insert new branches below this line.
-              - base=keen_hawk_uat
-              - base=task_force_uat
-              - base=electric_light_uat
-              - base=feisty_sloth_uat
-              - base=arctic_north_uat
-              - base=blue_horizon_uat
-              - base=big_coconut_uat
-              - base=clone_wars_uat
-              - base=epic_party_uat
-              - base=gray_knight_uat
-              - base=hard_encoded_uat
-              - base=hostile_tractor_uat
-              - base=inner_silence_uat
-              - base=intensive_care_uat
-              - base=iron_plant_uat
-              - base=koala_yawn_uat
-              - base=mad_orange_uat
-              - base=majestic_kangaroo_uat
-              - base=massive_entropy_uat
-              - base=middle_ages_uat
-              - base=modified_carbon_uat
-              - base=modus_operandi_uat
-              - base=neon_underwear_uat
-              - base=new_dawn_uat
-              - base=oasis_sun_uat
-              - base=pink_rooster_uat
-              - base=release
-              - base=soft_panda_uat
-              - base=science_vessel_uat
-              - base=secondary_opinion_uat
-              - base=tasty_ham_uat
-              - base=tenacious_d_uat
-              - base=vampire_textbook_uat
-              - base=yoyo_uat
-          - or: &PROJECT_BRANCHES_HOTFIX
-              - base=hard_encoded_hotfix
-              - base=inner_silence_hotfix
-              - base=intensive_care_hotfix
-              - base=mad_orange_hotfix
-              - base=massive_entropy_hotfix
-              - base=pink_rooster_hotfix
-              - base=secondary_opinion_hotfix
-              - base=soft_panda_hotfix
-              - base=tasty_ham_hotfix
-              - base=yoyo_hotfix
-    actions:
-      label:
-        add:
-          - "branch:{{base}}"
-      delete_head_branch:
-
-  - name: After master-PR is integrated, add two labels branch:master and in:5.177_master; also, delete the PR-branch
-    conditions:
-      - merged-at > '2024-07-09 00:00Z' # don't jump on every merged PR throughout history
-      - base=master
-    actions:
-      label:
-        add:
-          - "branch:{{base}}"
-          - "in:5.178_master"
-      delete_head_branch:
-
-  - name: Automatic squash-merge successful PRs into the respective base-branch
-    conditions:
+  - name: duplicated default from Automatic squash-merge successful PRs into the respective
+      base-branch
+    queue_conditions:
       - check-success=testspace-analytics
       - check-success=continuous-integration/jenkins/branch
       - label=ops:auto_squash_merge
       - or:
-          - or: *ALL_BASE_BRANCHES
+          - or: &ALL_BASE_BRANCHES
+                               # this rule should apply to both the project-branches from above, and master
+              - or:
+                                      # look 'ma, i'm doing https://docs.mergify.com/configuration/#yaml-anchors-and-aliases !
+              # Please keep in sync with the branches at .testspace.yml
+              # UAT BRANCH. COMMENT FOR NEW CUSTOMER AUTOMATION. DO NOT EDIT THIS LINE IN ANY WAY. The script will insert new branches below this line.
+                  - base=keen_hawk_uat
+                  - base=task_force_uat
+                  - base=electric_light_uat
+                  - base=feisty_sloth_uat
+                  - base=arctic_north_uat
+                  - base=blue_horizon_uat
+                  - base=big_coconut_uat
+                  - base=clone_wars_uat
+                  - base=epic_party_uat
+                  - base=gray_knight_uat
+                  - base=hard_encoded_uat
+                  - base=hostile_tractor_uat
+                  - base=inner_silence_uat
+                  - base=intensive_care_uat
+                  - base=iron_plant_uat
+                  - base=koala_yawn_uat
+                  - base=mad_orange_uat
+                  - base=majestic_kangaroo_uat
+                  - base=massive_entropy_uat
+                  - base=middle_ages_uat
+                  - base=modified_carbon_uat
+                  - base=modus_operandi_uat
+                  - base=neon_underwear_uat
+                  - base=new_dawn_uat
+                  - base=oasis_sun_uat
+                  - base=pink_rooster_uat
+                  - base=release
+                  - base=soft_panda_uat
+                  - base=science_vessel_uat
+                  - base=secondary_opinion_uat
+                  - base=tasty_ham_uat
+                  - base=tenacious_d_uat
+                  - base=vampire_textbook_uat
+                  - base=yoyo_uat
+              - or:
+                  - base=hard_encoded_hotfix
+                  - base=inner_silence_hotfix
+                  - base=intensive_care_hotfix
+                  - base=mad_orange_hotfix
+                  - base=massive_entropy_hotfix
+                  - base=pink_rooster_hotfix
+                  - base=secondary_opinion_hotfix
+                  - base=soft_panda_hotfix
+                  - base=tasty_ham_hotfix
+                  - base=yoyo_hotfix
           - base=master
       - or:
           - "#approved-reviews-by>=1"
           - label=ops:without_review_approval
-    actions:
-      queue:
-        name: default
-        method: squash
-
-  - name: Automatic merge commit (not squash) successful PRs
-    conditions:
+    merge_conditions:
+      - check-success=testspace-analytics
+      - check-success=continuous-integration/jenkins/branch
+    merge_method: squash
+  - name: duplicated default from Automatic merge commit (not squash) successful PRs
+    queue_conditions:
       - check-success=testspace-analytics
       - check-success=continuous-integration/jenkins/branch
       - label=ops:auto_merge_commit
@@ -106,8 +76,42 @@ pull_request_rules:
       - or:
           - "#approved-reviews-by>=1"
           - label=ops:without_review_approval
+    merge_conditions:
+      - check-success=testspace-analytics
+      - check-success=continuous-integration/jenkins/branch
+    merge_method: merge
+  - name: default
+    conditions:
+      - check-success=testspace-analytics
+      - check-success=continuous-integration/jenkins/branch
+
+pull_request_rules:
+  ############
+  # Act on PRs
+  ############
+
+  - name: After UAT-PR is integrated, add branch-label and delete the PR-branch
+    conditions:
+      - merged-at > '2023-03-15 00:00Z' # don't jump on every merged PR throughout history
+      - or: *ALL_BASE_BRANCHES
+    actions:
+      label:
+        add:
+          - "branch:{{base}}"
+      delete_head_branch:
+  - name: After master-PR is integrated, add two labels branch:master and in:5.177_master;
+      also, delete the PR-branch
+    conditions:
+      - merged-at > '2024-07-09 00:00Z' # don't jump on every merged PR throughout history
+      - base=master
+    actions:
+      label:
+        add:
+          - "branch:{{base}}"
+          - "in:5.178_master"
+      delete_head_branch:
+  - name: Automatic merge commit (not squash) successful PRs + Automatic squash-merge
+      successful PRs into the respective base-branch
+    conditions: []
     actions:
       queue:
-        name: default
-        method: merge
-
