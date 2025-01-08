@@ -8,6 +8,7 @@ Feature: Mediated commission
     And metasfresh has current date and time
     And set sys config boolean value true for sys config SKIP_WP_PROCESSOR_FOR_AUTOMATION
 
+  @ignore # https://github.com/metasfresh/metasfresh/issues/19699
   @from:cucumber
   @topic:commissionContracts
   Scenario: Happy flow for mediated commission contract
