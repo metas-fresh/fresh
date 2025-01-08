@@ -22,15 +22,16 @@ package de.metas.handlingunits.inout;
  * #L%
  */
 
-
+import de.metas.handlingunits.model.I_M_HU;
+import de.metas.handlingunits.model.I_M_ShipmentSchedule_QtyPicked;
+import de.metas.handlingunits.util.HUTopLevel;
+import de.metas.util.ISingletonService;
 import org.adempiere.ad.dao.IQueryFilter;
 import org.adempiere.util.lang.IContextAware;
 import org.compiere.model.I_M_InOut;
 import org.compiere.model.I_M_InOutLine;
 
-import de.metas.handlingunits.model.I_M_HU;
-import de.metas.handlingunits.util.HUTopLevel;
-import de.metas.util.ISingletonService;
+import java.util.List;
 
 /**
  * Service used to manage the relation between {@link I_M_HU} and shipment line.
@@ -83,4 +84,6 @@ public interface IHUShipmentAssignmentBL extends ISingletonService
 	void removeHUAssignments(de.metas.handlingunits.model.I_M_InOutLine shipmentLine);
 
 	IQueryFilter<I_M_HU> createHUsNotAssignedToShipmentsFilter(IContextAware contextProvider);
+
+	List<I_M_ShipmentSchedule_QtyPicked> retrieveAssignedQuantities(I_M_InOut shipment);
 }

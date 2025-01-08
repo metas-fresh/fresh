@@ -10,7 +10,10 @@ INSERT INTO AD_Table_Trl (AD_Language,AD_Table_ID, Name, IsTranslated,AD_Client_
 
 -- 2023-01-09T15:31:47.642Z
 -- I forgot to set the DICTIONARY_ID_COMMENTS System Configurator
-INSERT INTO AD_Sequence (AD_Client_ID,AD_Org_ID,AD_Sequence_ID,Created,CreatedBy,CurrentNext,CurrentNextSys,Description,IncrementNo,IsActive,IsAudited,IsAutoSequence,IsTableID,Name,StartNewYear,StartNo,Updated,UpdatedBy) VALUES (0,0,556188,TO_TIMESTAMP('2023-01-09 17:31:47','YYYY-MM-DD HH24:MI:SS'),100,1000000,50000,'Table C_DocType_Invoicing_Pool',1,'Y','N','Y','Y','C_DocType_Invoicing_Pool','N',1000000,TO_TIMESTAMP('2023-01-09 17:31:47','YYYY-MM-DD HH24:MI:SS'),100)
+INSERT INTO AD_Sequence (AD_Client_ID,AD_Org_ID,AD_Sequence_ID,Created,CreatedBy,CurrentNext,CurrentNextSys,Description,IncrementNo,IsActive,IsAudited,IsAutoSequence,IsTableID,Name,
+                         StartNo,Updated,UpdatedBy) 
+VALUES (0,0,556188,TO_TIMESTAMP('2023-01-09 17:31:47','YYYY-MM-DD HH24:MI:SS'),100,1000000,50000,'Table C_DocType_Invoicing_Pool',1,'Y','N','Y','Y','C_DocType_Invoicing_Pool',
+        1000000,TO_TIMESTAMP('2023-01-09 17:31:47','YYYY-MM-DD HH24:MI:SS'),100)
 ;
 
 -- 2023-01-09T15:31:47.659Z

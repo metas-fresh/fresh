@@ -11,8 +11,8 @@ import org.adempiere.model.InterfaceWrapperHelper;
 import org.adempiere.util.lang.impl.TableRecordReference;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Nullable;
 import java.util.List;
+import javax.annotation.Nullable;
 import java.util.Optional;
 
 import static org.adempiere.model.InterfaceWrapperHelper.create;
@@ -83,6 +83,19 @@ public class EDIDocOutBoundLogService
 
 		return invoiceRecord.getEDI_ExportStatus();
 	}
+
+	@Nullable
+	public String getEDIExportStatusFromInvoiceRecord(final @NonNull TableRecordReference recordReference)
+	{
+		if (!I_C_Invoice.Table_Name.equals(recordReference.getTableName()))
+		{
+			return null;
+		}
+
+		final I_C_Invoice invoiceRecord = recordReference.getModel(I_C_Invoice.class);
+		return invoiceRecord.getEDI_ExportStatus();
+	}
+
 
 	public I_C_Doc_Outbound_Log retreiveById(@NonNull final DocOutboundLogId docOutboundLogId)
 	{

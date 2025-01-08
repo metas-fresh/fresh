@@ -13,6 +13,7 @@ import de.metas.handlingunits.picking.job.model.PickingJobId;
 import de.metas.handlingunits.picking.job.model.PickingJobReference;
 import de.metas.handlingunits.picking.job.model.PickingJobReferenceQuery;
 import de.metas.handlingunits.picking.job.model.PickingJobStepId;
+import de.metas.inout.ShipmentScheduleId;
 import de.metas.order.OrderId;
 import de.metas.picking.api.PickingSlotId;
 import de.metas.user.UserId;
@@ -31,8 +32,10 @@ import org.springframework.stereotype.Repository;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Repository
@@ -163,6 +166,20 @@ public class PickingJobRepository
 				.create()
 				.firstIdOnlyOptional(PickingJobId::ofRepoIdOrNull)
 				.map(pickingJobId -> PickingJobLoaderAndSaver.forLoading(loadingSupportServices).loadById(pickingJobId));
+	}
+
+	@NonNull
+	public Map<ShipmentScheduleId, List<PickingJobId>> getPickingJobIdsByScheduleId(
+			@NonNull final Set<ShipmentScheduleId> shipmentScheduleIds)
+	{
+		return queryBL.createQueryBuilder(I_M_Picking_Job_Step.class)
+				.addInArrayFilter(I_M_Picking_Job_Step.COLUMNNAME_M_ShipmentSchedule_ID, shipmentScheduleIds)
+				.create()
+				.stream()
+				.collect(Collectors.groupingBy(
+						step -> ShipmentScheduleId.ofRepoId(step.getM_ShipmentSchedule_ID()),
+						Collectors.mapping(step -> PickingJobId.ofRepoId(step.getM_Picking_Job_ID()),
+										   Collectors.toList())));
 	}
 
 	@NonNull

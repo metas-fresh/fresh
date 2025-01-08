@@ -22,6 +22,7 @@ package de.metas.handlingunits.inout.impl;
  * #L%
  */
 
+import com.google.common.collect.ImmutableList;
 import de.metas.handlingunits.IHUAssignmentBL;
 import de.metas.handlingunits.IHUAssignmentDAO;
 import de.metas.handlingunits.IHUContext;
@@ -249,5 +250,16 @@ public class HUShipmentAssignmentBL implements IHUShipmentAssignmentBL
 		}
 
 		handlingUnitsDAO.saveHU(hu);
+	}
+
+	@NonNull
+	public List<I_M_ShipmentSchedule_QtyPicked> retrieveAssignedQuantities(@NonNull final I_M_InOut shipment)
+	{
+		final List<I_M_InOutLine> lines = inOutDAO.retrieveLines(shipment, I_M_InOutLine.class);
+		return lines
+				.stream()
+				.map(line -> shipmentScheduleAllocDAO.retrieveAllForInOutLine(line, I_M_ShipmentSchedule_QtyPicked.class))
+				.flatMap(List::stream)
+				.collect(ImmutableList.toImmutableList());
 	}
 }
