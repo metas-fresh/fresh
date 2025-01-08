@@ -16,9 +16,34 @@
  *****************************************************************************/
 package de.metas.cache;
 
+import com.google.common.base.MoreObjects;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.MapMaker;
+import com.google.common.collect.Maps;
+import de.metas.cache.model.CacheInvalidateMultiRequest;
+import de.metas.cache.model.CacheInvalidateRequest;
+import de.metas.logging.LogManager;
+import de.metas.util.Check;
+import de.metas.util.GuavaCollectors;
+import de.metas.util.Services;
+import lombok.Getter;
+import lombok.NonNull;
+import org.adempiere.ad.trx.api.ITrx;
+import org.adempiere.ad.trx.api.ITrxListenerManager.TrxEventTiming;
+import org.adempiere.ad.trx.api.ITrxManager;
+import org.adempiere.ad.trx.api.OnTrxMissingPolicy;
+import org.adempiere.util.lang.IAutoCloseable;
+import org.adempiere.util.lang.impl.TableRecordReference;
+import org.compiere.Adempiere;
+import org.compiere.SpringContextHolder;
+import org.slf4j.Logger;
+import org.slf4j.MDC.MDCCloseable;
+
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -27,6 +52,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
+<<<<<<< HEAD
 import javax.annotation.Nullable;
 
 import org.adempiere.ad.trx.api.ITrx;
@@ -60,6 +86,8 @@ import de.metas.util.Check;
 import de.metas.util.Services;
 import lombok.NonNull;
 
+=======
+>>>>>>> 0eed8b1baf6 (Cache API improvements for observability (REST API) and configuration (#16625))
 /**
  * Adempiere Cache Management
  *
@@ -77,19 +105,20 @@ public final class CacheMgt
 
 	public static final String JMX_BASE_NAME = "de.metas.cache";
 
+	@Getter @NonNull private final CCacheConfigDefaults configDefaults = CCacheConfigDefaults.computeFrom(SpringContextHolder.instance);
+
 	private final ConcurrentHashMap<CacheLabel, CachesGroup> cachesByLabel = new ConcurrentHashMap<>();
 
 	private final CopyOnWriteArrayList<ICacheResetListener> globalCacheResetListeners = new CopyOnWriteArrayList<>();
 	private final ConcurrentMap<String, CopyOnWriteArrayList<ICacheResetListener>> cacheResetListenersByTableName = new ConcurrentHashMap<>();
 
-	/* package */ static final transient Logger logger = LogManager.getLogger(CacheMgt.class);
+	/* package */ static final Logger logger = LogManager.getLogger(CacheMgt.class);
 
 	private final AtomicBoolean cacheResetRunning = new AtomicBoolean();
 	private final AtomicLong lastCacheReset = new AtomicLong();
 
 	private CacheMgt()
 	{
-		JMXRegistry.get().registerJMX(new JMXCacheMgt(), OnJMXAlreadyExistsPolicy.Replace);
 	}
 
 	/**
@@ -123,28 +152,16 @@ public final class CacheMgt
 	{
 		try (final IAutoCloseable ignored = CacheMDC.putCache(instance))
 		{
-			final Boolean registerWeak = null; // auto
-			register(instance, registerWeak);
-		}
-	}
-
-	private void register(@NonNull final CacheInterface cache, @Nullable final Boolean registerWeak)
-	{
-		try (final IAutoCloseable cacheIdMDC = CacheMDC.putCache(cache))
-		{
-			// FIXME: consider register weak flag
-			final Set<CacheLabel> labels = cache.getLabels();
-			Check.assumeNotEmpty(labels, "labels is not empty");
-
+			final Set<CacheLabel> labels = Check.assumeNotEmpty(instance.getLabels(), "labels is not empty");
 			labels.stream()
 					.map(this::getCachesGroup)
-					.forEach(cacheGroup -> cacheGroup.addCache(cache));
+					.forEach(cacheGroup -> cacheGroup.addCache(instance));
 		}
 	}
 
 	public void unregister(final CacheInterface cache)
 	{
-		try (final IAutoCloseable cacheIdMDC = CacheMDC.putCache(cache))
+		try (final IAutoCloseable ignored = CacheMDC.putCache(cache))
 		{
 			cache.getLabels()
 					.stream()
@@ -153,17 +170,14 @@ public final class CacheMgt
 		}
 	}
 
-	public Set<CacheLabel> getCacheLabels()
-	{
-		return ImmutableSet.copyOf(cachesByLabel.keySet());
-	}
-
 	public Set<String> getTableNamesToBroadcast()
 	{
 		return CacheInvalidationRemoteHandler.instance.getTableNamesToBroadcast();
 	}
 
-	/** @return last time cache reset timestamp */
+	/**
+	 * @return last time cache reset timestamp
+	 */
 	public long getLastCacheReset()
 	{
 		return lastCacheReset.get();
@@ -183,6 +197,7 @@ public final class CacheMgt
 			return 0;
 		}
 
+<<<<<<< HEAD
 		final SpanMetadata spanMetadata = SpanMetadata.builder()
 				.name("Full CacheReset")
 				.type(Type.CACHE_OPERATION.getCode()).subType(SubType.CACHE_INVALIDATE.getCode())
@@ -204,24 +219,25 @@ public final class CacheMgt
 	private long reset0()
 	{
 		long total = 0;
+=======
+>>>>>>> 0eed8b1baf6 (Cache API improvements for observability (REST API) and configuration (#16625))
 		try
 		{
-			total = cachesByLabel.values()
-					.stream()
-					.mapToLong(CachesGroup::invalidateAllNoFail)
+			final long total = streamCaches()
+					.mapToLong(CachesGroup::invalidateNoFail)
 					.sum();
 
 			fireGlobalCacheResetListeners(CacheInvalidateMultiRequest.all());
 
 			lastCacheReset.incrementAndGet();
+
+			logger.info("Reset all: cache instances invalidated ({} cached items invalidated).", total);
+			return total;
 		}
 		finally
 		{
 			cacheResetRunning.set(false);
 		}
-
-		logger.info("Reset all: cache instances invalidated ({} cached items invalidated).", total);
-		return total;
 	}
 
 	private void fireGlobalCacheResetListeners(final CacheInvalidateMultiRequest multiRequest)
@@ -241,7 +257,7 @@ public final class CacheMgt
 					.stream()
 					.map(cacheResetListenersByTableName::get)
 					.filter(Objects::nonNull)
-					.flatMap(listeners -> listeners.stream())
+					.flatMap(Collection::stream)
 					.forEach(listener -> fireCacheResetListenerNoFail(listener, multiRequest));
 		}
 	}
@@ -268,27 +284,28 @@ public final class CacheMgt
 	{
 		final CacheInvalidateMultiRequest request = CacheInvalidateMultiRequest.allRecordsForTable(tableName);
 		return reset(request, ResetMode.LOCAL_AND_BROADCAST);
-	}	// reset
+	}    // reset
 
 	/**
 	 * Invalidate all cached entries for given TableName.
-	 *
+	 * <p>
 	 * The event won't be broadcasted.
 	 *
 	 * @param tableName table name
 	 * @return how many cache entries were invalidated
 	 */
+	@SuppressWarnings("UnusedReturnValue")
 	public long resetLocal(final String tableName)
 	{
 		final CacheInvalidateMultiRequest request = CacheInvalidateMultiRequest.allRecordsForTable(tableName);
 		return reset(request, ResetMode.LOCAL);
-	}	// reset
+	}    // reset
 
 	/**
 	 * Invalidate all cached entries for given TableName/Record_ID.
 	 *
 	 * @param tableName table name
-	 * @param recordId record if applicable or negative for all
+	 * @param recordId  record if applicable or negative for all
 	 * @return how many cache entries were invalidated
 	 */
 	public long reset(final String tableName, final int recordId)
@@ -304,7 +321,7 @@ public final class CacheMgt
 
 	/**
 	 * Reset cache for TableName/Record_ID when given transaction is committed.
-	 *
+	 * <p>
 	 * If no transaction was given or given transaction was not found, the cache is reset right away.
 	 */
 	public void resetLocalNowAndBroadcastOnTrxCommit(final String trxName, final CacheInvalidateMultiRequest request)
@@ -391,7 +408,7 @@ public final class CacheMgt
 			return reset();
 		}
 
-		int total = 0;
+		long total = 0;
 		for (final CacheInvalidateRequest request : multiRequest.getRequests())
 		{
 			final long totalPerRequest = invalidateForRequest(request);
@@ -456,10 +473,7 @@ public final class CacheMgt
 	 */
 	private long computeTotalSize()
 	{
-		return cachesByLabel.values()
-				.stream()
-				.mapToLong(CachesGroup::computeTotalSize)
-				.sum();
+		return streamCaches().mapToLong(CacheInterface::size).sum();
 	}
 
 	/**
@@ -468,7 +482,7 @@ public final class CacheMgt
 	@Override
 	public String toString()
 	{
-		return "CacheMgt[Instances="	+ cachesByLabel.size() + "]";
+		return "CacheMgt[Instances=" + cachesByLabel.size() + "]";
 	}
 
 	/**
@@ -502,6 +516,7 @@ public final class CacheMgt
 				.addIfAbsent(cacheResetListener);
 	}
 
+	@SuppressWarnings("UnusedReturnValue")
 	public boolean removeCacheResetListener(@NonNull final String tableName, @NonNull final ICacheResetListener cacheResetListener)
 	{
 		final CopyOnWriteArrayList<ICacheResetListener> cacheResetListeners = cacheResetListenersByTableName.get(tableName);
@@ -513,10 +528,45 @@ public final class CacheMgt
 		return cacheResetListeners.remove(cacheResetListener);
 	}
 
-	/** Collects records that needs to be removed from cache when a given transaction is committed */
+	private Stream<CacheInterface> streamCaches()
+	{
+		return cachesByLabel.values().stream()
+				.flatMap(CachesGroup::streamCaches)
+				.collect(GuavaCollectors.distinctBy(CacheInterface::getCacheId));
+	}
+
+	public Stream<CCacheStats> streamStats(@NonNull final CCacheStatsPredicate predicate)
+	{
+		return streamStats().filter(predicate);
+	}
+
+	public Stream<CCacheStats> streamStats()
+	{
+		return streamCaches()
+				.map(CacheMgt::extractStatsOrNull)
+				.filter(Objects::nonNull);
+	}
+
+	private static CCacheStats extractStatsOrNull(final CacheInterface cacheInterface)
+	{
+		return cacheInterface instanceof CCache ? ((CCache<?, ?>)cacheInterface).stats() : null;
+	}
+
+	public Optional<CacheInterface> getById(final long cacheId)
+	{
+		return streamCaches()
+				.filter(cache -> cache.getCacheId() == cacheId)
+				.findFirst();
+	}
+
+	/**
+	 * Collects records that needs to be removed from cache when a given transaction is committed
+	 */
 	private static final class RecordsToResetOnTrxCommitCollector
 	{
-		/** Gets/creates the records collector which needs to be reset when transaction is committed */
+		/**
+		 * Gets/creates the records collector which needs to be reset when transaction is committed
+		 */
 		public static RecordsToResetOnTrxCommitCollector getCreate(final ITrx trx)
 		{
 			return trx.getProperty(TRX_PROPERTY, () -> {
@@ -545,7 +595,9 @@ public final class CacheMgt
 
 		private final Map<CacheInvalidateRequest, ResetMode> request2resetMode = Maps.newConcurrentMap();
 
-		/** Enqueues a record */
+		/**
+		 * Enqueues a record
+		 */
 		public void addRecord(@NonNull final CacheInvalidateMultiRequest multiRequest, @NonNull final ResetMode resetMode)
 		{
 			multiRequest.getRequests()
@@ -553,7 +605,9 @@ public final class CacheMgt
 			logger.debug("Scheduled cache invalidation on transaction commit: {} ({})", multiRequest, resetMode);
 		}
 
-		/** Reset the cache for all enqueued records */
+		/**
+		 * Reset the cache for all enqueued records
+		 */
 		private void sendRequestsAndClear()
 		{
 			if (request2resetMode.isEmpty())
@@ -595,9 +649,7 @@ public final class CacheMgt
 	private static class CachesGroup
 	{
 		private final CacheLabel label;
-		private final ConcurrentMap<Long, CacheInterface> caches = new MapMaker()
-				.weakValues()
-				.makeMap();
+		private final ConcurrentMap<Long, CacheInterface> caches = new MapMaker().weakValues().makeMap();
 
 		public CachesGroup(@NonNull final CacheLabel label)
 		{
@@ -631,44 +683,21 @@ public final class CacheMgt
 
 		private Stream<CacheInterface> streamCaches()
 		{
-			return caches.values()
-					.stream()
-					.filter(Objects::nonNull);
+			return caches.values().stream().filter(Objects::nonNull);
 		}
 
-		public long computeTotalSize()
-		{
-			return streamCaches()
-					.mapToLong(CacheInterface::size)
-					.sum();
-		}
-
-		public long invalidateAllNoFail()
+		private long invalidateAllNoFail()
 		{
 			return streamCaches()
 					.mapToLong(CachesGroup::invalidateNoFail)
 					.sum();
 		}
 
-		public long invalidateForRecordNoFail(final TableRecordReference recordRef)
+		private long invalidateForRecordNoFail(final TableRecordReference recordRef)
 		{
 			return streamCaches()
 					.mapToLong(cache -> invalidateNoFail(cache, recordRef))
 					.sum();
-		}
-
-		private static long invalidateNoFail(final CacheInterface cacheInstance, final TableRecordReference recordRef)
-		{
-			try (final IAutoCloseable ignored = CacheMDC.putCache(cacheInstance))
-			{
-				return cacheInstance.resetForRecordId(recordRef);
-			}
-			catch (final Exception ex)
-			{
-				// log but don't fail
-				logger.warn("Error while reseting {} for {}. Ignored.", cacheInstance, recordRef, ex);
-				return 0;
-			}
 		}
 
 		private static long invalidateNoFail(@Nullable final CacheInterface cacheInstance)
@@ -684,7 +713,21 @@ public final class CacheMgt
 			catch (final Exception ex)
 			{
 				// log but don't fail
-				logger.warn("Error while reseting {}. Ignored.", cacheInstance, ex);
+				logger.warn("Error while resetting {}. Ignored.", cacheInstance, ex);
+				return 0;
+			}
+		}
+
+		private static long invalidateNoFail(final CacheInterface cacheInstance, final TableRecordReference recordRef)
+		{
+			try (final IAutoCloseable ignored = CacheMDC.putCache(cacheInstance))
+			{
+				return cacheInstance.resetForRecordId(recordRef);
+			}
+			catch (final Exception ex)
+			{
+				// log but don't fail
+				logger.warn("Error while resetting {} for {}. Ignored.", cacheInstance, recordRef, ex);
 				return 0;
 			}
 		}

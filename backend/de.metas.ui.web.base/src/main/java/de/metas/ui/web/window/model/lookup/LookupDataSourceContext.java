@@ -90,7 +90,7 @@ public final class LookupDataSourceContext implements Evaluatee2, IValidationCon
 	public static final String FILTER_Any = "%";
 	private static final String FILTER_Any_SQL = "'%'";
 
-	public static final CtxName PARAM_AD_Language = CtxNames.parse(Env.CTXNAME_AD_Language);
+	public static final CtxName PARAM_AD_Language = CtxNames.parseNotNull(Env.CTXNAME_AD_Language);
 	public static final CtxName PARAM_UserRolePermissionsKey = AccessSqlStringExpression.PARAM_UserRolePermissionsKey;
 
 	public static final CtxName PARAM_OrgAccessSql = CtxNames.parse("OrgAccessSql");

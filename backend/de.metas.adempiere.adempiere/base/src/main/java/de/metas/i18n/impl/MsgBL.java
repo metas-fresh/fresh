@@ -1,5 +1,6 @@
 package de.metas.i18n.impl;
 
+<<<<<<< HEAD
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +33,9 @@ import javax.annotation.Nullable;
 import de.metas.i18n.AdMessagesTreeLoader;
 import org.compiere.util.Env;
 
+=======
+import de.metas.i18n.AdMessageId;
+>>>>>>> 0eed8b1baf6 (Cache API improvements for observability (REST API) and configuration (#16625))
 import de.metas.i18n.AdMessageKey;
 import de.metas.i18n.IMsgBL;
 import de.metas.i18n.ITranslatableString;
@@ -39,11 +43,19 @@ import de.metas.i18n.Msg;
 import de.metas.i18n.TranslatableStrings;
 import de.metas.util.Check;
 import lombok.NonNull;
+<<<<<<< HEAD
+=======
+import org.compiere.util.Env;
+
+import javax.annotation.Nullable;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
+>>>>>>> 0eed8b1baf6 (Cache API improvements for observability (REST API) and configuration (#16625))
 
 /**
- *
  * This implementation delegates to {@link Msg} and is therefore coupled with the database.
- *
  */
 @SuppressWarnings("deprecation")
 public class MsgBL implements IMsgBL
@@ -150,4 +162,31 @@ public class MsgBL implements IMsgBL
 	{
 		Msg.cacheReset();
 	}
+<<<<<<< HEAD
+=======
+
+	@Override
+	public String getBaseLanguageMsg(@NonNull final AdMessageKey adMessage, @Nullable final Object... msgParameters)
+	{
+		return TranslatableStrings.adMessage(adMessage, msgParameters).translate(Language.getBaseAD_Language());
+	}
+
+	@Override
+	public Optional<AdMessageId> getIdByAdMessage(@NonNull final AdMessageKey adMessage)
+	{
+		return Msg.toMap().getIdByAdMessage(adMessage);
+	}
+
+	@Override
+	public boolean isMessageExists(AdMessageKey adMessage)
+	{
+		return Msg.toMap().isMessageExists(adMessage);
+	}
+
+	@Override
+	public Optional<AdMessageKey> getAdMessageKeyById(final AdMessageId adMessageId)
+	{
+		return Msg.toMap().getAdMessageKeyById(adMessageId);
+	}
+>>>>>>> 0eed8b1baf6 (Cache API improvements for observability (REST API) and configuration (#16625))
 }

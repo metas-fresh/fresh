@@ -26,17 +26,6 @@ package de.metas.letters.report;
  * #L%
  */
 
-import java.util.List;
-import java.util.StringTokenizer;
-
-import org.adempiere.exceptions.AdempiereException;
-import org.adempiere.exceptions.FillMandatoryException;
-import org.adempiere.model.InterfaceWrapperHelper;
-import org.compiere.model.I_AD_User;
-import org.compiere.model.MClient;
-import org.compiere.model.MNote;
-import org.compiere.model.Query;
-
 import de.metas.email.EMail;
 import de.metas.email.EMailAddress;
 import de.metas.email.EMailSentStatus;
@@ -44,7 +33,6 @@ import de.metas.email.impl.EMailSendException;
 import de.metas.email.mailboxes.UserEMailConfig;
 import de.metas.i18n.AdMessageId;
 import de.metas.i18n.AdMessageKey;
-import de.metas.i18n.IADMessageDAO;
 import de.metas.i18n.IMsgBL;
 import de.metas.letters.model.IEMailEditor;
 import de.metas.letters.model.MADBoilerPlate;
@@ -55,6 +43,16 @@ import de.metas.process.ProcessInfoParameter;
 import de.metas.user.UserId;
 import de.metas.user.api.IUserBL;
 import de.metas.util.Services;
+import org.adempiere.exceptions.AdempiereException;
+import org.adempiere.exceptions.FillMandatoryException;
+import org.adempiere.model.InterfaceWrapperHelper;
+import org.compiere.model.I_AD_User;
+import org.compiere.model.MClient;
+import org.compiere.model.MNote;
+import org.compiere.model.Query;
+
+import java.util.List;
+import java.util.StringTokenizer;
 
 /**
  * Send BoilerPlate to selected contacts
@@ -254,7 +252,7 @@ public class AD_BoilderPlate_SendToUsers extends JavaProcess
 
 	private void createNote(MADBoilerPlate text, I_AD_User user, Exception e)
 	{
-		final AdMessageId adMessageId = Services.get(IADMessageDAO.class).retrieveIdByValue(AD_Message_UserNotifyError)
+		final AdMessageId adMessageId = Services.get(IMsgBL.class).getIdByAdMessage(AD_Message_UserNotifyError)
 				.orElseThrow(() -> new AdempiereException("@NotFound@ @AD_Message_ID@ " + AD_Message_UserNotifyError));
 
 		//

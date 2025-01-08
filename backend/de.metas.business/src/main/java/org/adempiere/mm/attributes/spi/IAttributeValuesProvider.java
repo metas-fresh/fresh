@@ -35,7 +35,7 @@ import org.compiere.util.NamePair;
 
 import com.google.common.collect.ImmutableSet;
 
-import de.metas.cache.CCache.CCacheStats;
+import de.metas.cache.CCacheStats;
 
 /**
  * Implementations of this interface are providing a fixed set of values for a given attribute.

@@ -25,7 +25,11 @@ package de.metas.ui.web.window.model.lookup;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import de.metas.adempiere.service.impl.TooltipType;
+<<<<<<< HEAD
 import de.metas.cache.CCache.CCacheStats;
+=======
+import de.metas.common.util.CoalesceUtil;
+>>>>>>> 0eed8b1baf6 (Cache API improvements for observability (REST API) and configuration (#16625))
 import de.metas.logging.LogManager;
 import de.metas.ui.web.view.descriptor.SqlAndParams;
 import de.metas.ui.web.window.WindowConstants;
@@ -66,7 +70,22 @@ public class GenericSqlLookupDataSourceFetcher implements LookupDataSourceFetche
 
 	private static final Logger logger = LogManager.getLogger(GenericSqlLookupDataSourceFetcher.class);
 
+<<<<<<< HEAD
 	private final @NonNull String lookupTableName;
+=======
+	@NonNull private final String lookupTableName;
+	@Getter private final boolean numericKey;
+	@Getter @NonNull private final SqlForFetchingLookups sqlForFetchingLookups;
+	@Getter @NonNull private final SqlForFetchingLookupById sqlForFetchingLookupById;
+	@Nullable private final INamePairPredicate postQueryPredicate;
+	@Getter @NonNull private final Optional<WindowId> zoomIntoWindowId;
+	@NonNull private final TooltipType tooltipType;
+
+	private final int pageLength;
+
+	//
+	// Computed:
+>>>>>>> 0eed8b1baf6 (Cache API improvements for observability (REST API) and configuration (#16625))
 	private final @NonNull Optional<String> lookupTableNameAsOptional;
 	@Getter
 	private final boolean numericKey;
@@ -133,12 +152,6 @@ public class GenericSqlLookupDataSourceFetcher implements LookupDataSourceFetche
 	@Override
 	public void cacheInvalidate()
 	{
-	}
-
-	@Override
-	public List<CCacheStats> getCacheStats()
-	{
-		return ImmutableList.of();
 	}
 
 	@Override

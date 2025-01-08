@@ -1,7 +1,8 @@
 package de.metas.ui.web.window.model.lookup;
 
 import com.google.common.collect.ImmutableList;
-import de.metas.cache.CCache.CCacheStats;
+import de.metas.cache.CCacheStats;
+import de.metas.cache.CacheLabel;
 import de.metas.ui.web.window.datatypes.LookupValue;
 import de.metas.ui.web.window.datatypes.LookupValue.IntegerLookupValue;
 import de.metas.ui.web.window.datatypes.LookupValuesList;
@@ -39,6 +40,8 @@ import java.util.Optional;
 
 public interface LookupDataSourceFetcher
 {
+	CacheLabel ADDITIONAL_CACHE_LABEL = CacheLabel.ofString(LookupDataSourceFetcher.class.getSimpleName());
+
 	LookupValue LOOKUPVALUE_NULL = IntegerLookupValue.builder()
 			.id(-1)
 			.active(false)

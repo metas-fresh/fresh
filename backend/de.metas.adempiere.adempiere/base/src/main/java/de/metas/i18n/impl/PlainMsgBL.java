@@ -22,20 +22,25 @@ package de.metas.i18n.impl;
  * #L%
  */
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
-
+import de.metas.i18n.AdMessageId;
 import de.metas.i18n.AdMessageKey;
 import de.metas.i18n.IMsgBL;
 import de.metas.i18n.ITranslatableString;
 import de.metas.i18n.TranslatableStrings;
 import lombok.NonNull;
 
+<<<<<<< HEAD
+=======
+import javax.annotation.Nullable;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
+
+>>>>>>> 0eed8b1baf6 (Cache API improvements for observability (REST API) and configuration (#16625))
 public class PlainMsgBL implements IMsgBL
 {
 	@Override
@@ -148,4 +153,32 @@ public class PlainMsgBL implements IMsgBL
 	{
 		// nothing
 	}
+<<<<<<< HEAD
+=======
+
+	@Override
+	public String getBaseLanguageMsg(@NonNull final AdMessageKey adMessage, @Nullable final Object... msgParameters)
+	{
+		return TranslatableStrings.adMessage(adMessage, msgParameters)
+				.translate(Language.getBaseAD_Language());
+	}
+
+	@Override
+	public Optional<AdMessageId> getIdByAdMessage(@NonNull final AdMessageKey value)
+	{
+		return Optional.empty();
+	}
+
+	@Override
+	public boolean isMessageExists(final AdMessageKey adMessage)
+	{
+		return false;
+	}
+
+	@Override
+	public Optional<AdMessageKey> getAdMessageKeyById(final AdMessageId adMessageId)
+	{
+		return Optional.empty();
+	}
+>>>>>>> 0eed8b1baf6 (Cache API improvements for observability (REST API) and configuration (#16625))
 }

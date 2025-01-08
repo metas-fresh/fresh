@@ -249,7 +249,17 @@ public final class NumberUtils
 		{
 			try
 			{
+<<<<<<< HEAD
 				final BigDecimal bd = new BigDecimal(value.toString());
+=======
+				final String valueStr = StringUtils.trimBlankToNull(value.toString());
+				if (valueStr == null)
+				{
+					return defaultValue;
+				}
+
+				final BigDecimal bd = new BigDecimal(valueStr);
+>>>>>>> 0eed8b1baf6 (Cache API improvements for observability (REST API) and configuration (#16625))
 				return bd.intValue();
 			}
 			catch (final NumberFormatException e)

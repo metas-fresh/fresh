@@ -44,7 +44,7 @@ public final class ImmutableTranslatableString implements ITranslatableString
 	private final String defaultValue;
 
 	@lombok.Builder
-	ImmutableTranslatableString(
+	private ImmutableTranslatableString(
 			@Nullable @Singular final Map<String, String> trls,
 			@Nullable final String defaultValue)
 	{
@@ -52,6 +52,39 @@ public final class ImmutableTranslatableString implements ITranslatableString
 		this.defaultValue = defaultValue == null ? "" : defaultValue;
 	}
 
+<<<<<<< HEAD
+=======
+	public static ImmutableTranslatableString ofMap(
+			@Nullable final Map<String, String> trls,
+			@Nullable final String defaultValue)
+	{
+		return new ImmutableTranslatableString(trls, defaultValue);
+	}
+
+	public static ImmutableTranslatableString ofDefaultValue(@Nullable final String defaultValue)
+	{
+		return ofMap(null, defaultValue);
+	}
+
+	private static ImmutableMap<String, String> normalizeTrlsMap(@Nullable final Map<String, String> trls)
+	{
+		if (trls == null || trls.isEmpty())
+		{
+			return ImmutableMap.of();
+		}
+		else if (trls.containsValue(null))
+		{
+			ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
+			trls.forEach((adLanguage, trl) -> builder.put(adLanguage, trl != null ? trl : ""));
+			return builder.build();
+		}
+		else
+		{
+			return ImmutableMap.copyOf(trls);
+		}
+	}
+
+>>>>>>> 0eed8b1baf6 (Cache API improvements for observability (REST API) and configuration (#16625))
 	@Override
 	@Deprecated
 	public String toString()

@@ -3,6 +3,7 @@
  */
 package de.metas.modelvalidator;
 
+<<<<<<< HEAD
 import java.time.Duration;
 
 /*
@@ -31,6 +32,43 @@ import java.util.Properties;
 
 import javax.sql.DataSource;
 
+=======
+import com.mchange.v2.c3p0.ComboPooledDataSource;
+import de.metas.adempiere.callout.C_OrderFastInputTabCallout;
+import de.metas.adempiere.engine.MViewModelValidator;
+import de.metas.adempiere.model.I_C_InvoiceLine;
+import de.metas.adempiere.modelvalidator.AD_User;
+import de.metas.adempiere.modelvalidator.Order;
+import de.metas.adempiere.modelvalidator.OrderLine;
+import de.metas.adempiere.modelvalidator.Payment;
+import de.metas.bpartner.interceptor.C_BPartner_Location;
+import de.metas.cache.CCache.CacheMapType;
+import de.metas.cache.model.IModelCacheService;
+import de.metas.cache.model.ITableCacheConfig;
+import de.metas.cache.model.ITableCacheConfig.TrxLevel;
+import de.metas.document.ICounterDocBL;
+import de.metas.i18n.AdMessageKey;
+import de.metas.i18n.IMsgBL;
+import de.metas.inout.model.I_M_InOutLine;
+import de.metas.inout.model.validator.M_InOut;
+import de.metas.inout.model.validator.M_QualityNote;
+import de.metas.inoutcandidate.modelvalidator.InOutCandidateValidator;
+import de.metas.inoutcandidate.modelvalidator.ReceiptScheduleValidator;
+import de.metas.interfaces.I_C_OrderLine;
+import de.metas.invoice.callout.C_InvoiceLine_TabCallout;
+import de.metas.invoice.service.IInvoiceBL;
+import de.metas.invoice.service.impl.AbstractInvoiceBL;
+import de.metas.invoicecandidate.api.IInvoiceCandidateListeners;
+import de.metas.invoicecandidate.spi.impl.AttachmentInvoiceCandidateListener;
+import de.metas.invoicecandidate.spi.impl.OrderAndInOutInvoiceCandidateListener;
+import de.metas.logging.LogManager;
+import de.metas.order.document.counterDoc.C_Order_CounterDocHandler;
+import de.metas.report.client.ReportsClient;
+import de.metas.request.model.validator.R_Request;
+import de.metas.shipping.model.validator.M_ShipperTransportation;
+import de.metas.util.Check;
+import de.metas.util.Services;
+>>>>>>> 0eed8b1baf6 (Cache API improvements for observability (REST API) and configuration (#16625))
 import org.adempiere.ad.migration.logger.IMigrationLogger;
 import org.adempiere.ad.modelvalidator.IModelInterceptor;
 import org.adempiere.ad.ui.api.ITabCalloutFactory;
@@ -255,7 +293,6 @@ public class SwatValidator implements ModelValidator
 		{
 			final ISysConfigBL sysConfigBL = Services.get(ISysConfigBL.class);
 			final IMsgBL msgBL = Services.get(IMsgBL.class);
-			final IADMessageDAO msgDAO = Services.get(IADMessageDAO.class);
 
 			final boolean throwException = sysConfigBL.getBooleanValue(SYSCONFIG_ORG_ADEMPIERE_UTIL_CHECK_THROW_EXCEPTION, true);
 			Check.setThrowException(throwException);
@@ -263,7 +300,7 @@ public class SwatValidator implements ModelValidator
 			{
 				Check.setLogger(LogManager.getLogger(Check.class));
 			}
-			else if (msgDAO.isMessageExists(MSG_ORG_ADEMPIERE_UTIL_CHECK_EXCEPTION_HEADER_MESSAGE))
+			else if (msgBL.isMessageExists(MSG_ORG_ADEMPIERE_UTIL_CHECK_EXCEPTION_HEADER_MESSAGE))
 			{
 				Check.setExceptionHeaderMessage(msgBL.getMsg(Env.getCtx(), MSG_ORG_ADEMPIERE_UTIL_CHECK_EXCEPTION_HEADER_MESSAGE));
 			}

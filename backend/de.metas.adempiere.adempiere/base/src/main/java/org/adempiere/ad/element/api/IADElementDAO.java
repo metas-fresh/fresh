@@ -33,11 +33,9 @@ import de.metas.util.ISingletonService;
 
 public interface IADElementDAO extends ISingletonService
 {
-	public List<I_AD_UI_Element> retrieveChildUIElements(I_AD_Element element);
+	List<I_AD_UI_Element> retrieveChildUIElements(I_AD_Element element);
 
 	List<I_AD_Column> retrieveColumns(int elementId);
-
-	List<I_AD_Field> retrieveFields(String columnName);
 
 	void makeElementMandatoryInApplicationDictionaryTables();
 

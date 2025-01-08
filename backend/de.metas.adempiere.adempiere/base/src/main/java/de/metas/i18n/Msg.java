@@ -1,26 +1,28 @@
 package de.metas.i18n;
 
+<<<<<<< HEAD
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableMap;
+=======
+>>>>>>> 0eed8b1baf6 (Cache API improvements for observability (REST API) and configuration (#16625))
 import com.google.common.collect.ImmutableSet;
 import de.metas.cache.CCache;
-import de.metas.currency.Amount;
 import de.metas.logging.LogManager;
 import de.metas.util.Check;
 import de.metas.util.GuavaCollectors;
+<<<<<<< HEAD
 import de.metas.util.Services;
 import de.metas.util.lang.ReferenceListAwareEnum;
 import de.metas.util.lang.ReferenceListAwareEnums;
+=======
+>>>>>>> 0eed8b1baf6 (Cache API improvements for observability (REST API) and configuration (#16625))
 import lombok.NonNull;
 import lombok.Singular;
 import org.adempiere.ad.service.IADReferenceDAO;
 import org.adempiere.ad.trx.api.ITrx;
-import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.exceptions.DBException;
 import org.compiere.Adempiere;
 import org.compiere.model.I_AD_Element;
-import org.compiere.model.I_AD_Message;
-import org.compiere.util.AmtInWords;
 import org.compiere.util.DB;
 import org.compiere.util.Env;
 import org.compiere.util.Ini;
@@ -31,13 +33,9 @@ import java.io.File;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Stream;
 
 /**
  * Reads all Messages and stores them in a HashMap
@@ -49,180 +47,57 @@ import java.util.stream.Stream;
 @Deprecated
 public final class Msg
 {
-	/**
-	 * Initial size of HashMap
-	 */
-	private static final int MAP_SIZE = 2200;
-	/**
-	 * Separator between Msg and optional Tip
-	 */
-	private static final String SEPARATOR = Env.NL + Env.NL;
-
-	/**
-	 * Singleton
-	 */
 	private static final Msg instance = new Msg();
 
 	/**
 	 * Logger
 	 */
 	private static final Logger s_log = LogManager.getLogger(Msg.class);
+	private final MessagesMapRepository messagesMapRepository = new MessagesMapRepository();
 
-	/**
-	 * @return {@link Msg} singleton instance
-	 */
 	private static Msg get()
 	{
 		return instance;
-	}    // get
+	}
 
-	/**************************************************************************
-	 * Constructor
-	 */
 	private Msg()
 	{
 	}
 
-	/**
-	 * Messages cache: AD_Language to MessageValue to Translated message text
-	 */
-	private final CCache<String, CCache<String, Message>> adLanguage2messages = CCache.newCache(I_AD_Message.Table_Name + "#by#ADLanguage", 10, CCache.EXPIREMINUTES_Never);
 	private final CCache<String, Element> elementsByElementName = CCache.newLRUCache(I_AD_Element.Table_Name, 500, CCache.EXPIREMINUTES_Never);
-
-	/**
-	 * Get Language specific Message Map
-	 *
-	 * @param adLanguage Language Key
-	 * @return messages map or null of messages map could not be loaded.
-	 */
-	private CCache<String, Message> getMessagesForLanguage(@Nullable final String adLanguage)
-	{
-		final String adLanguageToUse = notNullOrBaseLanguage(adLanguage);
-
-		return adLanguage2messages.getOrLoad(adLanguageToUse, () -> retrieveMessagesCache(adLanguageToUse));
-	}
 
 	/**
 	 * @return given adLanguage if not null or base language
 	 */
 	private static String notNullOrBaseLanguage(@Nullable final String adLanguage)
 	{
-		return Check.isEmpty(adLanguage, true) ? Language.getBaseAD_Language() : adLanguage;
+		return Check.isBlank(adLanguage) ? Language.getBaseAD_Language() : adLanguage;
 	}
 
-	/**
-	 * Retrieve messages map (cache).
-	 *
-	 * @param adLanguage Language
-	 * @return messages cache map or null if initialization was postponed.
-	 */
-	private static CCache<String, Message> retrieveMessagesCache(final String adLanguage)
+	public static MessagesMap toMap() {return get().getMessagesMap();}
+
+	private MessagesMap getMessagesMap()
 	{
-		if (Adempiere.isUnitTestMode())
-		{
-			return new CCache<>(I_AD_Message.Table_Name, MAP_SIZE, CCache.EXPIREMINUTES_Never);
-		}
+		return messagesMapRepository.getMap();
+	}
 
-		// If there is no database connection, postpone the messages loading
-		if (!DB.isConnected())
-		{
-			// Log if there is no database connection.
-			// We use FINE for logging because this can be a standard use case (e.g. on logout).
-			// NOTE: we use RuntimeException instead of DBNoConnectionException to avoid trying to using Msg (which would introduce recursion).
-			if (s_log.isDebugEnabled())
-			{
-				final RuntimeException ex = new RuntimeException("No DB Connection. Loading messages postponed.");
-				s_log.debug(ex.getMessage(), ex);
-			}
-			return null;
-		}
-
-		final CCache<String, Message> msg = new CCache<>(I_AD_Message.Table_Name, MAP_SIZE, CCache.EXPIREMINUTES_Never);
-
-		PreparedStatement pstmt = null;
-		ResultSet rs = null;
-		try
-		{
-			if (adLanguage == null || adLanguage.length() == 0 || Env.isBaseLanguage(adLanguage, "AD_Language"))
-			{
-				pstmt = DB.prepareStatement("SELECT Value, MsgText, MsgTip FROM AD_Message", ITrx.TRXNAME_None);
-			}
-			else
-			{
-				pstmt = DB.prepareStatement("SELECT m.Value, t.MsgText, t.MsgTip "
-													+ "FROM AD_Message_Trl t, AD_Message m "
-													+ "WHERE m.AD_Message_ID=t.AD_Message_ID"
-													+ " AND t.AD_Language=?", ITrx.TRXNAME_None);
-				pstmt.setString(1, adLanguage);
-			}
-			rs = pstmt.executeQuery();
-
-			// get values
-			while (rs.next())
-			{
-				final String adMessage = rs.getString(1);
-				final String msgText = rs.getString(2);
-				final String msgTip = rs.getString(3);
-				msg.put(adMessage, Message.ofTextAndTip(adMessage, msgText, msgTip));
-			}
-		}
-		catch (final SQLException e)
-		{
-			s_log.error("initMsg", e);
-			return null;
-		}
-		finally
-		{
-			DB.close(rs, pstmt);
-			rs = null;
-			pstmt = null;
-		}
-
-		//
-		if (msg.size() < 100)
-		{
-			final AdempiereException ex = new AdempiereException("Too few (" + msg.size() + ") Records found for " + adLanguage);
-			s_log.error(ex.getMessage(), ex);
-			return null;
-		}
-
-		s_log.debug("Loaded {} for '{}' language", msg.size(), adLanguage);
-		return msg;
-	}    // initMsg
-
-	/**
-	 * Reset Message cache
-	 */
 	public void reset()
 	{
-		// clear all languages
-		new ArrayList<>(adLanguage2messages.values()).forEach(CCache::reset);
-		adLanguage2messages.reset();
-
+		messagesMapRepository.cacheReset();
 		elementsByElementName.reset();
-	}   // reset
+	}
 
 	public static void cacheReset()
 	{
 		get().reset();
 	}
 
-	/**
-	 * Lookup term
-	 *
-	 * @param adLanguage language
-	 * @param text       text
-	 * @return translated term or <code>null</code> if message term could not be found
-	 */
-	private Message lookup(final String adLanguage, final String text)
+	@Nullable
+	private Message lookup(final String text)
 	{
 		if (text == null)
 		{
 			return Message.EMPTY;
-		}
-		if (adLanguage == null || adLanguage.length() == 0)
-		{
-			return Message.ofMissingADMessage(text);
 		}
 
 		//
@@ -258,51 +133,27 @@ public final class Msg
 			return Message.ofMissingADMessage(text);
 		}
 
-		final CCache<String, Message> messages = getMessagesForLanguage(adLanguage);
-		if (messages == null)
-		{
-			// messages map could not be loaded (i.e. no database connection)
-			// => build a missing message an return it because if we would return null,
-			// caller would interpret as missing message which could be wrong because atm we don't know if it's missing or not.
-			return Message.ofMissingADMessage(text);
-		}
-		return messages.get(text);
-	}   // lookup
-
-	private Stream<Message> lookupForPrefix(@NonNull final String adLanguage, @NonNull final String prefix)
-	{
-		final CCache<String, Message> messages = getMessagesForLanguage(adLanguage);
-		if (messages == null)
-		{
-			return Stream.empty();
-		}
-
-		return messages.values().stream()
-				.filter(message -> message.getAD_Message().startsWith(prefix));
+		return getMessagesMap().getByAdMessage(text);
 	}
 
 	/**************************************************************************
 	 * Get translated text for AD_Message
 	 *
-	 * @param adLanguage - Language
-	 * @param adMessage - Message Key
 	 * @return translated text
 	 */
 	public static String getMsg(final String adLanguage, final String adMessage)
 	{
-		return getMessage(adLanguage, adMessage).getMsgTextAndTip();
+		return getMessage(adMessage).getMsgTextAndTip(adLanguage);
 	}
 
-	private static Message getMessage(final String adLanguage, final String adMessage)
+	private static Message getMessage(final String adMessage)
 	{
-		if (adMessage == null || adMessage.length() == 0)
+		if (adMessage == null || adMessage.isEmpty())
 		{
 			return Message.EMPTY;
 		}
 
-		final String adLanguageToUse = notNullOrBaseLanguage(adLanguage);
-		final Message message = get().lookup(adLanguageToUse, adMessage);
-
+		final Message message = get().lookup(adMessage);
 		if (message == null)
 		{
 			s_log.warn("AD_Message not found: {}", adMessage);
@@ -346,8 +197,8 @@ public final class Msg
 	 */
 	private static String getMsg(final String adLanguage, final String adMessage, final boolean getText)
 	{
-		final Message message = getMessage(adLanguage, adMessage);
-		return getText ? message.getMsgText() : message.getMsgTip();
+		final Message message = getMessage(adMessage);
+		return getText ? message.getMsgText(adLanguage) : message.getMsgTip(adLanguage);
 	}
 
 	/**
@@ -403,10 +254,11 @@ public final class Msg
 	public static String getMsg(final String adLanguage, final String adMessage, final Object[] args)
 	{
 		final String adLanguageToUse = notNullOrBaseLanguage(adLanguage);
-		final Message message = getMessage(adLanguageToUse, adMessage);
-		return format(adLanguageToUse, message, args);
+		final Message message = getMessage(adMessage);
+		return MessageFormatter.format(adLanguageToUse, message, args);
 	}    // getMsg
 
+<<<<<<< HEAD
 	private static String format(@NonNull final String adLanguage, @NonNull final Message message, @Nullable final Object[] args)
 	{
 		final String messageStr = message.getMsgTextAndTip();
@@ -525,86 +377,12 @@ public final class Msg
 
 	}
 
+=======
+>>>>>>> 0eed8b1baf6 (Cache API improvements for observability (REST API) and configuration (#16625))
 	public static Map<String, String> getMsgMap(final String adLanguage, final String prefix, boolean removePrefix)
 	{
-		final Function<Message, String> keyFunction;
-		if (removePrefix)
-		{
-			final int beginIndex = prefix.length();
-			keyFunction = message -> message.getAD_Message().substring(beginIndex);
-		}
-		else
-		{
-			keyFunction = Message::getAD_Message;
-		}
-
-		return get().lookupForPrefix(adLanguage, prefix)
-				.collect(ImmutableMap.toImmutableMap(keyFunction, Message::getMsgText));
+		return get().getMessagesMap().toStringMap(adLanguage, prefix, removePrefix);
 	}
-
-	/**************************************************************************
-	 * Get Amount in Words
-	 *
-	 * @param language language
-	 * @param amount numeric amount (352.80)
-	 * @return amount in words (three*five*two 80/100)
-	 */
-	public static String getAmtInWords(final Language language, final String amount)
-	{
-		if (amount == null || language == null)
-		{
-			return amount;
-		}
-		// Try to find Class
-		String className = "org.compiere.util.AmtInWords_";
-		try
-		{
-			className += language.getLanguageCode().toUpperCase();
-			final Class<?> clazz = Class.forName(className);
-			final AmtInWords aiw = (AmtInWords)clazz.newInstance();
-			return aiw.getAmtInWords(amount);
-		}
-		catch (final ClassNotFoundException e)
-		{
-			s_log.trace("Class not found: {}", className);
-		}
-		catch (final Exception e)
-		{
-			s_log.error(className, e);
-		}
-
-		// Fallback
-		final StringBuilder sb = new StringBuilder();
-		int pos = amount.lastIndexOf('.');
-		final int pos2 = amount.lastIndexOf(',');
-		if (pos2 > pos)
-		{
-			pos = pos2;
-		}
-		for (int i = 0; i < amount.length(); i++)
-		{
-			if (pos == i)    // we are done
-			{
-				final String cents = amount.substring(i + 1);
-				sb.append(' ').append(cents).append("/100");
-				break;
-			}
-			else
-			{
-				final char c = amount.charAt(i);
-				if (c == ',' || c == '.')
-				{
-					continue;
-				}
-				if (sb.length() > 0)
-				{
-					sb.append("*");
-				}
-				sb.append(getMsg(language, String.valueOf(c)));
-			}
-		}
-		return sb.toString();
-	}    // getAmtInWords
 
 	/**************************************************************************
 	 * Get Translation for Element
@@ -726,8 +504,6 @@ public final class Msg
 		finally
 		{
 			DB.close(rs, pstmt);
-			rs = null;
-			pstmt = null;
 		}
 	}
 
@@ -780,10 +556,10 @@ public final class Msg
 		final String adLanguageToUse = notNullOrBaseLanguage(adLanguage);
 
 		// Check AD_Message
-		final Message message = get().lookup(adLanguageToUse, text);
+		final Message message = get().lookup(text);
 		if (message != null && !message.isMissing())
 		{
-			return message.getMsgTextAndTip();
+			return message.getMsgTextAndTip(adLanguageToUse);
 		}
 
 		// Check AD_Element
@@ -852,12 +628,12 @@ public final class Msg
 
 	public static String translate(final Properties ctx, final String text, final boolean isSOTrx)
 	{
-		if (text == null || text.length() == 0)
+		if (text == null || text.isEmpty())
 		{
 			return text;
 		}
 		final String s = ctx.getProperty(text);
-		if (s != null && s.length() > 0)
+		if (s != null && !s.isEmpty())
 		{
 			return s;
 		}
@@ -902,7 +678,7 @@ public final class Msg
 	 */
 	public static String parseTranslation(final String adLanguage, final String text)
 	{
-		if (text == null || text.length() == 0)
+		if (text == null || text.isEmpty())
 		{
 			return text;
 		}
@@ -915,7 +691,7 @@ public final class Msg
 		while (i != -1)
 		{
 			outStr.append(inStr.substring(0, i));            // up to @
-			inStr = inStr.substring(i + 1, inStr.length());    // from first @
+			inStr = inStr.substring(i + 1);    // from first @
 
 			final int j = inStr.indexOf('@');                        // next @
 			if (j < 0)                                        // no second tag
@@ -936,7 +712,7 @@ public final class Msg
 				outStr.append(translate(adLanguage, token));            // replace context
 			}
 
-			inStr = inStr.substring(j + 1, inStr.length());    // from second @
+			inStr = inStr.substring(j + 1);    // from second @
 			i = inStr.indexOf('@');
 		}
 
@@ -944,6 +720,7 @@ public final class Msg
 		return outStr.toString();
 	}   // parseTranslation
 
+<<<<<<< HEAD
 	/**
 	 * Internal translated message representation (immutable)
 	 */
@@ -1035,6 +812,8 @@ public final class Msg
 		}
 	}
 
+=======
+>>>>>>> 0eed8b1baf6 (Cache API improvements for observability (REST API) and configuration (#16625))
 	@lombok.Value
 	private static final class Element
 	{
@@ -1103,16 +882,12 @@ public final class Msg
 
 		public ITranslatableString getText(final String displayColumnName, final boolean isSOTrx)
 		{
-			switch (displayColumnName)
+			return switch (displayColumnName)
 			{
-				case I_AD_Element.COLUMNNAME_Description:
-					return isSOTrx ? description : poDescription;
-				case I_AD_Element.COLUMNNAME_PrintName:
-					return isSOTrx ? printName : poPrintName;
-				case I_AD_Element.COLUMNNAME_Name:
-				default:
-					return isSOTrx ? name : poName;
-			}
+				case I_AD_Element.COLUMNNAME_Description -> isSOTrx ? description : poDescription;
+				case I_AD_Element.COLUMNNAME_PrintName -> isSOTrx ? printName : poPrintName;
+				default -> isSOTrx ? name : poName;
+			};
 		}
 	}
 }    // Msg

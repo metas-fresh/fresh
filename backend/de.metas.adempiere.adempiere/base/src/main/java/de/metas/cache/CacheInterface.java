@@ -28,6 +28,9 @@ import org.adempiere.util.lang.impl.TableRecordReference;
  */
 public interface CacheInterface
 {
+	/**
+	 * @return unique cache ID
+	 */
 	long getCacheId();
 
 	/**
