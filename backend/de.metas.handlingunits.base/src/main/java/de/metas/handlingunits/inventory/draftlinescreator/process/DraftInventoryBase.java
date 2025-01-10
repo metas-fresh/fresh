@@ -1,5 +1,10 @@
 package de.metas.handlingunits.inventory.draftlinescreator.process;
 
+import de.metas.document.DocTypeId;
+import de.metas.document.impl.DocTypeDAO;
+import de.metas.i18n.AdMessageKey;
+import de.metas.inventory.InventoryDocSubType;
+import de.metas.util.Services;
 import org.compiere.SpringContextHolder;
 import org.compiere.model.I_M_Inventory;
 
@@ -42,7 +47,11 @@ import de.metas.util.Check;
 
 public abstract class DraftInventoryBase extends JavaProcess implements IProcessPrecondition
 {
+	public static final AdMessageKey REQUIRES_SINGLE_HU_INVENTORY = AdMessageKey.of("de.metas.handlingunits.inventory.process.Requieres_SingleHUInventory");
+	public static final AdMessageKey REQUIRES_WAREHOUSE = AdMessageKey.of("de.metas.handlingunits.inventory.process.Requires_Warehouse");
+	
 	private final InventoryRepository inventoryRepo = SpringContextHolder.instance.getBean(InventoryRepository.class);
+	private final DocTypeDAO docTypeDAO = Services.get(DocTypeDAO.class);
 
 	@Override
 	final public ProcessPreconditionsResolution checkPreconditionsApplicable(final IProcessPreconditionsContext context)
@@ -57,7 +66,22 @@ public abstract class DraftInventoryBase extends JavaProcess implements IProcess
 		{
 			return ProcessPreconditionsResolution.rejectWithInternalReason("inventory is processed");
 		}
+		if (inventory.getM_Warehouse_ID() <= 0)
+		{
+			return ProcessPreconditionsResolution.reject(REQUIRES_WAREHOUSE);
+		}
 
+		if (inventory.getC_DocType_ID() <= 0)
+		{
+			return ProcessPreconditionsResolution.reject(REQUIRES_SINGLE_HU_INVENTORY);
+		}
+
+		final DocBaseAndSubType docBaseAndSubType = docTypeDAO.getDocBaseAndSubTypeById(DocTypeId.ofRepoId(inventory.getC_DocType_ID()));
+		if (!InventoryDocSubType.SingleHUInventory.toDocBaseAndSubType().equals(docBaseAndSubType))
+		{
+			return ProcessPreconditionsResolution.reject(REQUIRES_SINGLE_HU_INVENTORY);
+		}
+		
 		return ProcessPreconditionsResolution.accept();
 	}
 
