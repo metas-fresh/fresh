@@ -1,12 +1,11 @@
 package de.metas.ui.web.window.datatypes.json;
 
-import java.util.List;
-
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.Builder;
+import lombok.Value;
+import lombok.extern.jackson.Jacksonized;
 
-import lombok.Data;
+import java.util.List;
 
 /*
  * #%L
@@ -30,8 +29,9 @@ import lombok.Data;
  * #L%
  */
 
-@JsonAutoDetect(fieldVisibility = Visibility.ANY, getterVisibility = Visibility.NONE, isGetterVisibility = Visibility.NONE, setterVisibility = Visibility.NONE)
-@Data
+@Value
+@Builder
+@Jacksonized
 public class JSONDocumentChangeLog
 {
 	JSONDocumentPath path;

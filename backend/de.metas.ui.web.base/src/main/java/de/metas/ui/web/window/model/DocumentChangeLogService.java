@@ -1,22 +1,16 @@
 package de.metas.ui.web.window.model;
 
-import java.text.SimpleDateFormat;
-import java.time.ZonedDateTime;
-
-import org.adempiere.ad.table.RecordChangeLog;
-import org.adempiere.ad.table.RecordChangeLogRepository;
-import org.adempiere.util.lang.impl.TableRecordReference;
-import org.compiere.util.DisplayType;
-import org.compiere.util.TimeUtil;
-import org.slf4j.Logger;
-import org.springframework.stereotype.Service;
-
-import de.metas.i18n.Language;
-import de.metas.logging.LogManager;
+import de.metas.ui.web.window.datatypes.DocumentPath;
 import de.metas.ui.web.window.datatypes.json.JSONDocumentChangeLog;
+import de.metas.ui.web.window.datatypes.json.JSONDocumentPath;
 import de.metas.user.api.IUserDAO;
 import de.metas.util.Services;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import org.adempiere.ad.table.RecordChangeLog;
+import org.adempiere.ad.table.RecordChangeLogRepository;
+import org.adempiere.util.lang.impl.TableRecordReference;
+import org.springframework.stereotype.Service;
 
 /*
  * #%L
@@ -41,56 +35,24 @@ import lombok.NonNull;
  */
 
 @Service
+@RequiredArgsConstructor
 public class DocumentChangeLogService
 {
-	private static final Logger logger = LogManager.getLogger(DocumentChangeLogService.class);
+	@NonNull private final IUserDAO usersRepo = Services.get(IUserDAO.class);
+	@NonNull private final DocumentCollection documentCollection;
+	@NonNull private final RecordChangeLogRepository changeLogRepository;
 
-	private final IUserDAO usersRepo = Services.get(IUserDAO.class);
-	private final RecordChangeLogRepository changeLogRepository;
-
-	public DocumentChangeLogService(final RecordChangeLogRepository changeLogRepository)
+	public JSONDocumentChangeLog getJSONDocumentChangeLog(@NonNull final DocumentPath documentPath)
 	{
-		this.changeLogRepository = changeLogRepository;
-	}
-
-	public JSONDocumentChangeLog getJSONDocumentChangeLog(@NonNull final TableRecordReference recordRef, final String adLanguage)
-	{
+		final TableRecordReference recordRef = documentCollection.getTableRecordReference(documentPath);
 		final RecordChangeLog changeLog = changeLogRepository.getSummaryByRecord(recordRef);
-		return toJson(changeLog, adLanguage);
-	}
-
-	private JSONDocumentChangeLog toJson(RecordChangeLog changeLog, final String adLanguage)
-	{
-		final JSONDocumentChangeLog json = new JSONDocumentChangeLog();
-		json.setCreatedByUsername(usersRepo.retrieveUserFullName(changeLog.getCreatedByUserId()));
-		json.setLastChangedByUsername(usersRepo.retrieveUserFullName(changeLog.getLastChangedByUserId()));
-
-		final ZonedDateTime created = TimeUtil.asZonedDateTime(changeLog.getCreatedTimestamp());
-		json.setCreatedTimestamp(formatTimestamp(created, adLanguage));
-
-		final ZonedDateTime updated = TimeUtil.asZonedDateTime(changeLog.getLastChangedTimestamp());
-		json.setLastChangedTimestamp(formatTimestamp(updated, adLanguage));
-
-		return json;
-	}
-
-	private String formatTimestamp(final ZonedDateTime timestamp, final String adLanguage)
-	{
-		if (timestamp == null)
-		{
-			return null;
-		}
-
-		try
-		{
-			final Language language = Language.getLanguage(adLanguage);
-			final SimpleDateFormat dateFormat = DisplayType.getDateFormat(DisplayType.DateTime, language);
-			return dateFormat.format(TimeUtil.asDate(timestamp));
-		}
-		catch (Exception ex)
-		{
-			logger.warn("Failed formating {}. Returning it a string.", timestamp, ex);
-			return timestamp.toString();
-		}
+		
+		return JSONDocumentChangeLog.builder()
+				.path(JSONDocumentPath.ofWindowDocumentPath(documentPath))
+				.createdByUsername(usersRepo.retrieveUserFullName(changeLog.getCreatedByUserId()))
+				.createdTimestamp(changeLog.getCreatedTimestamp().toString())
+				.lastChangedByUsername(usersRepo.retrieveUserFullName(changeLog.getLastChangedByUserId()))
+				.lastChangedTimestamp(changeLog.getLastChangedTimestamp().toString())
+				.build();
 	}
 }

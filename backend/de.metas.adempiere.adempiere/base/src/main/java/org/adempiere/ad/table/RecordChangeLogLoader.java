@@ -82,21 +82,13 @@ final class RecordChangeLogLoader
 
 	private void loadRecordSummary(final RecordChangeLogBuilder changeLogsBuilder, final ComposedRecordId recordId)
 	{
-		final String sql = new StringBuilder()
-				.append("SELECT Created, CreatedBy, Updated, UpdatedBy FROM ").append(poInfo.getTableName())
-				.append(" WHERE ").append(poInfo.getSqlWhereClauseByKeys())
-				.toString();
-
-		final List<Object> sqlParams = recordId.getKeysAsList(poInfo.getKeyColumnNames());
-
-		DB.retrieveFirstRowOrNull(sql, sqlParams, rs -> {
-			changeLogsBuilder
-					.createdByUserId(UserId.ofRepoIdOrNull(rs.getInt("CreatedBy")))
-					.createdTimestamp(TimeUtil.asInstant(rs.getTimestamp("Created")))
-					.lastChangedByUserId(UserId.ofRepoIdOrNull(rs.getInt("UpdatedBy")))
-					.lastChangedTimestamp(TimeUtil.asInstant(rs.getTimestamp("Updated")));
-			return null;
-		});
+		DB.forFirstRowIfAny(
+				"SELECT Created, CreatedBy, Updated, UpdatedBy FROM " + poInfo.getTableName() + " WHERE " + poInfo.getSqlWhereClauseByKeys(),
+				recordId.getKeysAsList(poInfo.getKeyColumnNames()),
+				rs -> changeLogsBuilder.createdByUserId(UserId.ofRepoIdOrNull(rs.getInt("CreatedBy")))
+						.createdTimestamp(rs.getTimestamp("Created").toInstant())
+						.lastChangedByUserId(UserId.ofRepoIdOrNull(rs.getInt("UpdatedBy")))
+						.lastChangedTimestamp(rs.getTimestamp("Updated").toInstant()));
 	}
 
 	private List<RecordChangeLogEntry> retrieveLogEntries(@NonNull final ComposedRecordId recordId)
@@ -111,7 +103,7 @@ final class RecordChangeLogLoader
 		final TableRecordReference recordRef = TableRecordReference.of(poInfo.getAD_Table_ID(), singleRecordId);
 
 		final ImmutableListMultimap<TableRecordReference, RecordChangeLogEntry> //
-		logEntries = RecordChangeLogEntryLoader.retrieveLogEntries(LogEntriesQuery.of(recordRef));
+				logEntries = RecordChangeLogEntryLoader.retrieveLogEntries(LogEntriesQuery.of(recordRef));
 
 		return (logEntries.get(recordRef));
 	}

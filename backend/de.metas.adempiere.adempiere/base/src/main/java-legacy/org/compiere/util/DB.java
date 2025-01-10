@@ -952,12 +952,34 @@ public class DB
 		return executeUpdate(sql, params, onFail, trxName, timeOut, updateReturnProcessor);
 	}    // executeUpdateEx
 
+<<<<<<< HEAD
 	/**
 	 * Execute Update and throw exception.
 	 *
 	 * @see {@link #executeUpdateEx(String, Object[], String)}
 	 */
 	public int executeUpdateEx(final String sql, final String trxName, final int timeOut) throws DBException
+=======
+		final ExecuteUpdateRequest executeUpdateRequest = ExecuteUpdateRequest.builder()
+				.sql(sql)
+				.onFail(onFail)
+				.trxName(trxName)
+				.timeOut(timeOut)
+
+				.build();
+
+		final SQLUpdateResult result = executeUpdate(executeUpdateRequest);
+
+		return result.getReturnedValue();
+
+	}
+
+	public int executeUpdateAndThrowExceptionOnFail(final String sql,
+													final Object[] params,
+													final String trxName,
+													final int timeOut,
+													final ISqlUpdateReturnProcessor updateReturnProcessor)
+>>>>>>> bceb13a01f1 (webui Record Change Log - display timestamps using frontend locale/timezone (#17848))
 	{
 		final Object[] params = null;
 		final OnFail onFail = OnFail.ThrowException;
@@ -2703,7 +2725,21 @@ public class DB
 	}
 
 	@NonNull
+<<<<<<< HEAD
 	private static <T> ImmutableList<T> retrieveRows(
+=======
+	public static <T> ImmutableList<T> retrieveRows(
+			@NonNull final CharSequence sql,
+			@Nullable final Object[] sqlParams,
+			@NonNull final ResultSetRowLoader<T> loader)
+	{
+		final List<Object> sqlParamsList = sqlParams != null && sqlParams.length > 0 ? Arrays.asList(sqlParams) : null;
+		return retrieveRows(sql, sqlParamsList, loader);
+	}
+
+	@NonNull
+	public static <T> ImmutableSet<T> retrieveUniqueRows(
+>>>>>>> bceb13a01f1 (webui Record Change Log - display timestamps using frontend locale/timezone (#17848))
 			@NonNull final CharSequence sql,
 			@Nullable final List<Object> sqlParams,
 			@Nullable final String trxName,
@@ -2737,6 +2773,17 @@ public class DB
 		{
 			close(rs, pstmt);
 		}
+	}
+
+	public void forFirstRowIfAny(
+			@NonNull final String sql,
+			@Nullable final List<Object> sqlParams,
+			@NonNull final ResultSetConsumer consumer)
+	{
+		retrieveFirstRowOrNull(sql, sqlParams, (rs) -> {
+			consumer.accept(rs);
+			return null;
+		});
 	}
 
 	public <T> T retrieveFirstRowOrNull(
