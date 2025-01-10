@@ -67,7 +67,7 @@ import static org.adempiere.model.InterfaceWrapperHelper.loadOutOfTrx;
 
 public class TaxDAO implements ITaxDAO
 {
-	private final static transient Logger logger = LogManager.getLogger(TaxDAO.class);
+	private final static Logger logger = LogManager.getLogger(TaxDAO.class);
 
 	private final IQueryBL queryBL = Services.get(IQueryBL.class);
 	private final IOrgDAO orgDAO = Services.get(IOrgDAO.class);
@@ -136,28 +136,22 @@ public class TaxDAO implements ITaxDAO
 	}
 
 	@Override
-	public TaxId getDefaultTaxId(final I_C_TaxCategory taxCategory)
+	public Tax getDefaultTax(@NonNull final TaxCategoryId taxCategoryId)
 	{
-		final Properties ctx = InterfaceWrapperHelper.getCtx(taxCategory);
-		final String trxName = InterfaceWrapperHelper.getTrxName(taxCategory);
-		final I_C_Tax tax;
-
-		final List<I_C_Tax> list = queryBL.createQueryBuilder(I_C_Tax.class, ctx, trxName)
-				.addEqualsFilter(I_C_Tax.COLUMNNAME_C_TaxCategory_ID, taxCategory.getC_TaxCategory_ID())
+		final List<I_C_Tax> list = queryBL.createQueryBuilderOutOfTrx(I_C_Tax.class)
+				.addEqualsFilter(I_C_Tax.COLUMNNAME_C_TaxCategory_ID, taxCategoryId)
 				.addEqualsFilter(I_C_Tax.COLUMNNAME_IsDefault, true)
 				.create()
 				.list();
 		if (list.size() == 1)
 		{
-			tax = list.get(0);
+			return TaxUtils.from(list.get(0));
 		}
 		else
 		{
 			// Error - should only be one default
 			throw new AdempiereException("TooManyDefaults");
 		}
-
-		return TaxId.ofRepoId(tax.getC_Tax_ID());
 	}
 
 	@Override
@@ -439,9 +433,9 @@ public class TaxDAO implements ITaxDAO
 		{
 			final String countryCode = countryDAO.retrieveCountryCode2ByCountryId(toCountryId);
 			final boolean isEULocation = countryAreaBL.isMemberOf(Env.getCtx(),
-																  ICountryAreaBL.COUNTRYAREAKEY_EU,
-																  countryCode,
-																  Env.getDate());
+					ICountryAreaBL.COUNTRYAREAKEY_EU,
+					countryCode,
+					Env.getDate());
 			typeOfDestCountry = isEULocation ? WITHIN_COUNTRY_AREA : OUTSIDE_COUNTRY_AREA;
 		}
 		return typeOfDestCountry;

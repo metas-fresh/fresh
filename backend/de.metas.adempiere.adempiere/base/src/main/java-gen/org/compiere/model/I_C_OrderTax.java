@@ -99,28 +99,6 @@ public interface I_C_OrderTax
 	String COLUMNNAME_C_OrderTax_ID = "C_OrderTax_ID";
 
 	/**
-	 * Set Tax.
-	 * Tax identifier
-	 *
-	 * <br>Type: TableDir
-	 * <br>Mandatory: true
-	 * <br>Virtual Column: false
-	 */
-	void setC_Tax_ID (int C_Tax_ID);
-
-	/**
-	 * Get Tax.
-	 * Tax identifier
-	 *
-	 * <br>Type: TableDir
-	 * <br>Mandatory: true
-	 * <br>Virtual Column: false
-	 */
-	int getC_Tax_ID();
-
-	String COLUMNNAME_C_Tax_ID = "C_Tax_ID";
-
-	/**
 	 * Get Created.
 	 * Date this record was created
 	 *
@@ -146,6 +124,28 @@ public interface I_C_OrderTax
 	String COLUMNNAME_CreatedBy = "CreatedBy";
 
 	/**
+	 * Set Tax.
+	 * Tax identifier
+	 *
+	 * <br>Type: TableDir
+	 * <br>Mandatory: true
+	 * <br>Virtual Column: false
+	 */
+	void setC_Tax_ID (int C_Tax_ID);
+
+	/**
+	 * Get Tax.
+	 * Tax identifier
+	 *
+	 * <br>Type: TableDir
+	 * <br>Mandatory: true
+	 * <br>Virtual Column: false
+	 */
+	int getC_Tax_ID();
+
+	String COLUMNNAME_C_Tax_ID = "C_Tax_ID";
+
+	/**
 	 * Set Active.
 	 * The record is active in the system
 	 *
@@ -169,6 +169,29 @@ public interface I_C_OrderTax
 	String COLUMNNAME_IsActive = "IsActive";
 
 	/**
+	 * Set Document Level.
+	 * Tax is calculated on document level (rather than line by line)
+	 *
+	 * <br>Type: YesNo
+	 * <br>Mandatory: true
+	 * <br>Virtual Column: false
+	 */
+	void setIsDocumentLevel (boolean IsDocumentLevel);
+
+	/**
+	 * Get Document Level.
+	 * Tax is calculated on document level (rather than line by line)
+	 *
+	 * <br>Type: YesNo
+	 * <br>Mandatory: true
+	 * <br>Virtual Column: false
+	 */
+	boolean isDocumentLevel();
+
+	ModelColumn<I_C_OrderTax, Object> COLUMN_IsDocumentLevel = new ModelColumn<>(I_C_OrderTax.class, "IsDocumentLevel", null);
+	String COLUMNNAME_IsDocumentLevel = "IsDocumentLevel";
+
+	/**
 	 * Set Packaging Tax.
 	 *
 	 * <br>Type: YesNo
@@ -190,7 +213,7 @@ public interface I_C_OrderTax
 	String COLUMNNAME_IsPackagingTax = "IsPackagingTax";
 
 	/**
-	 * Set Preis inklusive Steuern.
+	 * Set Price incl. Tax.
 	 * Tax is included in the price
 	 *
 	 * <br>Type: YesNo
@@ -200,7 +223,7 @@ public interface I_C_OrderTax
 	void setIsTaxIncluded (boolean IsTaxIncluded);
 
 	/**
-	 * Get Preis inklusive Steuern.
+	 * Get Price incl. Tax.
 	 * Tax is included in the price
 	 *
 	 * <br>Type: YesNo
@@ -214,7 +237,7 @@ public interface I_C_OrderTax
 
 	/**
 	 * Set Whole Tax.
-	 * If this flag is set, in a tax aware document (e.g. Invoice, Order) this tax will absorb the whole amount, leaving 0 for base amount
+	 * If the flag is set, this tax can be used in documents where an entire line amount is a tax amount. Used, e.g., when a tax charge needs to be paid to a customs office.
 	 *
 	 * <br>Type: YesNo
 	 * <br>Mandatory: true
@@ -224,7 +247,7 @@ public interface I_C_OrderTax
 
 	/**
 	 * Get Whole Tax.
-	 * If this flag is set, in a tax aware document (e.g. Invoice, Order) this tax will absorb the whole amount, leaving 0 for base amount
+	 * If the flag is set, this tax can be used in documents where an entire line amount is a tax amount. Used, e.g., when a tax charge needs to be paid to a customs office.
 	 *
 	 * <br>Type: YesNo
 	 * <br>Mandatory: true
@@ -257,8 +280,8 @@ public interface I_C_OrderTax
 	String COLUMNNAME_Processed = "Processed";
 
 	/**
-	 * Set Steuerbetrag.
-	 * Tax Amount for a document
+	 * Set Tax Amount.
+	 * Tax Amount for Credit Card transaction
 	 *
 	 * <br>Type: Amount
 	 * <br>Mandatory: true
@@ -267,8 +290,8 @@ public interface I_C_OrderTax
 	void setTaxAmt (BigDecimal TaxAmt);
 
 	/**
-	 * Get Steuerbetrag.
-	 * Tax Amount for a document
+	 * Get Tax Amount.
+	 * Tax Amount for Credit Card transaction
 	 *
 	 * <br>Type: Amount
 	 * <br>Mandatory: true
@@ -280,7 +303,7 @@ public interface I_C_OrderTax
 	String COLUMNNAME_TaxAmt = "TaxAmt";
 
 	/**
-	 * Set Bezugswert.
+	 * Set Tax base Amount.
 	 * Base for calculating the tax amount
 	 *
 	 * <br>Type: Amount
@@ -290,7 +313,7 @@ public interface I_C_OrderTax
 	void setTaxBaseAmt (BigDecimal TaxBaseAmt);
 
 	/**
-	 * Get Bezugswert.
+	 * Get Tax base Amount.
 	 * Base for calculating the tax amount
 	 *
 	 * <br>Type: Amount

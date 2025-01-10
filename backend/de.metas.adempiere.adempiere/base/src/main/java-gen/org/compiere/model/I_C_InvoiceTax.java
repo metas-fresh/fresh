@@ -1,101 +1,81 @@
 package org.compiere.model;
 
+import java.math.BigDecimal;
+import org.adempiere.model.ModelColumn;
 
 /** Generated Interface for C_InvoiceTax
- *  @author Adempiere (generated) 
+ *  @author metasfresh (generated) 
  */
-@SuppressWarnings("javadoc")
+@SuppressWarnings("unused")
 public interface I_C_InvoiceTax 
 {
 
-    /** TableName=C_InvoiceTax */
-    public static final String Table_Name = "C_InvoiceTax";
+	String Table_Name = "C_InvoiceTax";
 
-    /** AD_Table_ID=334 */
-//    public static final int Table_ID = org.compiere.model.MTable.getTable_ID(Table_Name);
+//	/** AD_Table_ID=334 */
+//	int Table_ID = org.compiere.model.MTable.getTable_ID(Table_Name);
 
-//    org.compiere.util.KeyNamePair Model = new org.compiere.util.KeyNamePair(Table_ID, Table_Name);
-
-    /** AccessLevel = 1 - Org
-     */
-//    java.math.BigDecimal accessLevel = java.math.BigDecimal.valueOf(1);
-
-    /** Load Meta Data */
 
 	/**
-	 * Get Mandant.
+	 * Get Client.
 	 * Client/Tenant for this installation.
 	 *
 	 * <br>Type: TableDir
 	 * <br>Mandatory: true
 	 * <br>Virtual Column: false
 	 */
-	public int getAD_Client_ID();
+	int getAD_Client_ID();
 
-	public org.compiere.model.I_AD_Client getAD_Client();
-
-    /** Column definition for AD_Client_ID */
-    public static final org.adempiere.model.ModelColumn<I_C_InvoiceTax, org.compiere.model.I_AD_Client> COLUMN_AD_Client_ID = new org.adempiere.model.ModelColumn<I_C_InvoiceTax, org.compiere.model.I_AD_Client>(I_C_InvoiceTax.class, "AD_Client_ID", org.compiere.model.I_AD_Client.class);
-    /** Column name AD_Client_ID */
-    public static final String COLUMNNAME_AD_Client_ID = "AD_Client_ID";
+	String COLUMNNAME_AD_Client_ID = "AD_Client_ID";
 
 	/**
-	 * Set Sektion.
-	 * Organisatorische Einheit des Mandanten
+	 * Set Organisation.
+	 * Organisational entity within client
 	 *
-	 * <br>Type: TableDir
+	 * <br>Type: Search
 	 * <br>Mandatory: true
 	 * <br>Virtual Column: false
 	 */
-	public void setAD_Org_ID (int AD_Org_ID);
+	void setAD_Org_ID (int AD_Org_ID);
 
 	/**
-	 * Get Sektion.
-	 * Organisatorische Einheit des Mandanten
+	 * Get Organisation.
+	 * Organisational entity within client
 	 *
-	 * <br>Type: TableDir
+	 * <br>Type: Search
 	 * <br>Mandatory: true
 	 * <br>Virtual Column: false
 	 */
-	public int getAD_Org_ID();
+	int getAD_Org_ID();
 
-	public org.compiere.model.I_AD_Org getAD_Org();
-
-	public void setAD_Org(org.compiere.model.I_AD_Org AD_Org);
-
-    /** Column definition for AD_Org_ID */
-    public static final org.adempiere.model.ModelColumn<I_C_InvoiceTax, org.compiere.model.I_AD_Org> COLUMN_AD_Org_ID = new org.adempiere.model.ModelColumn<I_C_InvoiceTax, org.compiere.model.I_AD_Org>(I_C_InvoiceTax.class, "AD_Org_ID", org.compiere.model.I_AD_Org.class);
-    /** Column name AD_Org_ID */
-    public static final String COLUMNNAME_AD_Org_ID = "AD_Org_ID";
+	String COLUMNNAME_AD_Org_ID = "AD_Org_ID";
 
 	/**
-	 * Set Rechnung.
+	 * Set Invoice.
 	 * Invoice Identifier
 	 *
 	 * <br>Type: Search
 	 * <br>Mandatory: true
 	 * <br>Virtual Column: false
 	 */
-	public void setC_Invoice_ID (int C_Invoice_ID);
+	void setC_Invoice_ID (int C_Invoice_ID);
 
 	/**
-	 * Get Rechnung.
+	 * Get Invoice.
 	 * Invoice Identifier
 	 *
 	 * <br>Type: Search
 	 * <br>Mandatory: true
 	 * <br>Virtual Column: false
 	 */
-	public int getC_Invoice_ID();
+	int getC_Invoice_ID();
 
-	public org.compiere.model.I_C_Invoice getC_Invoice();
+	org.compiere.model.I_C_Invoice getC_Invoice();
 
-	public void setC_Invoice(org.compiere.model.I_C_Invoice C_Invoice);
+	void setC_Invoice(org.compiere.model.I_C_Invoice C_Invoice);
 
-    /** Column definition for C_Invoice_ID */
-    public static final org.adempiere.model.ModelColumn<I_C_InvoiceTax, org.compiere.model.I_C_Invoice> COLUMN_C_Invoice_ID = new org.adempiere.model.ModelColumn<I_C_InvoiceTax, org.compiere.model.I_C_Invoice>(I_C_InvoiceTax.class, "C_Invoice_ID", org.compiere.model.I_C_Invoice.class);
-    /** Column name C_Invoice_ID */
-    public static final String COLUMNNAME_C_Invoice_ID = "C_Invoice_ID";
+	ModelColumn<I_C_InvoiceTax, org.compiere.model.I_C_Invoice> COLUMN_C_Invoice_ID = new ModelColumn<>(I_C_InvoiceTax.class, "C_Invoice_ID", org.compiere.model.I_C_Invoice.class);
+	String COLUMNNAME_C_Invoice_ID = "C_Invoice_ID";
 
 	/**
 	 * Set C_InvoiceTax.
@@ -104,7 +84,7 @@ public interface I_C_InvoiceTax
 	 * <br>Mandatory: true
 	 * <br>Virtual Column: false
 	 */
-	public void setC_InvoiceTax_ID (int C_InvoiceTax_ID);
+	void setC_InvoiceTax_ID (int C_InvoiceTax_ID);
 
 	/**
 	 * Get C_InvoiceTax.
@@ -113,96 +93,103 @@ public interface I_C_InvoiceTax
 	 * <br>Mandatory: true
 	 * <br>Virtual Column: false
 	 */
-	public int getC_InvoiceTax_ID();
+	int getC_InvoiceTax_ID();
 
-    /** Column definition for C_InvoiceTax_ID */
-    public static final org.adempiere.model.ModelColumn<I_C_InvoiceTax, Object> COLUMN_C_InvoiceTax_ID = new org.adempiere.model.ModelColumn<I_C_InvoiceTax, Object>(I_C_InvoiceTax.class, "C_InvoiceTax_ID", null);
-    /** Column name C_InvoiceTax_ID */
-    public static final String COLUMNNAME_C_InvoiceTax_ID = "C_InvoiceTax_ID";
+	ModelColumn<I_C_InvoiceTax, Object> COLUMN_C_InvoiceTax_ID = new ModelColumn<>(I_C_InvoiceTax.class, "C_InvoiceTax_ID", null);
+	String COLUMNNAME_C_InvoiceTax_ID = "C_InvoiceTax_ID";
 
 	/**
-	 * Set Steuer.
-	 * Tax identifier
-	 *
-	 * <br>Type: TableDir
-	 * <br>Mandatory: true
-	 * <br>Virtual Column: false
-	 */
-	public void setC_Tax_ID (int C_Tax_ID);
-
-	/**
-	 * Get Steuer.
-	 * Tax identifier
-	 *
-	 * <br>Type: TableDir
-	 * <br>Mandatory: true
-	 * <br>Virtual Column: false
-	 */
-	public int getC_Tax_ID();
-
-	public org.compiere.model.I_C_Tax getC_Tax();
-
-	public void setC_Tax(org.compiere.model.I_C_Tax C_Tax);
-
-    /** Column definition for C_Tax_ID */
-    public static final org.adempiere.model.ModelColumn<I_C_InvoiceTax, org.compiere.model.I_C_Tax> COLUMN_C_Tax_ID = new org.adempiere.model.ModelColumn<I_C_InvoiceTax, org.compiere.model.I_C_Tax>(I_C_InvoiceTax.class, "C_Tax_ID", org.compiere.model.I_C_Tax.class);
-    /** Column name C_Tax_ID */
-    public static final String COLUMNNAME_C_Tax_ID = "C_Tax_ID";
-
-	/**
-	 * Get Erstellt.
+	 * Get Created.
 	 * Date this record was created
 	 *
 	 * <br>Type: DateTime
 	 * <br>Mandatory: true
 	 * <br>Virtual Column: false
 	 */
-	public java.sql.Timestamp getCreated();
+	java.sql.Timestamp getCreated();
 
-    /** Column definition for Created */
-    public static final org.adempiere.model.ModelColumn<I_C_InvoiceTax, Object> COLUMN_Created = new org.adempiere.model.ModelColumn<I_C_InvoiceTax, Object>(I_C_InvoiceTax.class, "Created", null);
-    /** Column name Created */
-    public static final String COLUMNNAME_Created = "Created";
+	ModelColumn<I_C_InvoiceTax, Object> COLUMN_Created = new ModelColumn<>(I_C_InvoiceTax.class, "Created", null);
+	String COLUMNNAME_Created = "Created";
 
 	/**
-	 * Get Erstellt durch.
+	 * Get Created By.
 	 * User who created this records
 	 *
 	 * <br>Type: Table
 	 * <br>Mandatory: true
 	 * <br>Virtual Column: false
 	 */
-	public int getCreatedBy();
+	int getCreatedBy();
 
-    /** Column definition for CreatedBy */
-    public static final org.adempiere.model.ModelColumn<I_C_InvoiceTax, org.compiere.model.I_AD_User> COLUMN_CreatedBy = new org.adempiere.model.ModelColumn<I_C_InvoiceTax, org.compiere.model.I_AD_User>(I_C_InvoiceTax.class, "CreatedBy", org.compiere.model.I_AD_User.class);
-    /** Column name CreatedBy */
-    public static final String COLUMNNAME_CreatedBy = "CreatedBy";
+	String COLUMNNAME_CreatedBy = "CreatedBy";
 
 	/**
-	 * Set Aktiv.
+	 * Set Tax.
+	 * Tax identifier
+	 *
+	 * <br>Type: TableDir
+	 * <br>Mandatory: true
+	 * <br>Virtual Column: false
+	 */
+	void setC_Tax_ID (int C_Tax_ID);
+
+	/**
+	 * Get Tax.
+	 * Tax identifier
+	 *
+	 * <br>Type: TableDir
+	 * <br>Mandatory: true
+	 * <br>Virtual Column: false
+	 */
+	int getC_Tax_ID();
+
+	String COLUMNNAME_C_Tax_ID = "C_Tax_ID";
+
+	/**
+	 * Set Active.
 	 * The record is active in the system
 	 *
 	 * <br>Type: YesNo
 	 * <br>Mandatory: true
 	 * <br>Virtual Column: false
 	 */
-	public void setIsActive (boolean IsActive);
+	void setIsActive (boolean IsActive);
 
 	/**
-	 * Get Aktiv.
+	 * Get Active.
 	 * The record is active in the system
 	 *
 	 * <br>Type: YesNo
 	 * <br>Mandatory: true
 	 * <br>Virtual Column: false
 	 */
-	public boolean isActive();
+	boolean isActive();
 
-    /** Column definition for IsActive */
-    public static final org.adempiere.model.ModelColumn<I_C_InvoiceTax, Object> COLUMN_IsActive = new org.adempiere.model.ModelColumn<I_C_InvoiceTax, Object>(I_C_InvoiceTax.class, "IsActive", null);
-    /** Column name IsActive */
-    public static final String COLUMNNAME_IsActive = "IsActive";
+	ModelColumn<I_C_InvoiceTax, Object> COLUMN_IsActive = new ModelColumn<>(I_C_InvoiceTax.class, "IsActive", null);
+	String COLUMNNAME_IsActive = "IsActive";
+
+	/**
+	 * Set Document Level.
+	 * Tax is calculated on document level (rather than line by line)
+	 *
+	 * <br>Type: YesNo
+	 * <br>Mandatory: true
+	 * <br>Virtual Column: false
+	 */
+	void setIsDocumentLevel (boolean IsDocumentLevel);
+
+	/**
+	 * Get Document Level.
+	 * Tax is calculated on document level (rather than line by line)
+	 *
+	 * <br>Type: YesNo
+	 * <br>Mandatory: true
+	 * <br>Virtual Column: false
+	 */
+	boolean isDocumentLevel();
+
+	ModelColumn<I_C_InvoiceTax, Object> COLUMN_IsDocumentLevel = new ModelColumn<>(I_C_InvoiceTax.class, "IsDocumentLevel", null);
+	String COLUMNNAME_IsDocumentLevel = "IsDocumentLevel";
 
 	/**
 	 * Set Packaging Tax.
@@ -211,7 +198,7 @@ public interface I_C_InvoiceTax
 	 * <br>Mandatory: true
 	 * <br>Virtual Column: false
 	 */
-	public void setIsPackagingTax (boolean IsPackagingTax);
+	void setIsPackagingTax (boolean IsPackagingTax);
 
 	/**
 	 * Get Packaging Tax.
@@ -220,165 +207,146 @@ public interface I_C_InvoiceTax
 	 * <br>Mandatory: true
 	 * <br>Virtual Column: false
 	 */
-	public boolean isPackagingTax();
+	boolean isPackagingTax();
 
-    /** Column definition for IsPackagingTax */
-    public static final org.adempiere.model.ModelColumn<I_C_InvoiceTax, Object> COLUMN_IsPackagingTax = new org.adempiere.model.ModelColumn<I_C_InvoiceTax, Object>(I_C_InvoiceTax.class, "IsPackagingTax", null);
-    /** Column name IsPackagingTax */
-    public static final String COLUMNNAME_IsPackagingTax = "IsPackagingTax";
+	ModelColumn<I_C_InvoiceTax, Object> COLUMN_IsPackagingTax = new ModelColumn<>(I_C_InvoiceTax.class, "IsPackagingTax", null);
+	String COLUMNNAME_IsPackagingTax = "IsPackagingTax";
 
 	/**
-	 * Set Preis inklusive Steuern.
+	 * Set Price incl. Tax.
 	 * Tax is included in the price
 	 *
 	 * <br>Type: YesNo
 	 * <br>Mandatory: true
 	 * <br>Virtual Column: false
 	 */
-	public void setIsTaxIncluded (boolean IsTaxIncluded);
+	void setIsTaxIncluded (boolean IsTaxIncluded);
 
 	/**
-	 * Get Preis inklusive Steuern.
+	 * Get Price incl. Tax.
 	 * Tax is included in the price
 	 *
 	 * <br>Type: YesNo
 	 * <br>Mandatory: true
 	 * <br>Virtual Column: false
 	 */
-	public boolean isTaxIncluded();
+	boolean isTaxIncluded();
 
-    /** Column definition for IsTaxIncluded */
-    public static final org.adempiere.model.ModelColumn<I_C_InvoiceTax, Object> COLUMN_IsTaxIncluded = new org.adempiere.model.ModelColumn<I_C_InvoiceTax, Object>(I_C_InvoiceTax.class, "IsTaxIncluded", null);
-    /** Column name IsTaxIncluded */
-    public static final String COLUMNNAME_IsTaxIncluded = "IsTaxIncluded";
+	ModelColumn<I_C_InvoiceTax, Object> COLUMN_IsTaxIncluded = new ModelColumn<>(I_C_InvoiceTax.class, "IsTaxIncluded", null);
+	String COLUMNNAME_IsTaxIncluded = "IsTaxIncluded";
 
 	/**
 	 * Set Whole Tax.
-	 * If this flag is set, in a tax aware document (e.g. Invoice, Order) this tax will absorb the whole amount, leaving 0 for base amount
+	 * If the flag is set, this tax can be used in documents where an entire line amount is a tax amount. Used, e.g., when a tax charge needs to be paid to a customs office.
 	 *
 	 * <br>Type: YesNo
 	 * <br>Mandatory: true
 	 * <br>Virtual Column: false
 	 */
-	public void setIsWholeTax (boolean IsWholeTax);
+	void setIsWholeTax (boolean IsWholeTax);
 
 	/**
 	 * Get Whole Tax.
-	 * If this flag is set, in a tax aware document (e.g. Invoice, Order) this tax will absorb the whole amount, leaving 0 for base amount
+	 * If the flag is set, this tax can be used in documents where an entire line amount is a tax amount. Used, e.g., when a tax charge needs to be paid to a customs office.
 	 *
 	 * <br>Type: YesNo
 	 * <br>Mandatory: true
 	 * <br>Virtual Column: false
 	 */
-	public boolean isWholeTax();
+	boolean isWholeTax();
 
-    /** Column definition for IsWholeTax */
-    public static final org.adempiere.model.ModelColumn<I_C_InvoiceTax, Object> COLUMN_IsWholeTax = new org.adempiere.model.ModelColumn<I_C_InvoiceTax, Object>(I_C_InvoiceTax.class, "IsWholeTax", null);
-    /** Column name IsWholeTax */
-    public static final String COLUMNNAME_IsWholeTax = "IsWholeTax";
+	ModelColumn<I_C_InvoiceTax, Object> COLUMN_IsWholeTax = new ModelColumn<>(I_C_InvoiceTax.class, "IsWholeTax", null);
+	String COLUMNNAME_IsWholeTax = "IsWholeTax";
 
 	/**
-	 * Set Verarbeitet.
-	 * Checkbox sagt aus, ob der Beleg verarbeitet wurde.
+	 * Set Processed.
 	 *
 	 * <br>Type: YesNo
 	 * <br>Mandatory: true
 	 * <br>Virtual Column: false
 	 */
-	public void setProcessed (boolean Processed);
+	void setProcessed (boolean Processed);
 
 	/**
-	 * Get Verarbeitet.
-	 * Checkbox sagt aus, ob der Beleg verarbeitet wurde.
+	 * Get Processed.
 	 *
 	 * <br>Type: YesNo
 	 * <br>Mandatory: true
 	 * <br>Virtual Column: false
 	 */
-	public boolean isProcessed();
+	boolean isProcessed();
 
-    /** Column definition for Processed */
-    public static final org.adempiere.model.ModelColumn<I_C_InvoiceTax, Object> COLUMN_Processed = new org.adempiere.model.ModelColumn<I_C_InvoiceTax, Object>(I_C_InvoiceTax.class, "Processed", null);
-    /** Column name Processed */
-    public static final String COLUMNNAME_Processed = "Processed";
+	ModelColumn<I_C_InvoiceTax, Object> COLUMN_Processed = new ModelColumn<>(I_C_InvoiceTax.class, "Processed", null);
+	String COLUMNNAME_Processed = "Processed";
 
 	/**
-	 * Set Steuerbetrag.
-	 * Tax Amount for a document
+	 * Set Tax Amount.
+	 * Tax Amount for Credit Card transaction
 	 *
 	 * <br>Type: Amount
 	 * <br>Mandatory: true
 	 * <br>Virtual Column: false
 	 */
-	public void setTaxAmt (java.math.BigDecimal TaxAmt);
+	void setTaxAmt (BigDecimal TaxAmt);
 
 	/**
-	 * Get Steuerbetrag.
-	 * Tax Amount for a document
+	 * Get Tax Amount.
+	 * Tax Amount for Credit Card transaction
 	 *
 	 * <br>Type: Amount
 	 * <br>Mandatory: true
 	 * <br>Virtual Column: false
 	 */
-	public java.math.BigDecimal getTaxAmt();
+	BigDecimal getTaxAmt();
 
-    /** Column definition for TaxAmt */
-    public static final org.adempiere.model.ModelColumn<I_C_InvoiceTax, Object> COLUMN_TaxAmt = new org.adempiere.model.ModelColumn<I_C_InvoiceTax, Object>(I_C_InvoiceTax.class, "TaxAmt", null);
-    /** Column name TaxAmt */
-    public static final String COLUMNNAME_TaxAmt = "TaxAmt";
+	ModelColumn<I_C_InvoiceTax, Object> COLUMN_TaxAmt = new ModelColumn<>(I_C_InvoiceTax.class, "TaxAmt", null);
+	String COLUMNNAME_TaxAmt = "TaxAmt";
 
 	/**
-	 * Set Bezugswert.
+	 * Set Tax base Amount.
 	 * Base for calculating the tax amount
 	 *
 	 * <br>Type: Amount
 	 * <br>Mandatory: true
 	 * <br>Virtual Column: false
 	 */
-	public void setTaxBaseAmt (java.math.BigDecimal TaxBaseAmt);
+	void setTaxBaseAmt (BigDecimal TaxBaseAmt);
 
 	/**
-	 * Get Bezugswert.
+	 * Get Tax base Amount.
 	 * Base for calculating the tax amount
 	 *
 	 * <br>Type: Amount
 	 * <br>Mandatory: true
 	 * <br>Virtual Column: false
 	 */
-	public java.math.BigDecimal getTaxBaseAmt();
+	BigDecimal getTaxBaseAmt();
 
-    /** Column definition for TaxBaseAmt */
-    public static final org.adempiere.model.ModelColumn<I_C_InvoiceTax, Object> COLUMN_TaxBaseAmt = new org.adempiere.model.ModelColumn<I_C_InvoiceTax, Object>(I_C_InvoiceTax.class, "TaxBaseAmt", null);
-    /** Column name TaxBaseAmt */
-    public static final String COLUMNNAME_TaxBaseAmt = "TaxBaseAmt";
+	ModelColumn<I_C_InvoiceTax, Object> COLUMN_TaxBaseAmt = new ModelColumn<>(I_C_InvoiceTax.class, "TaxBaseAmt", null);
+	String COLUMNNAME_TaxBaseAmt = "TaxBaseAmt";
 
 	/**
-	 * Get Aktualisiert.
+	 * Get Updated.
 	 * Date this record was updated
 	 *
 	 * <br>Type: DateTime
 	 * <br>Mandatory: true
 	 * <br>Virtual Column: false
 	 */
-	public java.sql.Timestamp getUpdated();
+	java.sql.Timestamp getUpdated();
 
-    /** Column definition for Updated */
-    public static final org.adempiere.model.ModelColumn<I_C_InvoiceTax, Object> COLUMN_Updated = new org.adempiere.model.ModelColumn<I_C_InvoiceTax, Object>(I_C_InvoiceTax.class, "Updated", null);
-    /** Column name Updated */
-    public static final String COLUMNNAME_Updated = "Updated";
+	ModelColumn<I_C_InvoiceTax, Object> COLUMN_Updated = new ModelColumn<>(I_C_InvoiceTax.class, "Updated", null);
+	String COLUMNNAME_Updated = "Updated";
 
 	/**
-	 * Get Aktualisiert durch.
+	 * Get Updated By.
 	 * User who updated this records
 	 *
 	 * <br>Type: Table
 	 * <br>Mandatory: true
 	 * <br>Virtual Column: false
 	 */
-	public int getUpdatedBy();
+	int getUpdatedBy();
 
-    /** Column definition for UpdatedBy */
-    public static final org.adempiere.model.ModelColumn<I_C_InvoiceTax, org.compiere.model.I_AD_User> COLUMN_UpdatedBy = new org.adempiere.model.ModelColumn<I_C_InvoiceTax, org.compiere.model.I_AD_User>(I_C_InvoiceTax.class, "UpdatedBy", org.compiere.model.I_AD_User.class);
-    /** Column name UpdatedBy */
-    public static final String COLUMNNAME_UpdatedBy = "UpdatedBy";
+	String COLUMNNAME_UpdatedBy = "UpdatedBy";
 }
