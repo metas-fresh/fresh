@@ -32,6 +32,7 @@ import de.metas.cucumber.stepdefs.StepDefConstants;
 import de.metas.cucumber.stepdefs.ValueAndName;
 import de.metas.cucumber.stepdefs.resource.S_Resource_StepDefData;
 import de.metas.product.ResourceId;
+import de.metas.util.Check;
 import de.metas.util.Services;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.And;
@@ -45,6 +46,13 @@ import org.compiere.model.I_C_BPartner_Location;
 import org.compiere.model.I_M_Warehouse;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import static de.metas.cucumber.stepdefs.StepDefConstants.TABLECOLUMN_IDENTIFIER;
+import static org.adempiere.model.InterfaceWrapperHelper.load;
+import static org.assertj.core.api.Assertions.*;
 import static org.compiere.model.I_M_Warehouse.COLUMNNAME_M_Warehouse_ID;
 import static org.compiere.model.I_M_Warehouse.COLUMNNAME_Value;
 
@@ -74,6 +82,14 @@ public class M_Warehouse_StepDef
 
 					row.getAsIdentifier().put(warehouseTable, warehouseRecord);
 				});
+			final String bpartnerLocationIdentifier = DataTableUtil.extractStringOrNullForColumnName(row, "OPT." + I_M_Warehouse.COLUMNNAME_C_BPartner_Location_ID + "." + TABLECOLUMN_IDENTIFIER);
+			if (Check.isNotBlank(bpartnerLocationIdentifier))
+			{
+				final I_C_BPartner_Location bPartnerLocation = load(warehouseRecord.getC_BPartner_Location_ID(), I_C_BPartner_Location.class);
+				assertThat(bPartnerLocation).isNotNull();
+				bPartnerLocationTable.putOrReplace(bpartnerLocationIdentifier, bPartnerLocation);
+			}
+		}
 	}
 
 	@And("metasfresh contains M_Warehouse:")

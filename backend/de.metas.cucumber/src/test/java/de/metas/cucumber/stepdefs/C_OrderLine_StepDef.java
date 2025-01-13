@@ -53,6 +53,11 @@ import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.mm.attributes.AttributeSetInstanceId;
 import org.adempiere.mm.attributes.keys.AttributesKeys;
 import org.adempiere.model.InterfaceWrapperHelper;
+import org.assertj.core.api.Assertions;
+import org.assertj.core.api.SoftAssertions;
+import org.compiere.model.I_C_BPartner;
+import org.compiere.model.I_C_BPartner_Location;
+import org.compiere.model.I_C_Currency;
 import org.compiere.model.I_C_DocType;
 import org.compiere.model.I_C_Order;
 import org.compiere.model.I_C_OrderLine;
@@ -62,11 +67,15 @@ import org.compiere.model.I_M_Attribute;
 import org.compiere.model.I_M_AttributeInstance;
 import org.compiere.model.I_M_AttributeSetInstance;
 import org.compiere.model.I_M_Product;
+import org.compiere.model.I_M_Shipper;
+import org.compiere.model.I_M_Warehouse;
+import org.compiere.util.TimeUtil;
 import org.compiere.model.I_M_Warehouse;
 
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -95,6 +104,9 @@ public class C_OrderLine_StepDef
 	private final C_Tax_StepDefData taxTable;
 	private final M_Warehouse_StepDefData warehouseTable;
 	private final IdentifierIds_StepDefData identifierIdsTable;
+	private final M_Shipper_StepDefData shipperTable;
+	private final C_BPartner_Location_StepDefData bPartnerLocationTable;
+	private final C_Currency_StepDefData currencyTable;
 
 	public C_OrderLine_StepDef(
 			@NonNull final M_Product_StepDefData productTable,
@@ -108,7 +120,10 @@ public class C_OrderLine_StepDef
 			@NonNull final M_Attribute_StepDefData attributeTable,
 			@NonNull final C_Tax_StepDefData taxTable,
 			@NonNull final M_Warehouse_StepDefData warehouseTable,
-			@NonNull final IdentifierIds_StepDefData identifierIdsTable)
+			@NonNull final IdentifierIds_StepDefData identifierIdsTable
+			@NonNull final M_Shipper_StepDefData shipperTable,
+			@NonNull final C_BPartner_Location_StepDefData bPartnerLocationTable,
+			@NonNull final C_Currency_StepDefData currencyTable)
 	{
 		this.productTable = productTable;
 		this.partnerTable = partnerTable;
@@ -122,6 +137,9 @@ public class C_OrderLine_StepDef
 		this.taxTable = taxTable;
 		this.warehouseTable = warehouseTable;
 		this.identifierIdsTable = identifierIdsTable;
+		this.shipperTable = shipperTable;
+		this.bPartnerLocationTable = bPartnerLocationTable;
+		this.currencyTable = currencyTable;
 	}
 
 	@Given("metasfresh contains C_OrderLines:")
@@ -206,22 +224,68 @@ public class C_OrderLine_StepDef
 						orderLine.setC_UOM_ID(UomId.toRepoId(uomId));
 					}
 
+					final String shipperIdentifier = DataTableUtil.extractStringOrNullForColumnName(tableRow, "OPT." + I_C_OrderLine.COLUMNNAME_M_Shipper_ID + "." + TABLECOLUMN_IDENTIFIER);
+					if (Check.isNotBlank(shipperIdentifier))
+					{
+						final I_M_Shipper shipper = shipperTable.get(shipperIdentifier);
+						Assertions.assertThat(shipper).isNotNull();
+
+						orderLine.setM_Shipper_ID(shipper.getM_Shipper_ID());
+					}
+
+					final ZonedDateTime datePromised = DataTableUtil.extractZonedDateTimeOrNullForColumnName(tableRow, "OPT." + I_C_OrderLine.COLUMNNAME_DatePromised);
+					if (datePromised != null)
+					{
+						orderLine.setDatePromised(TimeUtil.asTimestamp(datePromised));
+					}
+
+					final String bpLocationIdentifier = DataTableUtil.extractStringOrNullForColumnName(tableRow, "OPT." + I_C_OrderLine.COLUMNNAME_C_BPartner_Location_ID + "." + TABLECOLUMN_IDENTIFIER);
+					if (Check.isNotBlank(bpLocationIdentifier))
+					{
+						final I_C_BPartner_Location bPartnerLocation = bPartnerLocationTable.get(bpLocationIdentifier);
+						Assertions.assertThat(bPartnerLocation).isNotNull();
+						orderLine.setC_BPartner_Location_ID(bPartnerLocation.getC_BPartner_Location_ID());
+					}
+
+					final String currencyIdentifier = DataTableUtil.extractStringOrNullForColumnName(tableRow, "OPT." + I_C_OrderLine.COLUMNNAME_C_Currency_ID + "." + TABLECOLUMN_IDENTIFIER);
+					if (Check.isNotBlank(currencyIdentifier))
+					{
+						final I_C_Currency currency = currencyTable.get(currencyIdentifier);
+						Assertions.assertThat(currency).isNotNull();
+
+						orderLine.setC_Currency_ID(currency.getC_Currency_ID());
+					}
+
+					final Timestamp dateOrdered = DataTableUtil.extractDateTimestampForColumnNameOrNull(tableRow, "OPT." + I_C_OrderLine.COLUMNNAME_DateOrdered);
+					if (dateOrdered != null)
+					{
+						orderLine.setDateOrdered(dateOrdered);
+					}
+
+
 					saveRecord(orderLine);
 
 					orderLineTable.putOrReplace(tableRow.getAsIdentifier(), orderLine);
 				});
 	}
 
-	@Then("the purchase order with document subtype {string} linked to order {string} has lines:")
-	public void thePurchaseOrderLinkedToOrderO_HasLines(@Nullable final String docSubType, @NonNull final String linkedOrderIdentifier, @NonNull final DataTable dataTable)
+	@Then("the purchase order {string} with document subtype {string} linked to order {string} has lines:")
+	public void thePurchaseOrderLinkedToOrderO_HasLines(
+			@NonNull final String orderIdentifier,
+			@Nullable final String docSubType,
+			@NonNull final String linkedOrderIdentifier,
+			@NonNull final DataTable dataTable)
 	{
+		final SoftAssertions softly = new SoftAssertions();
+
 		final I_C_Order purchaseOrder = queryBL
 				.createQueryBuilder(I_C_Order.class)
 				.addOnlyActiveRecordsFilter()
 				.addEqualsFilter(I_C_Order.COLUMNNAME_Link_Order_ID, orderTable.get(linkedOrderIdentifier).getC_Order_ID())
 				.create().firstOnly(I_C_Order.class);
 
-		assertThat(purchaseOrder).isNotNull();
+		softly.assertThat(purchaseOrder).isNotNull();
+		orderTable.putOrReplace(orderIdentifier, purchaseOrder);
 
 		final I_C_DocType docType = queryBL
 				.createQueryBuilder(I_C_DocType.class)
@@ -229,10 +293,11 @@ public class C_OrderLine_StepDef
 				.addEqualsFilter(I_C_DocType.COLUMN_C_DocType_ID, purchaseOrder.getC_DocTypeTarget_ID())
 				.create().firstOnly(I_C_DocType.class);
 
-		assertThat(docType).isNotNull();
+		softly.assertThat(docType).isNotNull();
+
 		if (Check.isNotBlank(docSubType))
 		{
-			assertThat(docType.getDocSubType()).isEqualTo(docSubType);
+			softly.assertThat(docType.getDocSubType()).as(I_C_DocType.COLUMNNAME_DocSubType).isEqualTo(docSubType);
 		}
 
 		final List<I_C_OrderLine> purchaseOrderLines = queryBL
@@ -250,6 +315,8 @@ public class C_OrderLine_StepDef
 			final String productIdentifier = DataTableUtil.extractStringForColumnName(tableRow, COLUMNNAME_M_Product_ID + ".Identifier");
 			final String partnerIdentifier = DataTableUtil.extractStringOrNullForColumnName(tableRow, "OPT." + I_C_OrderLine.COLUMNNAME_C_BPartner_ID + ".Identifier");
 			final int partnerId = Check.isBlank(partnerIdentifier) ? 0 : partnerTable.get(partnerIdentifier).getC_BPartner_ID();
+			final String warehouseIdentifier = DataTableUtil.extractStringOrNullForColumnName(tableRow, "OPT." + I_C_OrderLine.COLUMNNAME_M_Warehouse_ID + "." + TABLECOLUMN_IDENTIFIER);
+			final ZonedDateTime datePromised = DataTableUtil.extractZonedDateTimeOrNullForColumnName(tableRow, "OPT." + I_C_OrderLine.COLUMNNAME_DatePromised);
 
 			boolean linePresent = false;
 
@@ -263,14 +330,36 @@ public class C_OrderLine_StepDef
 					linePresent = linePresent && orderLine.getC_BPartner_ID() == partnerId;
 				}
 
+				if (Check.isNotBlank(warehouseIdentifier))
+				{
+					final I_M_Warehouse warehouse = warehouseTable.get(warehouseIdentifier);
+					softly.assertThat(warehouse).isNotNull();
+
+					linePresent = linePresent && (orderLine.getM_Warehouse_ID() == warehouse.getM_Warehouse_ID());
+				}
+
+				if (datePromised != null)
+				{
+					softly.assertThat(orderLine.getDatePromised()).as(I_C_OrderLine.COLUMNNAME_DatePromised).isNotNull();
+					linePresent = linePresent && (orderLine.getDatePromised().equals(TimeUtil.asTimestamp(datePromised)));
+				}
+
 				if (linePresent)
 				{
+					final String orderLineIdentifier = DataTableUtil.extractStringOrNullForColumnName(tableRow, "OPT." + I_C_OrderLine.COLUMNNAME_C_OrderLine_ID + "." + TABLECOLUMN_IDENTIFIER);
+					if (Check.isNotBlank(orderLineIdentifier))
+					{
+						orderLineTable.putOrReplace(orderLineIdentifier, orderLine);
+					}
+
 					break;
 				}
 			}
 
-			assertThat(linePresent).isTrue();
+			softly.assertThat(linePresent).isTrue();
 		}
+
+		softly.assertAll();
 	}
 
 	@And("validate the created order lines")

@@ -83,7 +83,7 @@ Feature: sales order
     Then the order is created:
       | Link_Order_ID.Identifier | IsSOTrx | DocBaseType | DocSubType | OPT.DocStatus |
       | o_2                      | false   | POO         | MED        | DR            |
-    And the purchase order with document subtype 'MED' linked to order 'o_2' has lines:
+    And the purchase order 'orderPO_2' with document subtype 'MED' linked to order 'o_2' has lines:
       | QtyOrdered | LineNetAmt | M_Product_ID.Identifier | OPT.C_BPartner_ID.Identifier |
       | 10         | 100        | p_2                     | endcustomer_2                |
     And the sales order identified by 'o_2' is closed
@@ -138,7 +138,7 @@ Feature: sales order
     Then the order is created:
       | Link_Order_ID.Identifier | IsSOTrx | OPT.DropShip_BPartner_ID.Identifier | OPT.IsDropShip | DocBaseType | DocSubType | OPT.DocStatus |
       | o_26                     | false   | shiptopartner_26                    | true           | POO         | MED        | DR            |
-    And the purchase order with document subtype 'MED' linked to order 'o_26' has lines:
+    And the purchase order 'orderPO_26' with document subtype 'MED' linked to order 'o_26' has lines:
       | QtyOrdered | LineNetAmt | M_Product_ID.Identifier | OPT.C_BPartner_ID.Identifier | OPT.C_BPartner_Location_ID.Identifier | OPT.C_BPartner_Location_Value_ID.Identifier |
       | 10         | 100        | p_26                    | shiptopartner_26             | bpl_26                                | l_26                                        |
     And the sales order identified by 'o_26' is closed
@@ -213,7 +213,7 @@ Feature: sales order
     Then the order is created:
       | Link_Order_ID.Identifier | IsSOTrx | DocBaseType | DocSubType |
       | o_3                      | false   | POO         |            |
-    And the purchase order with document subtype '' linked to order 'o_3' has lines:
+    And the purchase order 'orderPO_3' with document subtype '' linked to order 'o_3' has lines:
       | QtyOrdered | LineNetAmt | M_Product_ID.Identifier |
       | 150        | 0          | p_31_1                  |
       | 100        | 0          | p_32                    |
