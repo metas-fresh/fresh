@@ -14,15 +14,6 @@ ENV LC_CTYPE="en_US.UTF-8"
 RUN echo en_US.UTF-8 UTF-8 > /etc/locale.gen && locale-gen en_US.UTF-8
 
 COPY docker-builds/db/init/ /docker-entrypoint-initdb.d/
-COPY docker-builds/db/scripts/ /tmp/scripts/
 
 # COPY docker-builds/db/metasfresh_latest.pgdump .
 ADD --chown=postgres https://metasfresh.com/wp-content/releases/db_seeds/metasfresh-5_172.pgdump metasfresh.pgdump
-
-COPY --from=backend /backend/metasfresh-dist/dist/target/dist/sql /tmp/sql
-
-RUN cd /tmp/sql \
-	&& find -mindepth 3 -type f -delete \
-	&& find -type f -regextype egrep -not -regex ".*\/([0-9]{5,7})_.*" -delete \
-	&& mkdir /docker-entrypoint-initdb.d/migrations \
-	&& mcp '*/*.sql' '/docker-entrypoint-initdb.d/migrations/#2---#1.sql'

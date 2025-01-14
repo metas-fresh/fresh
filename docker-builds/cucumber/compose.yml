@@ -9,6 +9,7 @@ services:
     environment:
       # run the database on the initial data
       # so we can later commit it again to create postcucumber images without doubling the image size
+      # /data directories can't be persisted with docker commit!
       - PGDATA=/var/lib/postgresql/initdata
     healthcheck:
       test: pg_isready -h localhost -U metasfresh -d metasfresh -t 1

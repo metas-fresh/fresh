@@ -12,8 +12,9 @@ ENV TZ=Europe/Berlin
 
 WORKDIR /migrations
 COPY docker-builds/metadata/build-info.properties .
+COPY docker-builds/db/init-preloaded/migrate.properties .
 COPY --from=backend /backend/metasfresh-dist/dist/target/dist/install/lib .
 COPY --from=backend /backend/metasfresh-dist/dist/target/dist/sql sql/
 
 # this image expects database settings mounted to /migrations/settings.properties to properly run
-CMD ["java", "-jar", "de.metas.migration.cli.jar", "-d", ".", "-s", "settings.properties"]
+CMD ["java", "-jar", "de.metas.migration.cli.jar", "-d", ".", "-s", "migrate.properties"]

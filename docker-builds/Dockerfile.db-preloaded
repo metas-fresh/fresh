@@ -5,8 +5,6 @@ FROM metasfresh/metas-db:$REFNAME as db
 # https://cadu.dev/creating-a-docker-image-with-database-preloaded/
 # dirty but works
 
-# TODO: see how RunMigrationScriptsTest.java does it using our own java-tool. It's better for different reasons.
-
 FROM db as init
 
 RUN ["sed", "-i", "s/exec \"$@\"/echo \"skipping...\"/", "/usr/local/bin/docker-entrypoint.sh"]
@@ -23,13 +21,12 @@ ENV POSTGRES_USER=postgres
 ENV POSTGRES_PASSWORD=postgres
 ENV LC_ALL="en_US.UTF-8"
 ENV LC_CTYPE="en_US.UTF-8"
-# changing pgdata location to avoid existing volume so we are able to commit post cucumber data later on
-ENV PGDATA /var/lib/postgresql/customdata
 
 # grabed from official postgres image: this 777 will be replaced by 700 at runtime (allows semi-arbitrary "--user" values)
 RUN mkdir -p "$PGDATA" && chown -R postgres:postgres "$PGDATA" && chmod 777 "$PGDATA"
 
 COPY --chmod=700 docker-builds/db/init-preloaded/custom-entrypoint.sh /usr/local/bin/
+COPY --from=init /var/lib/postgresql/data /var/lib/postgresql/initdata
+
 ENTRYPOINT ["custom-entrypoint.sh"]
 
-COPY --from=init /var/lib/postgresql/data /var/lib/postgresql/initdata
