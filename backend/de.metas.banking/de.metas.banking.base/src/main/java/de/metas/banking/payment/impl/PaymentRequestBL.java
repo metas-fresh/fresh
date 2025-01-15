@@ -29,6 +29,8 @@ import de.metas.banking.payment.IPaymentRequestBL;
 import de.metas.banking.payment.IPaymentRequestDAO;
 import de.metas.bpartner.BPartnerId;
 import de.metas.bpartner.service.IBPartnerDAO;
+import de.metas.invoice.InvoiceId;
+import de.metas.invoice.service.IInvoiceBL;
 import de.metas.util.Check;
 import de.metas.util.Services;
 import org.adempiere.exceptions.AdempiereException;
@@ -46,6 +48,8 @@ import java.math.BigDecimal;
 public class PaymentRequestBL implements IPaymentRequestBL
 {
 	private static final String DYNATTR_UpdatedFromPaymentRequest = PaymentRequestBL.class.getName() + "#UpdatedFromPaymentRequest";
+
+	private final IInvoiceBL invoiceBL = Services.get(IInvoiceBL.class);
 
 	@Override
 	public I_C_Payment_Request createNewFromTemplate(final I_C_Payment_Request request)
@@ -67,7 +71,7 @@ public class PaymentRequestBL implements IPaymentRequestBL
 		}
 
 		final Boolean updated = InterfaceWrapperHelper.getDynAttribute(paySelectionLine, DYNATTR_UpdatedFromPaymentRequest);
-		return updated == null ? false : updated;
+		return updated != null && updated;
 	}
 
 	@Override
@@ -75,13 +79,14 @@ public class PaymentRequestBL implements IPaymentRequestBL
 	{
 		Check.assumeNotNull(paySelectionLine, "paySelectionLine not null");
 
-		final I_C_Invoice invoice = paySelectionLine.getC_Invoice();
+		final InvoiceId invoiceId = InvoiceId.ofRepoId(paySelectionLine.getC_Invoice_ID());
+		final I_C_Invoice invoice = invoiceBL.getById(invoiceId);
 		Check.assumeNotNull(invoice, "invoice not null");
 
 		final IPaymentRequestDAO paymentRequestDAO = Services.get(IPaymentRequestDAO.class);
 		final IAllocationDAO allocationDAO = Services.get(IAllocationDAO.class);
 
-		final I_C_Payment_Request paymentRequest = paymentRequestDAO.retrieveSingularRequestOrNull(invoice);
+		final I_C_Payment_Request paymentRequest = paymentRequestDAO.retrieveSingularRequestOrNull(invoiceId);
 		if (paymentRequest == null)
 		{
 			return false;

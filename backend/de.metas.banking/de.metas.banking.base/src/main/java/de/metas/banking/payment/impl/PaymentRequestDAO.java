@@ -22,50 +22,66 @@ package de.metas.banking.payment.impl;
  * #L%
  */
 
+import de.metas.banking.BankAccountId;
+import de.metas.banking.model.I_C_Payment_Request;
+import de.metas.banking.payment.IPaymentRequestDAO;
+import de.metas.invoice.InvoiceId;
+import de.metas.util.Check;
+import de.metas.util.Services;
+import lombok.NonNull;
+import org.adempiere.ad.dao.IQueryBL;
+import org.adempiere.ad.dao.IQueryBuilder;
+import org.adempiere.ad.trx.api.ITrx;
+import org.adempiere.model.InterfaceWrapperHelper;
+import org.compiere.model.I_C_Invoice;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
-import org.adempiere.ad.dao.IQueryBL;
-import org.adempiere.ad.dao.IQueryBuilder;
-import org.adempiere.ad.trx.api.ITrx;
-import org.compiere.model.I_C_Invoice;
-
-import de.metas.banking.model.I_C_Payment_Request;
-import de.metas.banking.payment.IPaymentRequestDAO;
-import de.metas.util.Check;
-import de.metas.util.Services;
-
 /**
  * @author al
  */
 public class PaymentRequestDAO implements IPaymentRequestDAO
 {
-	private final IQueryBuilder<I_C_Payment_Request> retrieveRequestForInvoiceQuery(final I_C_Invoice invoice)
+	private IQueryBuilder<I_C_Payment_Request> retrieveRequestForInvoiceQuery(@NonNull final InvoiceId invoiceId)
 	{
 		final IQueryBL queryBL = Services.get(IQueryBL.class);
 
-		final IQueryBuilder<I_C_Payment_Request> queryBuilder = queryBL.createQueryBuilder(I_C_Payment_Request.class, invoice)
-				.addEqualsFilter(I_C_Payment_Request.COLUMN_C_Invoice_ID, invoice.getC_Invoice_ID())
-				.addOnlyActiveRecordsFilter() // NOTE: very important, BL relies on this (i.e. assumes it gets only active requests)
-				.addOnlyContextClient();
-		return queryBuilder;
+		return queryBL.createQueryBuilder(I_C_Payment_Request.class)
+				.addEqualsFilter(I_C_Payment_Request.COLUMNNAME_C_Invoice_ID, invoiceId)
+				.addOnlyActiveRecordsFilter(); // NOTE: very important, BL relies on this (i.e. assumes it gets only active requests)
 	}
 
 	@Override
-	public I_C_Payment_Request retrieveSingularRequestOrNull(final I_C_Invoice invoice)
+	public void createOrReplace(@NonNull final I_C_Invoice invoice, @NonNull final BankAccountId bankAccountId)
 	{
-		return retrieveRequestForInvoiceQuery(invoice)
+		final I_C_Payment_Request existingRequest = retrieveRequestForInvoiceQuery(InvoiceId.ofRepoId(invoice.getC_Invoice_ID()))
+				.create()
+				.firstOnly(I_C_Payment_Request.class);
+
+		final I_C_Payment_Request request = existingRequest != null ? existingRequest : InterfaceWrapperHelper.newInstance(I_C_Payment_Request.class);
+		request.setC_BP_BankAccount_ID(bankAccountId.getRepoId());
+		request.setAmount(invoice.getGrandTotal());
+		request.setC_Invoice_ID(invoice.getC_Invoice_ID());
+		InterfaceWrapperHelper.save(request);
+	}
+
+	@Override
+	@Nullable
+	public I_C_Payment_Request retrieveSingularRequestOrNull(@NonNull final InvoiceId invoiceId)
+	{
+		return retrieveRequestForInvoiceQuery(invoiceId)
 				.create()
 				.firstOnly(I_C_Payment_Request.class);
 	}
 
 	@Override
-	public boolean hasPaymentRequests(final I_C_Invoice invoice)
+	public boolean hasPaymentRequests(@NonNull final InvoiceId invoiceId)
 	{
-		return retrieveRequestForInvoiceQuery(invoice)
+		return retrieveRequestForInvoiceQuery(invoiceId)
 				.create()
 				.anyMatch();
 	}

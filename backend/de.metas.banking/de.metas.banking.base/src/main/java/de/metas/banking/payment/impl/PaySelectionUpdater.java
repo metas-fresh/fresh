@@ -150,7 +150,7 @@ public class PaySelectionUpdater implements IPaySelectionUpdater
 		trxManager.runInThreadInheritedTrx(this::updateInTrx);
 	}
 
-	private final void updateInTrx()
+	private void updateInTrx()
 	{
 		assertConfigurable();
 		_configurable = false; // Lock this updater. Shall not be configurable anymore.
@@ -195,7 +195,7 @@ public class PaySelectionUpdater implements IPaySelectionUpdater
 		cacheInvalidationForCurrentPaySelection();
 	}
 
-	private final void assertConfigurable()
+	private void assertConfigurable()
 	{
 		Check.assume(_configurable, "Not already executed");
 	}
@@ -219,7 +219,7 @@ public class PaySelectionUpdater implements IPaySelectionUpdater
 
 	private String buildSelectSQL(final List<Object> sqlParams)
 	{
-		// NOTE!!! Please keep in sync with org.compiere.model.CalloutPaySelection.invoice(Properties, int, GridTab, GridField, Object)
+		// NOTE!!! Please keep in sync with de.metas.banking.payment.callout.C_PaySelectionLine.invoice
 
 		Check.assume(sqlParams != null && sqlParams.isEmpty(), "instantiated empty list");
 
@@ -481,8 +481,7 @@ public class PaySelectionUpdater implements IPaySelectionUpdater
 		}
 		candidateBuilder.setPaymentRule(paymentRule.getCode());
 
-		final PaySelectionLineCandidate candidate = candidateBuilder.build();
-		return candidate;
+		return candidateBuilder.build();
 	}
 
 	private void createOrUpdatePaySelectionLine(final PaySelectionLineCandidate candidate)
@@ -544,7 +543,7 @@ public class PaySelectionUpdater implements IPaySelectionUpdater
 		}
 	}
 
-	private final void deletePaySelectionLine(final I_C_PaySelectionLine paySelectionLine)
+	private void deletePaySelectionLine(final I_C_PaySelectionLine paySelectionLine)
 	{
 		if (paySelectionLine == null)
 		{
@@ -564,7 +563,7 @@ public class PaySelectionUpdater implements IPaySelectionUpdater
 	/**
 	 * Updates {@link I_C_PaySelectionLine} from: given candidate and current pay selection header
 	 */
-	private final void updatePaySelectionLine(final I_C_PaySelectionLine paySelectionLine, final PaySelectionLineCandidate candidate)
+	private void updatePaySelectionLine(final I_C_PaySelectionLine paySelectionLine, final PaySelectionLineCandidate candidate)
 	{
 		//
 		// Update from C_PaySelection header

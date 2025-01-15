@@ -22,10 +22,15 @@ package de.metas.banking.payment.modelvalidator;
  * #L%
  */
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.List;
-
+import de.metas.banking.BankAccountId;
+import de.metas.banking.api.BankAccountService;
+import de.metas.banking.payment.IPaySelectionDAO;
+import de.metas.currency.CurrencyCode;
+import de.metas.currency.ICurrencyDAO;
+import de.metas.i18n.AdMessageKey;
+import de.metas.money.CurrencyId;
+import de.metas.util.Services;
+import lombok.NonNull;
 import org.adempiere.ad.modelvalidator.annotations.Interceptor;
 import org.adempiere.ad.modelvalidator.annotations.ModelChange;
 import org.adempiere.exceptions.AdempiereException;
@@ -36,15 +41,9 @@ import org.compiere.model.I_C_PaySelection;
 import org.compiere.model.I_C_PaySelectionLine;
 import org.compiere.model.ModelValidator;
 
-import de.metas.banking.BankAccountId;
-import de.metas.banking.api.BankAccountService;
-import de.metas.banking.payment.IPaySelectionDAO;
-import de.metas.currency.CurrencyCode;
-import de.metas.currency.ICurrencyDAO;
-import de.metas.i18n.AdMessageKey;
-import de.metas.money.CurrencyId;
-import de.metas.util.Services;
-import lombok.NonNull;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.List;
 
 @Interceptor(I_C_PaySelection.class)
 public class C_PaySelection
@@ -119,7 +118,7 @@ public class C_PaySelection
 			name.append(formattedDate);
 		}
 
-		if (name.length() > 0)
+		if (!name.isEmpty())
 		{
 			name.append("_");
 		}
@@ -131,7 +130,7 @@ public class C_PaySelection
 			name.append(bankAccountName);
 		}
 
-		if (name.length() > 0 && !paySelection.getName().startsWith(name.toString()))
+		if (!name.isEmpty() && !paySelection.getName().startsWith(name.toString()))
 		{
 			paySelection.setName(name.toString());
 		}

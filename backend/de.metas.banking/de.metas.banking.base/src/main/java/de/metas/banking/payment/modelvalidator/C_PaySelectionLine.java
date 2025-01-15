@@ -2,7 +2,6 @@ package de.metas.banking.payment.modelvalidator;
 
 import de.metas.banking.PaySelectionId;
 import de.metas.banking.payment.IPaySelectionBL;
-import de.metas.banking.payment.IPaySelectionDAO;
 import de.metas.banking.payment.IPaymentRequestBL;
 import de.metas.cache.model.CacheInvalidateMultiRequest;
 import de.metas.cache.model.ModelCacheInvalidationService;
@@ -10,6 +9,8 @@ import de.metas.cache.model.ModelCacheInvalidationTiming;
 import de.metas.currency.CurrencyCode;
 import de.metas.currency.ICurrencyDAO;
 import de.metas.i18n.AdMessageKey;
+import de.metas.invoice.InvoiceId;
+import de.metas.invoice.service.IInvoiceBL;
 import de.metas.money.CurrencyId;
 import de.metas.util.Services;
 import lombok.NonNull;
@@ -27,12 +28,14 @@ import org.compiere.model.ModelValidator;
 @Interceptor(I_C_PaySelectionLine.class)
 public class C_PaySelectionLine
 {
-	private final IPaySelectionDAO paySelectionDAO = Services.get(IPaySelectionDAO.class);
 	private final IPaySelectionBL paySelectionBL = Services.get(IPaySelectionBL.class);
 	private final ModelCacheInvalidationService modelCacheInvalidationService = ModelCacheInvalidationService.get();
 	private final ITrxManager trxManager = Services.get(ITrxManager.class);
+	private final IInvoiceBL invoiceBL = Services.get(IInvoiceBL.class);
 
 	private static final AdMessageKey MSG_PaySelectionLine_Invoice_InvalidCurrency = AdMessageKey.of("PaySelectionLine.Invoice.InvalidCurrency");
+
+
 
 	@ModelChange(timings = { ModelValidator.TYPE_BEFORE_NEW, ModelValidator.TYPE_BEFORE_CHANGE })
 	public void beforeNewOrChange(@NonNull final I_C_PaySelectionLine paySelectionLine)
@@ -76,7 +79,7 @@ public class C_PaySelectionLine
 		final I_C_PaySelection paySelection = paySelectionLine.getC_PaySelection();
 		final I_C_BP_BankAccount bankAccount = InterfaceWrapperHelper.create(paySelection.getC_BP_BankAccount(), I_C_BP_BankAccount.class);
 
-		final I_C_Invoice invoice = paySelectionLine.getC_Invoice();
+		final I_C_Invoice invoice = invoiceBL.getById(InvoiceId.ofRepoId(paySelectionLine.getC_Invoice_ID()));
 
 		//
 		// Match currency
@@ -96,14 +99,8 @@ public class C_PaySelectionLine
 				.markAsUserValidationError();
 	}
 
-	@ModelChange(timings = { ModelValidator.TYPE_AFTER_NEW, ModelValidator.TYPE_AFTER_CHANGE })
-	public void afterNewOrChange(final I_C_PaySelectionLine paySelectionLine)
-	{
-		updatePaySelectionAmount(paySelectionLine);
-	}
-
-	@ModelChange(timings = { ModelValidator.TYPE_AFTER_DELETE })
-	public void afterDelete(final I_C_PaySelectionLine paySelectionLine)
+	@ModelChange(timings = { ModelValidator.TYPE_AFTER_NEW, ModelValidator.TYPE_AFTER_CHANGE,  ModelValidator.TYPE_AFTER_DELETE })
+	public void afterNewOrChangeOrDelete(final I_C_PaySelectionLine paySelectionLine)
 	{
 		updatePaySelectionAmount(paySelectionLine);
 	}
@@ -111,7 +108,7 @@ public class C_PaySelectionLine
 	private void updatePaySelectionAmount(@NonNull final I_C_PaySelectionLine paySelectionLine)
 	{
 		final PaySelectionId paySelectionId = PaySelectionId.ofRepoId(paySelectionLine.getC_PaySelection_ID());
-		paySelectionDAO.updatePaySelectionTotalAmt(paySelectionId);
+		paySelectionBL.updatePaySelectionTotalAmt(paySelectionId);
 
 		// make sure the is invalidated *after* the change is visible for everyone
 		trxManager

@@ -29,6 +29,7 @@ import de.metas.banking.payment.IPaymentStringParserFactory;
 import de.metas.banking.payment.PaymentParserType;
 import de.metas.banking.payment.PaymentString;
 import de.metas.banking.process.paymentdocumentform.PaymentStringProcessService;
+import de.metas.invoice.InvoiceId;
 import de.metas.payment.spi.impl.QRCodeStringParser;
 import de.metas.util.Services;
 import lombok.NonNull;
@@ -48,7 +49,7 @@ import java.nio.charset.StandardCharsets;
 
 import static org.adempiere.model.InterfaceWrapperHelper.newInstance;
 import static org.adempiere.model.InterfaceWrapperHelper.saveRecord;
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class QRCodePaymentTest
 {
@@ -109,7 +110,7 @@ class QRCodePaymentTest
 
 		paymentStringProcessService.createPaymentRequestFromTemplate(invoice, paymentRequestTemplate);
 		
-		assertThat(paymentRequestDAO.hasPaymentRequests(invoice)).isTrue();
+		assertThat(paymentRequestDAO.hasPaymentRequests(InvoiceId.ofRepoId(invoice.getC_Invoice_ID()))).isTrue();
 
 		
 	}

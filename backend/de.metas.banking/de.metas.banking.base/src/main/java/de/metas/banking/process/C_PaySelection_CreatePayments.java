@@ -6,7 +6,6 @@ import de.metas.process.IProcessPrecondition;
 import de.metas.process.IProcessPreconditionsContext;
 import de.metas.process.JavaProcess;
 import de.metas.process.ProcessPreconditionsResolution;
-import de.metas.util.Check;
 import de.metas.util.Services;
 import org.compiere.model.I_C_PaySelection;
 import org.compiere.model.I_C_PaySelectionLine;
@@ -44,7 +43,7 @@ public class C_PaySelection_CreatePayments extends JavaProcess implements IProce
 	@Override
 	protected String doIt() throws Exception
 	{
-		final I_C_PaySelection paySelection = Check.assumePresent(paySelectionBL.getById(PaySelectionId.ofRepoId(getRecord_ID())), "should be present");
+		final I_C_PaySelection paySelection = paySelectionBL.getByIdNotNull(PaySelectionId.ofRepoId(getRecord_ID()));
 		paySelectionBL.createPayments(paySelection);
 		return MSG_OK;
 	}

@@ -47,7 +47,10 @@ public class ShortTermBankAccountIndex
 		for (final BPartnerBankAccount bankAccount : bpartnerComposite.getBankAccounts())
 		{
 			bankAccountsById.put(bankAccount.getId(), bankAccount);
-			bankAccountsByIBAN.put(bankAccount.getIban(), bankAccount);
+			if(bankAccount.getIban() != null)
+			{
+				bankAccountsByIBAN.put(bankAccount.getIban(), bankAccount);
+			}
 		}
 	}
 

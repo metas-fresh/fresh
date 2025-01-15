@@ -28,6 +28,7 @@ import de.metas.banking.BankId;
 import de.metas.bpartner.BPartnerBankAccountId;
 import de.metas.bpartner.BPartnerId;
 import de.metas.bpartner.OrgMappingId;
+import de.metas.bpartner.service.BPBankAcctUse;
 import de.metas.common.util.Check;
 import de.metas.money.CurrencyId;
 import lombok.AccessLevel;
@@ -87,7 +88,7 @@ public class BPartnerBankAccount
 	@JsonIgnore
 	private BPartnerId bpartnerId;
 
-	@NonNull
+	@Nullable
 	private String iban;
 
 	@Nullable
@@ -114,11 +115,13 @@ public class BPartnerBankAccount
 	@Nullable
 	private BankId bankId;
 
+	@Nullable private BPBankAcctUse bpBankAcctUse;
+
 
 	@Builder(toBuilder = true)
 	private BPartnerBankAccount(
 			@Nullable final BPartnerBankAccountId id,
-			@NonNull final String iban,
+			@Nullable final String iban,
 			@Nullable final String swiftCode,
 			@Nullable final String qrIban,
 			@Nullable final String name,
@@ -127,7 +130,8 @@ public class BPartnerBankAccount
 			@Nullable final Boolean isDefault,
 			@Nullable final RecordChangeLog changeLog,
 			@Nullable final OrgMappingId orgMappingId,
-			@Nullable final BankId bankId)
+			@Nullable final BankId bankId,
+			@Nullable final BPBankAcctUse bpBankAcctUse)
 	{
 		setId(id);
 		this.iban = iban;
@@ -142,6 +146,7 @@ public class BPartnerBankAccount
 
 		this.orgMappingId = orgMappingId;
 		this.bankId = bankId;
+		this.bpBankAcctUse = bpBankAcctUse;
 	}
 
 	public final void setId(@Nullable final BPartnerBankAccountId id)

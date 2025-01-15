@@ -5,12 +5,16 @@ import de.metas.banking.BankStatementAndLineAndRefId;
 import de.metas.banking.BankStatementLineId;
 import de.metas.banking.PaySelectionId;
 import de.metas.banking.PaySelectionLineId;
+import de.metas.bpartner.BPartnerBankAccountId;
 import de.metas.bpartner.BPartnerId;
+import de.metas.invoice.InvoiceId;
+import de.metas.money.CurrencyId;
 import de.metas.payment.PaymentId;
 import de.metas.util.ISingletonService;
 import lombok.NonNull;
 import org.compiere.model.I_C_PaySelection;
 import org.compiere.model.I_C_PaySelectionLine;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Map;
@@ -19,6 +23,8 @@ import java.util.Set;
 
 public interface IPaySelectionBL extends ISingletonService
 {
+	@Nullable BPartnerBankAccountId getBPartnerBankAccountId(@NonNull InvoiceId invoiceId, @NonNull CurrencyId currencyId);
+
 	/**
 	 * Creates a new pay selection updater which will create/updated/delete the {@link I_C_PaySelectionLine}s.
 	 */
@@ -36,6 +42,8 @@ public interface IPaySelectionBL extends ISingletonService
 	 * Unlink any pay selection line which points to given bank statement line or to one of its references.
 	 */
 	void unlinkPaySelectionLineFromBankStatement(Collection<BankStatementLineId> bankStatementLineIds);
+
+	I_C_PaySelection getByIdNotNull(@NonNull PaySelectionId paySelectionId);
 
 	Optional<I_C_PaySelection> getById(@NonNull PaySelectionId paySelectionId);
 
@@ -66,4 +74,6 @@ public interface IPaySelectionBL extends ISingletonService
 	Set<PaymentId> getPaymentIds(PaySelectionId paySelectionId);
 
 	ImmutableSet<BPartnerId> getBPartnerIdsFromPaySelectionLineIds(@NonNull Collection<PaySelectionLineId> paySelectionLineIds);
+
+	void updatePaySelectionTotalAmt(@NonNull PaySelectionId paySelectionId);
 }
