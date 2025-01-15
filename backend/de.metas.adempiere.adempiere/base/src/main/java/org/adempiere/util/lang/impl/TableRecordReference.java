@@ -27,7 +27,6 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import de.metas.util.Check;
@@ -192,6 +191,11 @@ public final class TableRecordReference implements ITableRecordReference
 		return new TableRecordReference(adTableId, recordId);
 	}
 
+	public static TableRecordReference of(@NonNull final AdTableId adTableId, final int recordId)
+	{
+		return new TableRecordReference(adTableId.getRepoId(), recordId);
+	}
+
 	@Nullable
 	public static TableRecordReference ofOrNull(final int adTableId, final int recordId)
 	{
@@ -339,12 +343,7 @@ public final class TableRecordReference implements ITableRecordReference
 	@Override
 	public String toString()
 	{
-		return MoreObjects.toStringHelper(this)
-				.omitNullValues()
-				.add("tableName", tableName)
-				.add("recordId", recordId)
-				// .add(" (SoftReference-)model", modelRef.get())
-				.toString();
+		return "ref{" + tableName + "/" + recordId + "}";
 	}
 
 	/**

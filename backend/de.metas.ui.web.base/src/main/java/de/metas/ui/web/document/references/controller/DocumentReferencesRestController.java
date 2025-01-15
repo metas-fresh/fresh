@@ -151,7 +151,7 @@ public class DocumentReferencesRestController
 			if (documentReferenceCandidates.isEmpty())
 			{
 				publisher.publishCompleted();
-				return publisher.getSseEmiter();
+				return publisher.getSseEmitter();
 			}
 
 			final JSONOptions jsonOpts = newJSONOptions();
@@ -173,7 +173,7 @@ public class DocumentReferencesRestController
 			publisher.publishCompletedWithError(ex);
 		}
 
-		return publisher.getSseEmiter();
+		return publisher.getSseEmitter();
 	}
 
 	private void evaluateAndPublishAll(

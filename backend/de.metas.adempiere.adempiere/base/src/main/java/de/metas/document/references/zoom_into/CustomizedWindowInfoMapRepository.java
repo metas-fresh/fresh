@@ -22,6 +22,7 @@
 
 package de.metas.document.references.zoom_into;
 
+import lombok.NonNull;
 import org.adempiere.ad.element.api.AdWindowId;
 
 public interface CustomizedWindowInfoMapRepository
@@ -29,4 +30,12 @@ public interface CustomizedWindowInfoMapRepository
 	CustomizedWindowInfoMap get();
 
 	void assertNoCycles(AdWindowId adWindowId);
+
+	default AdWindowId getEffectiveWindowId(@NonNull final AdWindowId adWindowId)
+	{
+		return get()
+				.getCustomizedWindowInfo(adWindowId)
+				.map(CustomizedWindowInfo::getCustomizationWindowId)
+				.orElse(adWindowId);
+	}
 }

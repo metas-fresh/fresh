@@ -1,61 +1,94 @@
-/*
- * #%L
- * de.metas.adempiere.adempiere.base
- * %%
- * Copyright (C) 2024 metas GmbH
- * %%
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as
- * published by the Free Software Foundation, either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public
- * License along with this program. If not, see
- * <http://www.gnu.org/licenses/gpl-2.0.html>.
- * #L%
- */
-
 package de.metas.i18n;
 
+import com.google.common.annotations.VisibleForTesting;
+import de.metas.ad_reference.ADRefListItem;
+import de.metas.ad_reference.ADReferenceService;
 import de.metas.currency.Amount;
 import de.metas.logging.LogManager;
 import de.metas.util.lang.ReferenceListAwareEnum;
+import de.metas.util.lang.ReferenceListAwareEnums;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
+import org.compiere.util.Env;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.text.MessageFormat;
 
 @UtilityClass
-class MessageFormatter
+public class MessageFormatter
 {
 	private static final Logger s_log = LogManager.getLogger(MessageFormatter.class);
 
 	static String format(@NonNull final String adLanguage, @NonNull final Message message, @Nullable final Object[] args)
 	{
 		final String messageStr = message.getMsgTextAndTip(adLanguage);
+		return format0(adLanguage, messageStr, args);
+	}
+
+	public static String format(@Nullable final String message, @Nullable final Object[] args)
+	{
+		final String messageNorm = normalizeToJavaMessageFormat(message);
+		final String adLanguage = Env.getADLanguageOrBaseLanguage();
+		return format0(adLanguage, messageNorm, args);
+	}
+
+	private static String format0(@NonNull final String adLanguage, @NonNull final String message, @Nullable final Object[] args)
+	{
 		if (args == null || args.length == 0)
 		{
-			return messageStr;
+			return message;
 		}
 
-		String retStr = messageStr;
+		String retStr = message;
 		try
 		{
 			normalizeArgsBeforeFormat(args, adLanguage);
-			retStr = MessageFormat.format(messageStr, args);    // format string
+			retStr = MessageFormat.format(message, args);    // format string
 		}
 		catch (final Exception e)
 		{
-			s_log.error(messageStr, e);
+			s_log.error(message, e);
 		}
 		return retStr;
+	}
+
+	@VisibleForTesting
+	static String normalizeToJavaMessageFormat(@Nullable final String text)
+	{
+		if (text == null)
+		{
+			return "";
+		}
+		if (text.isEmpty())
+		{
+			return text;
+		}
+
+		int firstIdx = text.indexOf("{}");
+		if (firstIdx < 0)
+		{
+			return text;
+		}
+
+		String inStr = text;
+		int idx = firstIdx;
+		final StringBuilder outStr = new StringBuilder();
+		int nextPlaceholderIndex = 0;
+		while (idx != -1)
+		{
+			outStr.append(inStr, 0, idx);            // up to {}
+			inStr = inStr.substring(idx + 2);    // continue after current {}
+
+			final int placeholderIndex = nextPlaceholderIndex;
+			nextPlaceholderIndex++;
+			outStr.append("{").append(placeholderIndex).append("}");
+
+			idx = inStr.indexOf("{}");
+		}
+
+		outStr.append(inStr);                            // add remainder
+		return outStr.toString();
 	}
 
 	private static void normalizeArgsBeforeFormat(final Object[] args, final String adLanguage)
@@ -106,6 +139,18 @@ class MessageFormatter
 			@NonNull final ReferenceListAwareEnum referenceListAwareEnum,
 			final String adLanguage)
 	{
+		final int adReferenceId = ReferenceListAwareEnums.getAD_Reference_ID(referenceListAwareEnum);
+		if (adReferenceId > 0)
+		{
+			final ADReferenceService adReferenceService = ADReferenceService.get();
+			final ADRefListItem adRefListItem = adReferenceService.retrieveListItemOrNull(adReferenceId, referenceListAwareEnum.getCode());
+			if (adRefListItem != null)
+			{
+				return adRefListItem.getName().translate(adLanguage);
+			}
+		}
+
+		// Fallback
 		return referenceListAwareEnum.toString();
 	}
 

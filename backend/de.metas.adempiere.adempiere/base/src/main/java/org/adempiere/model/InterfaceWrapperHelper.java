@@ -30,6 +30,7 @@ import de.metas.error.IErrorManager;
 import de.metas.i18n.IModelTranslationMap;
 import de.metas.i18n.impl.NullModelTranslationMap;
 import de.metas.logging.LogManager;
+import de.metas.organization.ClientAndOrgId;
 import de.metas.organization.OrgId;
 import de.metas.util.Check;
 import de.metas.util.GuavaCollectors;
@@ -1189,6 +1190,13 @@ public class InterfaceWrapperHelper
 
 		final int orgIdInt = NumberUtils.asInt(orgIdObj, -1);
 		return OrgId.optionalOfRepoId(orgIdInt);
+	}
+
+	public static ClientAndOrgId getClientAndOrgId(@NonNull final Object model)
+	{
+		final ClientId clientId = getClientId(model).orElseThrow(() -> new AdempiereException("Cannot determine AD_Client_ID from " + model));
+		final OrgId orgId = getOrgId(model).orElseThrow(() -> new AdempiereException("Cannot determine AD_Org_ID from " + model));
+		return ClientAndOrgId.ofClientAndOrg(clientId, orgId);
 	}
 
 	public static <T> T getValueByColumnId(@NonNull final Object model, @NonNull final AdColumnId adColumnId)

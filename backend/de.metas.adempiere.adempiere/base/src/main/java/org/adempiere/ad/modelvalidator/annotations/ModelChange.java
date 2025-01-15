@@ -22,17 +22,16 @@ package org.adempiere.ad.modelvalidator.annotations;
  * #L%
  */
 
+import org.adempiere.ad.modelvalidator.ModelChangeType;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.adempiere.ad.modelvalidator.ModelChangeType;
-
 /**
  * Indicates that the annotated method shall be triggered on a particular model change validator event.
- *
+ * <p>
  * Your annotated method can have following formats:
  * <ul>
  * <li>public void myMethod(final MyModelClass model)
@@ -40,7 +39,6 @@ import org.adempiere.ad.modelvalidator.ModelChangeType;
  * </ul>
  *
  * @author tsa
- *
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.METHOD })
@@ -49,12 +47,17 @@ public @interface ModelChange
 
 	/**
 	 * On which model change events shall we call the annotated methods.
-	 *
-	 * For more information about events, please check {@link ModelChangeType#getChangeType()} values.
-	 *
-	 * At least one event shall be specified.
+	 * Please consider using {@link #types()}.
 	 */
 	int[] timings() default {};
+
+	/**
+	 * On which model change events shall we call the annotated methods.
+	 * At least one event shall be specified.
+	 * 
+	 * NOTE: at the moment, using {@link #timings()} is accepted, but then types shall not be used.
+	 */
+	ModelChangeType[] types() default {};
 
 	/**
 	 * Indicate that the method shall be called only if one of the given fields were changed.
@@ -71,7 +74,7 @@ public @interface ModelChange
 	 * <pre>
 	 * ifColumnsChanged={IsPaid, C_BBartner_ID}, ignoreColumnsChanged={IsPaid}
 	 * </pre>
-	 *
+	 * <p>
 	 * => in this case, the system will only check for <code>C_BBartner_ID</code>.
 	 * <p>
 	 * If the annotation is specifying only ignore columns but no {@link #ifColumnsChanged()}-columns then all columns excluding the ignore columns will be checked for changes.
@@ -93,7 +96,6 @@ public @interface ModelChange
 	 * * any failure will be just logged and will not prevent execution<br>
 	 */
 	boolean afterCommit() default false;
-	
 
 	/**
 	 * Skip calling this interceptor if we are copying (with details)

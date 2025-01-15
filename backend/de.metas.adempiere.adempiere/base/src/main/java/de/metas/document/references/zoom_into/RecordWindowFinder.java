@@ -74,9 +74,14 @@ public class RecordWindowFinder
 		return new RecordWindowFinder(record.getTableName(), record.getRecord_ID());
 	}
 
-	public static RecordWindowFinder newInstance(final String tableName)
+	public static RecordWindowFinder newInstance(final String tableName, @NonNull final CustomizedWindowInfoMapRepository customizedWindowInfoMapRepository)
 	{
-		return new RecordWindowFinder(tableName);
+		return new RecordWindowFinder(tableName, null, customizedWindowInfoMapRepository);
+	}
+
+	public static RecordWindowFinder newInstance(final String tableName, final SOTrx soTrx)
+	{
+		return new RecordWindowFinder(tableName, soTrx, null);
 	}
 
 	public static Optional<AdWindowId> findAdWindowId(final TableRecordReference record)
@@ -86,7 +91,7 @@ public class RecordWindowFinder
 
 	public static Optional<AdWindowId> findAdWindowId(final String tableName)
 	{
-		return newInstance(tableName).findAdWindowId();
+		return newInstance(tableName, getCustomizedWindowInfoMapRepository()).findAdWindowId();
 	}
 
 	@Deprecated
@@ -107,10 +112,6 @@ public class RecordWindowFinder
 			? new DefaultGenericZoomIntoTableInfoRepository()
 			: new TestingGenericZoomIntoTableInfoRepository();
 
-	private final CustomizedWindowInfoMapRepository customizedWindowInfoMapRepository = !Adempiere.isUnitTestMode()
-			? SpringContextHolder.instance.getBean(CustomizedWindowInfoMapRepository.class)
-			: NullCustomizedWindowInfoMapRepository.instance;
-
 	//
 	// Parameters
 	@NonNull private final String _tableName;
@@ -124,6 +125,7 @@ public class RecordWindowFinder
 	private boolean checkRecordPresentInWindow = false; // false to be backwards compatible
 	private boolean checkParentRecord = false; // false to be backwards compatible
 	private boolean ignoreExcludeFromZoomTargetsFlag;
+	private final CustomizedWindowInfoMapRepository customizedWindowInfoMapRepository;
 
 	//
 	// State
@@ -151,15 +153,20 @@ public class RecordWindowFinder
 		_recordId = recordId;
 		_query_Provided = null;
 		alreadyKnownWindowId = null;
+
+		customizedWindowInfoMapRepository = getCustomizedWindowInfoMapRepository();
 	}
 
-	private RecordWindowFinder(final @NonNull String tableName)
+	private RecordWindowFinder(final @NonNull String tableName, final @Nullable SOTrx soTrx, @NonNull final CustomizedWindowInfoMapRepository customizedWindowInfoMapRepository)
 	{
 		Check.assumeNotEmpty(tableName, "tableName is not empty");
 		_tableName = tableName;
 		_recordId = -1;
+		_recordSOTrx_Effective = soTrx;
 		_query_Provided = null;
 		alreadyKnownWindowId = null;
+
+		this.customizedWindowInfoMapRepository = customizedWindowInfoMapRepository;
 	}
 
 	@Deprecated
@@ -171,6 +178,8 @@ public class RecordWindowFinder
 		_recordId = -1;
 		_query_Provided = query;
 		alreadyKnownWindowId = null;
+
+		customizedWindowInfoMapRepository = getCustomizedWindowInfoMapRepository();
 	}
 
 	@Deprecated
@@ -188,6 +197,8 @@ public class RecordWindowFinder
 		// suggested window is for both trx
 		// to be extended if we need 2 windows later
 		this.alreadyKnownWindowId = alreadyKnownWindowId;
+
+		customizedWindowInfoMapRepository = getCustomizedWindowInfoMapRepository();
 	}
 
 	public RecordWindowFinder checkRecordPresentInWindow()
@@ -449,6 +460,14 @@ public class RecordWindowFinder
 			logger.warn("Failed retrieving parent record ID from current record. Returning empty. \n\tthis={} \n\tSQL: {}", this, sql, ex);
 			return Optional.empty();
 		}
+	}
+
+	@NonNull
+	private static CustomizedWindowInfoMapRepository getCustomizedWindowInfoMapRepository()
+	{
+		return !Adempiere.isUnitTestMode()
+				? SpringContextHolder.instance.getBean(CustomizedWindowInfoMapRepository.class)
+				: NullCustomizedWindowInfoMapRepository.instance;
 	}
 
 	@Value

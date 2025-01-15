@@ -25,6 +25,8 @@ package org.adempiere.ad.table.api;
 import lombok.NonNull;
 import lombok.Value;
 
+import java.util.Objects;
+
 @Value(staticConstructor = "ofTableAndColumn")
 public class TableAndColumnName
 {
@@ -56,5 +58,10 @@ public class TableAndColumnName
 	public String getColumnNameAsString()
 	{
 		return columnName.getAsString();
+	}
+
+	public boolean equalsByColumnName(final String otherColumnName)
+	{
+		return Objects.equals(columnName.getAsString(), otherColumnName);
 	}
 }

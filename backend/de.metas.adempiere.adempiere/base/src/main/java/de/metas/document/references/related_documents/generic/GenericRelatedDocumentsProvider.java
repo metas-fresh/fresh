@@ -22,6 +22,7 @@
 
 package de.metas.document.references.related_documents.generic;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import de.metas.cache.CCache;
@@ -31,23 +32,23 @@ import de.metas.document.references.related_documents.RelatedDocumentsCandidate;
 import de.metas.document.references.related_documents.RelatedDocumentsCandidateGroup;
 import de.metas.document.references.related_documents.RelatedDocumentsCountSupplier;
 import de.metas.document.references.related_documents.RelatedDocumentsId;
+import de.metas.document.references.related_documents.RelatedDocumentsQuerySuppliers;
 import de.metas.document.references.related_documents.RelatedDocumentsTargetWindow;
 import de.metas.document.references.zoom_into.CustomizedWindowInfoMap;
 import de.metas.document.references.zoom_into.CustomizedWindowInfoMapRepository;
-import de.metas.logging.LogManager;
 import de.metas.util.Check;
 import de.metas.util.lang.Priority;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import org.adempiere.ad.element.api.AdWindowId;
 import org.compiere.model.I_AD_Column;
 import org.compiere.model.I_AD_Table;
 import org.compiere.model.I_AD_Window;
 import org.compiere.model.MQuery;
-import org.compiere.model.MQuery.Operator;
-import org.slf4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -56,11 +57,11 @@ import java.util.List;
  * @author Tobias Schoeneberg, www.metas.de - FR [ 2897194 ] Advanced Zoom and RelationTypes
  */
 @Component
+@RequiredArgsConstructor
 public class GenericRelatedDocumentsProvider implements IRelatedDocumentsProvider
 {
-	private static final Logger logger = LogManager.getLogger(GenericRelatedDocumentsProvider.class);
-
 	private final CustomizedWindowInfoMapRepository customizedWindowInfoMapRepository;
+	private final DynamicReferencesCache dynamicReferencesCache;
 
 	private final CCache<String, ImmutableList<GenericRelatedDocumentDescriptor>> descriptorsBySourceKeyColumnName = CCache.<String, ImmutableList<GenericRelatedDocumentDescriptor>>builder()
 			.cacheMapType(CCache.CacheMapType.LRU)
@@ -71,15 +72,9 @@ public class GenericRelatedDocumentsProvider implements IRelatedDocumentsProvide
 			.additionalTableNameToResetFor(I_AD_Column.Table_Name)
 			.build();
 
-	private final GenericRelatedDocumentDescriptorsRepository genericRelatedDocumentDescriptorsRepository = new DefaultGenericRelatedDocumentDescriptorsRepository();
+	private final GenericRelatedDocumentDescriptorsRepository genericRelatedDocumentDescriptorsRepository = new GenericRelatedDocumentDescriptorsRepository();
 
 	private final Priority relatedDocumentsPriority = Priority.LOWEST;
-
-	GenericRelatedDocumentsProvider(
-			@NonNull final CustomizedWindowInfoMapRepository customizedWindowInfoMapRepository)
-	{
-		this.customizedWindowInfoMapRepository = customizedWindowInfoMapRepository;
-	}
 
 	@Override
 	public ImmutableList<RelatedDocumentsCandidateGroup> retrieveRelatedDocumentsCandidates(
@@ -101,31 +96,53 @@ public class GenericRelatedDocumentsProvider implements IRelatedDocumentsProvide
 				continue;
 			}
 
-			final RelatedDocumentsCandidateGroup.RelatedDocumentsCandidateGroupBuilder groupBuilder = RelatedDocumentsCandidateGroup.builder();
-			for (final GenericTargetColumnInfo columnInfo : descriptor.getTargetColumns())
-			{
-				final MQuery query = buildMQuery(descriptor, columnInfo, fromDocument);
-				final RelatedDocumentsCountSupplier recordsCountSupplier = new GenericRelatedDocumentsCountSupplier(query, descriptor, fromDocument.getTableName());
-
-				groupBuilder.candidate(
-						RelatedDocumentsCandidate.builder()
-								.id(RelatedDocumentsId.ofString(Joiner.on("-")
-																		.skipNulls()
-																		.join("generic", windowId.getRepoId(), columnInfo.getColumnName())))
-								.internalName(descriptor.getTargetWindowInternalName())
-								.targetWindow(RelatedDocumentsTargetWindow.ofAdWindowIdAndCategory(windowId, columnInfo.getColumnName()))
-								.priority(relatedDocumentsPriority)
-								.query(query)
-								.windowCaption(descriptor.getName())
-								.filterByFieldCaption(columnInfo.getCaption())
-								.documentsCountSupplier(recordsCountSupplier)
-								.build());
-			}
-
-			result.add(groupBuilder.build());
+			final RelatedDocumentsCandidateGroup group = createCandidatesGroup(descriptor, fromDocument);
+			result.add(group);
 		}
 
 		return result.build();
+	}
+
+	private RelatedDocumentsCandidateGroup createCandidatesGroup(
+			@NonNull final GenericRelatedDocumentDescriptor descriptor,
+			@NonNull final IZoomSource fromDocument)
+	{
+		final AdWindowId windowId = descriptor.getTargetWindowId();
+
+		final RelatedDocumentsCandidateGroup.RelatedDocumentsCandidateGroupBuilder groupBuilder = RelatedDocumentsCandidateGroup.builder();
+		for (final GenericTargetColumnInfo targetColumn : descriptor.getTargetColumns())
+		{
+			final MQuery query = buildMQuery(targetColumn, descriptor, fromDocument);
+			if (query == null)
+			{
+				continue;
+			}
+
+			final GenericTargetWindowInfo targetWindow = descriptor.getGenericTargetWindowInfo();
+
+			final RelatedDocumentsCountSupplier recordsCountSupplier = new GenericRelatedDocumentsCountSupplier(
+					dynamicReferencesCache,
+					targetWindow,
+					targetColumn,
+					query,
+					fromDocument.getTableName());
+
+			groupBuilder.candidate(
+					RelatedDocumentsCandidate.builder()
+							.id(RelatedDocumentsId.ofString(Joiner.on("-")
+									.skipNulls()
+									.join("generic", windowId.getRepoId(), targetColumn.getColumnName())))
+							.internalName(descriptor.getTargetWindowInternalName())
+							.targetWindow(RelatedDocumentsTargetWindow.ofAdWindowIdAndCategory(windowId, targetColumn.getColumnName()))
+							.priority(relatedDocumentsPriority)
+							.querySupplier(RelatedDocumentsQuerySuppliers.ofQuery(query))
+							.windowCaption(descriptor.getName())
+							.filterByFieldCaption(targetColumn.getCaption())
+							.documentsCountSupplier(recordsCountSupplier)
+							.build());
+		}
+
+		return groupBuilder.build();
 	}
 
 	private List<GenericRelatedDocumentDescriptor> getDescriptors(@Nullable final String sourceKeyColumnName)
@@ -149,52 +166,109 @@ public class GenericRelatedDocumentsProvider implements IRelatedDocumentsProvide
 				.collect(ImmutableList.toImmutableList());
 	}
 
-	private static MQuery buildMQuery(
-			final GenericRelatedDocumentDescriptor descriptor,
+	@VisibleForTesting
+	static MQuery buildMQuery(
 			final GenericTargetColumnInfo targetColumn,
+			final GenericRelatedDocumentDescriptor descriptor,
 			final IZoomSource fromDocument)
 	{
-		final String targetTableName = descriptor.getTargetTableName();
-		final String targetColumnName = targetColumn.getColumnName();
-
 		//
 		// Zoom by dynamic references AD_Table_ID/Record_ID
-		// task "Zoomable Record_IDs" (03921)
+		final String sqlWhereClause;
 		if (targetColumn.isDynamic())
 		{
-			final MQuery query = new MQuery(targetTableName);
-			query.addRestriction("AD_Table_ID", Operator.EQUAL, fromDocument.getAD_Table_ID());
-			query.addRestriction("Record_ID", Operator.EQUAL, fromDocument.getRecord_ID());
-			query.setZoomTableName(targetTableName);
-			// query.setZoomColumnName(po.get_KeyColumns()[0]);
-			query.setZoomValue(fromDocument.getRecord_ID());
+			if (descriptor.hasSingleNonDynamicColumn())
+			{
+				// because this was already included in that non-dynamic reference.
+				return null;
+			}
 
-			return query;
+			final ArrayList<String> sqlWhereClauses = new ArrayList<>();
+
+			sqlWhereClauses.add(toSqlWhereClause(targetColumn, fromDocument));
+
+			//
+			// Exclude results matched by non-dynamic targets
+			descriptor.getNonDynamicColumns().stream()
+					.map(otherTargetColumn -> "NOT (" + toSqlWhereClause(otherTargetColumn, fromDocument) + ")")
+					.forEach(sqlWhereClauses::add);
+
+			sqlWhereClause = joinSqlWhereClauses("AND", sqlWhereClauses);
+		}
+		//
+		// Zoom by standard (non-dynamic) column
+		else
+		{
+			final ArrayList<String> sqlWhereClauses = new ArrayList<>();
+
+			sqlWhereClauses.add(toSqlWhereClause(targetColumn, fromDocument));
+
+			if (descriptor.isSingleNonDynamicColumn(targetColumn))
+			{
+				descriptor.getDynamicColumns()
+						.stream()
+						.map(dynamicColumn -> toSqlWhereClause(dynamicColumn, fromDocument))
+						.forEach(sqlWhereClauses::add);
+			}
+
+			sqlWhereClause = joinSqlWhereClauses("OR", sqlWhereClauses);
+		}
+
+		final GenericTargetWindowInfo targetWindow = descriptor.getGenericTargetWindowInfo();
+
+		final MQuery query = new MQuery(targetWindow.getTargetTableName());
+		query.setZoomTableName(targetWindow.getTargetTableName());
+		query.setZoomColumnName(targetColumn.isDynamic() ? null : targetColumn.getColumnName());
+		query.setZoomValue(fromDocument.getRecord_ID());
+
+		query.addRestriction(sqlWhereClause);
+
+		if (!Check.isBlank(targetWindow.getTabSqlWhereClause()))
+		{
+			query.addRestriction("(" + targetWindow.getTabSqlWhereClause() + ")");
+		}
+
+		return query;
+	}
+
+	private static String toSqlWhereClause(@NonNull final GenericTargetColumnInfo targetColumn, @NonNull final IZoomSource fromDocument)
+	{
+		if (targetColumn.isDynamic())
+		{
+			return "AD_Table_ID=" + fromDocument.getAD_Table_ID() + " AND Record_ID=" + fromDocument.getRecord_ID();
 		}
 		else
 		{
-			final MQuery query = new MQuery(targetTableName);
-			if (targetColumn.isVirtualTargetColumnName())
-			{
-				// TODO: find a way to specify restriction's ColumnName and ColumnSql
-				final String columnSql = targetColumn.getVirtualColumnSql();
-				query.addRestriction("(" + columnSql + ") = " + fromDocument.getRecord_ID());
-			}
-			else
-			{
-				query.addRestriction(targetColumnName, Operator.EQUAL, fromDocument.getRecord_ID());
-			}
-
-			if (!Check.isBlank(descriptor.getTabSqlWhereClause()))
-			{
-				query.addRestriction(descriptor.getTabSqlWhereClause());
-			}
-
-			query.setZoomTableName(targetTableName);
-			query.setZoomColumnName(fromDocument.getKeyColumnNameOrNull());
-			query.setZoomValue(fromDocument.getRecord_ID());
-
-			return query;
+			final String columnSql = targetColumn.isVirtualTargetColumnName()
+					? "(" + targetColumn.getVirtualColumnSql() + ")"
+					: targetColumn.getColumnName();
+			return columnSql + "=" + fromDocument.getRecord_ID();
 		}
 	}
+
+	private static String joinSqlWhereClauses(final String join, final List<String> sqlWhereClauses)
+	{
+		if (sqlWhereClauses.isEmpty())
+		{
+			return "";
+		}
+		else if (sqlWhereClauses.size() == 1)
+		{
+			return sqlWhereClauses.get(0);
+		}
+		else
+		{
+			final StringBuilder result = new StringBuilder();
+			for (final String sqlWhereClause : sqlWhereClauses)
+			{
+                if (result.length() > 0)
+				{
+					result.append(" ").append(join).append(" ");
+				}
+				result.append("(").append(sqlWhereClause).append(")");
+			}
+			return result.insert(0, "(").append(")").toString();
+		}
+	}
+
 }

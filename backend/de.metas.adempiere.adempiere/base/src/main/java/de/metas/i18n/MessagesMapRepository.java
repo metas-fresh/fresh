@@ -1,28 +1,5 @@
-/*
- * #%L
- * de.metas.adempiere.adempiere.base
- * %%
- * Copyright (C) 2024 metas GmbH
- * %%
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as
- * published by the Free Software Foundation, either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public
- * License along with this program. If not, see
- * <http://www.gnu.org/licenses/gpl-2.0.html>.
- * #L%
- */
-
 package de.metas.i18n;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
 import de.metas.cache.CCache;
 import de.metas.logging.LogManager;
@@ -34,11 +11,12 @@ import org.compiere.model.I_AD_Message;
 import org.compiere.util.DB;
 import org.slf4j.Logger;
 
-import javax.annotation.Nullable;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+
+import static de.metas.i18n.MessageFormatter.normalizeToJavaMessageFormat;
 
 class MessagesMapRepository
 {
@@ -135,44 +113,6 @@ class MessagesMapRepository
 		{
 			DB.close(rs, pstmt);
 		}
-	}
-
-	@VisibleForTesting
-	static String normalizeToJavaMessageFormat(@Nullable final String text)
-	{
-		if (text == null)
-		{
-			return "";
-		}
-		if (text.isEmpty())
-		{
-			return text;
-		}
-
-		int firstIdx = text.indexOf("{}");
-		if (firstIdx < 0)
-		{
-			return text;
-		}
-
-		String inStr = text;
-		int idx = firstIdx;
-		final StringBuilder outStr = new StringBuilder();
-		int nextPlaceholderIndex = 0;
-		while (idx != -1)
-		{
-			outStr.append(inStr, 0, idx);            // up to {}
-			inStr = inStr.substring(idx + 2);    // continue after current {}
-
-			final int placeholderIndex = nextPlaceholderIndex;
-			nextPlaceholderIndex++;
-			outStr.append("{").append(placeholderIndex).append("}");
-
-			idx = inStr.indexOf("{}");
-		}
-
-		outStr.append(inStr);                            // add remainder
-		return outStr.toString();
 	}
 
 	public void cacheReset()

@@ -12,6 +12,7 @@ import org.compiere.model.I_AD_Attachment;
 import org.compiere.model.I_AD_AttachmentEntry;
 import org.compiere.model.I_AD_Attachment_Log;
 import org.compiere.model.I_AD_Attachment_MultiRef;
+import org.compiere.model.I_AD_BusinessRule_Event;
 import org.compiere.model.I_AD_Column_Access;
 import org.compiere.model.I_AD_Document_Action_Access;
 import org.compiere.model.I_AD_Form_Access;
@@ -76,6 +77,7 @@ public class TableNamesSkipList
 			I_AD_Attachment_MultiRef.Table_Name,
 			I_AD_AttachmentEntry.Table_Name,
 			"AD_CHANGELOG",
+			I_AD_BusinessRule_Event.Table_Name,
 			"AD_ISSUE",
 			I_AD_Note.Table_Name,
 			"AD_PACKAGE_IMP",

@@ -47,6 +47,7 @@ import de.metas.bpartner.service.IBPGroupDAO;
 import de.metas.common.util.time.SystemTime;
 import de.metas.document.DocTypeId;
 import de.metas.document.NewRecordContext;
+import de.metas.document.references.zoom_into.CustomizedWindowInfoMapRepository;
 import de.metas.document.references.zoom_into.RecordWindowFinder;
 import de.metas.greeting.GreetingId;
 import de.metas.i18n.AdMessageKey;
@@ -87,6 +88,7 @@ import de.metas.util.NumberUtils;
 import de.metas.util.Services;
 import de.metas.util.StringUtils;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import org.adempiere.ad.element.api.AdWindowId;
 import org.adempiere.ad.persistence.ModelDynAttributeAccessor;
 import org.adempiere.ad.table.api.IADTableDAO;
@@ -115,9 +117,11 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class BPartnerQuickInputService
 {
 	private static final Logger logger = LogManager.getLogger(BPartnerQuickInputService.class);
+
 	private final BPartnerQuickInputRepository bpartnerQuickInputRepository;
 	private final BPartnerQuickInputAttributesRepository bpartnerQuickInputAttributesRepository;
 	private final BPartnerQuickInputRelatedRecordsRepository bpartnerQuickInputRelatedRecordsRepository;
@@ -127,6 +131,7 @@ public class BPartnerQuickInputService
 	private final BPartnerAttributesRepository bpartnerAttributesRepository;
 	private final BpartnerRelatedRecordsRepository bpartnerRelatedRecordsRepository;
 	private final BPartnerContactAttributesRepository bpartnerContactAttributesRepository;
+	private final CustomizedWindowInfoMapRepository customizedWindowInfoMapRepository;
 	private final IBPGroupDAO bpGroupDAO = Services.get(IBPGroupDAO.class);
 	private final ILocationDAO locationDAO = Services.get(ILocationDAO.class);
 	private final IPriceListDAO priceListDAO = Services.get(IPriceListDAO.class);
@@ -145,34 +150,9 @@ public class BPartnerQuickInputService
 
 	private final AdMessageKey MSG_C_BPartnerCreatedFromAnotherOrg = AdMessageKey.of("C_BPartnerCreatedFromAnotherOrg");
 
-	public BPartnerQuickInputService(
-			@NonNull final BPartnerQuickInputRepository bpartnerQuickInputRepository,
-			@NonNull final BPartnerQuickInputAttributesRepository bpartnerQuickInputAttributesRepository,
-			@NonNull final BPartnerQuickInputRelatedRecordsRepository bpartnerQuickInputRelatedRecordsRepository,
-			@NonNull final BPartnerContactQuickInputAttributesRepository bpartnerContactQuickInputAttributesRepository,
-			@NonNull final BPartnerNameAndGreetingStrategies bpartnerNameAndGreetingStrategies,
-			@NonNull final BPartnerCompositeRepository bpartnerCompositeRepository,
-			@NonNull final BPartnerAttributesRepository bpartnerAttributesRepository,
-			@NonNull final BpartnerRelatedRecordsRepository bpartnerRelatedRecordsRepository,
-			@NonNull final BPartnerContactAttributesRepository bpartnerContactAttributesRepository,
-			@NonNull final UserGroupRepository userGroupRepository)
-	{
-		this.bpartnerQuickInputRepository = bpartnerQuickInputRepository;
-		this.bpartnerQuickInputAttributesRepository = bpartnerQuickInputAttributesRepository;
-		this.bpartnerQuickInputRelatedRecordsRepository = bpartnerQuickInputRelatedRecordsRepository;
-		this.bpartnerContactQuickInputAttributesRepository = bpartnerContactQuickInputAttributesRepository;
-		this.bpartnerNameAndGreetingStrategies = bpartnerNameAndGreetingStrategies;
-		this.bpartnerCompositeRepository = bpartnerCompositeRepository;
-		this.bpartnerAttributesRepository = bpartnerAttributesRepository;
-		this.bpartnerRelatedRecordsRepository = bpartnerRelatedRecordsRepository;
-		this.bpartnerContactAttributesRepository = bpartnerContactAttributesRepository;
-		this.userGroupRepository = userGroupRepository;
-
-	}
-
 	public Optional<AdWindowId> getNewBPartnerWindowId()
 	{
-		return RecordWindowFinder.newInstance(I_C_BPartner_QuickInput.Table_Name)
+		return RecordWindowFinder.newInstance(I_C_BPartner_QuickInput.Table_Name, customizedWindowInfoMapRepository)
 				.ignoreExcludeFromZoomTargetsFlag()
 				.findAdWindowId();
 	}
@@ -226,9 +206,9 @@ public class BPartnerQuickInputService
 			else
 			{
 				return ExplainedOptional.of(NameAndGreeting.builder()
-													.name(companyname)
-													.greetingId(GreetingId.ofRepoIdOrNull(bpartner.getC_Greeting_ID())) // preserve current greeting
-													.build());
+						.name(companyname)
+						.greetingId(GreetingId.ofRepoIdOrNull(bpartner.getC_Greeting_ID())) // preserve current greeting
+						.build());
 			}
 		}
 		else
@@ -281,7 +261,7 @@ public class BPartnerQuickInputService
 	 * Task https://github.com/metasfresh/metasfresh/issues/1090
 	 */
 	public BPartnerId createBPartnerFromTemplate(@NonNull final I_C_BPartner_QuickInput template,
-			@NonNull final NewRecordContext newRecordContext)
+												 @NonNull final NewRecordContext newRecordContext)
 	{
 		Check.assume(!template.isProcessed(), "{} not already processed", template);
 
@@ -310,7 +290,7 @@ public class BPartnerQuickInputService
 		final BPartnerId bpartnerId = bpartnerComposite.getBpartner().getId();
 
 		createRequestAndNotifyUserGroupIfNeeded(bpartnerComposite,
-												newRecordContext);
+				newRecordContext);
 
 		//
 		// Copy BPartner Attributes
@@ -345,7 +325,7 @@ public class BPartnerQuickInputService
 	}
 
 	private void createRequestAndNotifyUserGroupIfNeeded(final BPartnerComposite bpartnerComposite,
-			final @NonNull NewRecordContext newRecordContext)
+														 final @NonNull NewRecordContext newRecordContext)
 	{
 		final OrgId partnerOrgId = bpartnerComposite.getOrgId();
 
@@ -367,10 +347,10 @@ public class BPartnerQuickInputService
 		final String partnerOrgName = orgDAO.retrieveOrgName(partnerOrgId);
 
 		final String summary = TranslatableStrings.adMessage(MSG_C_BPartnerCreatedFromAnotherOrg,
-															 loginUserName,
-															 loginOrgName,
-															 partnerName,
-															 partnerOrgName).translate(loginLanguage);
+				loginUserName,
+				loginOrgName,
+				partnerName,
+				partnerOrgName).translate(loginLanguage);
 
 		final RequestTypeId requestTypeId = requestTypeDAO.retrieveBPartnerCreatedFromAnotherOrgRequestTypeId();
 
@@ -515,9 +495,9 @@ public class BPartnerQuickInputService
 	}
 
 	private void validatePricesForCountries(final Optional<CountryId> possibleDefaultCountryId,
-			final ImmutableList<CountryId> nonDefaultCountryIds,
-			final PricingSystemId pricingSystemId,
-			final SOTrx soTrx)
+											final ImmutableList<CountryId> nonDefaultCountryIds,
+											final PricingSystemId pricingSystemId,
+											final SOTrx soTrx)
 	{
 		final PriceListsCollection salesPriceLists = priceListDAO.retrievePriceListsCollectionByPricingSystemId(pricingSystemId);
 
@@ -582,11 +562,11 @@ public class BPartnerQuickInputService
 
 		return BPartnerLocation.builder()
 				.locationType(BPartnerLocationType.builder()
-									  .billTo(true)
-									  .billToDefault(true)
-									  .shipTo(true)
-									  .shipToDefault(true)
-									  .build())
+						.billTo(true)
+						.billToDefault(true)
+						.shipTo(true)
+						.shipToDefault(true)
+						.build())
 				.name(".")
 				.phone(template.getC_BPartner_Location_Phone())
 				.mobile(template.getC_BPartner_Location_Mobile())
@@ -656,29 +636,29 @@ public class BPartnerQuickInputService
 			final boolean isPurchaseContact = template.isVendor();
 
 			contacts.add(BPartnerContact.builder()
-								 .transientId(transientId)
-								 .contactType(BPartnerContactType.builder()
-													  .defaultContact(isDefaultContact)
-													  .billToDefault(isDefaultContact)
-													  .shipToDefault(isDefaultContact)
-													  .sales(isSalesContact)
-													  .salesDefault(isSalesContact && isDefaultContact)
-													  .purchase(isPurchaseContact)
-													  .purchaseDefault(isPurchaseContact && isDefaultContact)
-													  .build())
-								 .newsletter(contactTemplate.isNewsletter())
-								 .membershipContact(contactTemplate.isMembershipContact())
-								 .firstName(contactTemplate.getFirstname())
-								 .lastName(contactTemplate.getLastname())
-								 .name(IUserBL.buildContactName(contactTemplate.getFirstname(), contactTemplate.getLastname()))
-								 .greetingId(GreetingId.ofRepoIdOrNull(contactTemplate.getC_Greeting_ID()))
-								 .phone(StringUtils.trimBlankToNull(contactTemplate.getPhone()))
-								 .email(StringUtils.trimBlankToNull(contactTemplate.getEMail()))
-								 .birthday(TimeUtil.asLocalDate(contactTemplate.getBirthday(), orgDAO.getTimeZone(OrgId.ofRepoIdOrAny(contactTemplate.getAD_Org_ID()))))
-								 .invoiceEmailEnabled(de.metas.common.util.StringUtils.toBoolean(contactTemplate.getIsInvoiceEmailEnabled(), null))
-								 .phone2(StringUtils.trimBlankToNull(contactTemplate.getPhone2()))
-								 .title(StringUtils.trimBlankToNull(contactTemplate.getTitle()))
-								 .build());
+					.transientId(transientId)
+					.contactType(BPartnerContactType.builder()
+							.defaultContact(isDefaultContact)
+							.billToDefault(isDefaultContact)
+							.shipToDefault(isDefaultContact)
+							.sales(isSalesContact)
+							.salesDefault(isSalesContact && isDefaultContact)
+							.purchase(isPurchaseContact)
+							.purchaseDefault(isPurchaseContact && isDefaultContact)
+							.build())
+					.newsletter(contactTemplate.isNewsletter())
+					.membershipContact(contactTemplate.isMembershipContact())
+					.firstName(contactTemplate.getFirstname())
+					.lastName(contactTemplate.getLastname())
+					.name(IUserBL.buildContactName(contactTemplate.getFirstname(), contactTemplate.getLastname()))
+					.greetingId(GreetingId.ofRepoIdOrNull(contactTemplate.getC_Greeting_ID()))
+					.phone(StringUtils.trimBlankToNull(contactTemplate.getPhone()))
+					.email(StringUtils.trimBlankToNull(contactTemplate.getEMail()))
+					.birthday(TimeUtil.asLocalDate(contactTemplate.getBirthday(), orgDAO.getTimeZone(OrgId.ofRepoIdOrAny(contactTemplate.getAD_Org_ID()))))
+					.invoiceEmailEnabled(de.metas.common.util.StringUtils.toBoolean(contactTemplate.getIsInvoiceEmailEnabled(), null))
+					.phone2(StringUtils.trimBlankToNull(contactTemplate.getPhone2()))
+					.title(StringUtils.trimBlankToNull(contactTemplate.getTitle()))
+					.build());
 		}
 
 		return contacts;
@@ -694,31 +674,37 @@ public class BPartnerQuickInputService
 		for (final I_C_BPartner_Location_QuickInput bpartnerLocationTemplate : bpartnerLocationTemplates)
 		{
 			bpartnerLocations.add(BPartnerLocation.builder()
-										  .locationType(BPartnerLocationType.builder()
-																.billTo(bpartnerLocationTemplate.isBillTo())
-																.billToDefault(bpartnerLocationTemplate.isBillToDefault())
-																.shipTo(bpartnerLocationTemplate.isShipTo())
-																.shipToDefault(bpartnerLocationTemplate.isShipToDefault())
-																.build())
-										  .active(bpartnerLocationTemplate.isActive())
-										  .email(bpartnerLocationTemplate.getEMail())
-										  .fax(bpartnerLocationTemplate.getFax())
-										  .mobile(bpartnerLocationTemplate.getPhone2())
-										  .phone(bpartnerLocationTemplate.getPhone())
-										  .name(bpartnerLocationTemplate.getName())
-										  .gln(GLN.ofNullableString(bpartnerLocationTemplate.getGLN()))
-										  .existingLocationId(LocationId.ofRepoId(bpartnerLocationTemplate.getC_Location_ID()))
-										  .bpartnerName(bpartnerLocationTemplate.getBPartnerName())
-										  .setupPlaceNo(bpartnerLocationTemplate.getSetup_Place_No())
-										  .replicationLookupDefault(bpartnerLocationTemplate.isReplicationLookupDefault())
-										  .remitTo(bpartnerLocationTemplate.isRemitTo())
-										  .handOverLocation(bpartnerLocationTemplate.isHandOverLocation())
-										  .visitorsAddress(bpartnerLocationTemplate.isVisitorsAddress())
-										  .build());
+					.locationType(BPartnerLocationType.builder()
+							.billTo(bpartnerLocationTemplate.isBillTo())
+							.billToDefault(bpartnerLocationTemplate.isBillToDefault())
+							.shipTo(bpartnerLocationTemplate.isShipTo())
+							.shipToDefault(bpartnerLocationTemplate.isShipToDefault())
+							.build())
+					.active(bpartnerLocationTemplate.isActive())
+					.email(bpartnerLocationTemplate.getEMail())
+					.fax(bpartnerLocationTemplate.getFax())
+					.mobile(bpartnerLocationTemplate.getPhone2())
+					.phone(bpartnerLocationTemplate.getPhone())
+					.name(bpartnerLocationTemplate.getName())
+					.gln(GLN.ofNullableString(bpartnerLocationTemplate.getGLN()))
+					.existingLocationId(LocationId.ofRepoId(bpartnerLocationTemplate.getC_Location_ID()))
+					.bpartnerName(bpartnerLocationTemplate.getBPartnerName())
+					.setupPlaceNo(bpartnerLocationTemplate.getSetup_Place_No())
+					.replicationLookupDefault(bpartnerLocationTemplate.isReplicationLookupDefault())
+					.remitTo(bpartnerLocationTemplate.isRemitTo())
+					.handOverLocation(bpartnerLocationTemplate.isHandOverLocation())
+					.visitorsAddress(bpartnerLocationTemplate.isVisitorsAddress())
+					.build());
 		}
 
 		return bpartnerLocations;
 	}
+
+	//
+	//
+	//
+	//
+	//
 
 	private static class TransientIdConverter
 	{

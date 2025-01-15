@@ -7,6 +7,7 @@ import de.metas.document.references.related_documents.IZoomSource;
 import de.metas.document.references.related_documents.RelatedDocumentsCandidate;
 import de.metas.document.references.related_documents.RelatedDocumentsCandidateGroup;
 import de.metas.document.references.related_documents.RelatedDocumentsId;
+import de.metas.document.references.related_documents.RelatedDocumentsQuerySuppliers;
 import de.metas.document.references.related_documents.RelatedDocumentsTargetWindow;
 import de.metas.document.references.zoom_into.RecordWindowFinder;
 import de.metas.i18n.ITranslatableString;
@@ -70,7 +71,7 @@ public class TableRelatedDocumentsProvider implements IRelatedDocumentsProvider
 										.internalName(id.toJson())
 										.targetWindow(RelatedDocumentsTargetWindow.ofAdWindowId(windowsWindowId))
 										.priority(Priority.HIGHEST)
-										.query(query)
+										.querySupplier(RelatedDocumentsQuerySuppliers.ofQuery(query))
 										.windowCaption(buildFilterCaption(windowsWindowId))
 										.filterByFieldCaption(buildFilterByFieldCaption(adTableId))
 										.documentsCountSupplier((permissions) -> targetWindowIds.size())
