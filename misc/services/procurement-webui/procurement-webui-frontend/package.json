@@ -13,7 +13,7 @@
     "@types/react-dom": "^17.0.0",
     "@types/react-router-dom": "^5.1.7",
     "@types/react-transition-group": "^4.4.0",
-    "axios": "^0.21.1",
+    "axios": "^0.28.0",
     "bulma": "^0.9.3",
     "classnames": "^2.2.6",
     "enzyme": "^3.11.0",
