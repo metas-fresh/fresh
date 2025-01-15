@@ -1,3 +1,13 @@
+UPDATE ad_archive
+SET ad_process_id = NULL
+WHERE ad_process_id = 540818
+;
+
+UPDATE c_printing_queue
+SET ad_process_id = NULL
+WHERE ad_process_id = 540818
+;
+
 DELETE
 FROM ad_table_process
 WHERE ad_process_id = 540818
