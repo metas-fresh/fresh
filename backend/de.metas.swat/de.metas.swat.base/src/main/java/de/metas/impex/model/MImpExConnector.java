@@ -27,6 +27,7 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
 
 import org.compiere.util.Util;
 
@@ -35,101 +36,117 @@ import de.metas.impex.spi.IConnector;
 
 public class MImpExConnector extends X_ImpEx_Connector
 {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -4915263677859779046L;
+    private static final long serialVersionUID = -4915263677859779046L;
 
-	public MImpExConnector(Properties ctx, int C_ImpExConnector_ID, String trxName)
-	{
-		super(ctx, C_ImpExConnector_ID, trxName);
-	}
+    public MImpExConnector(Properties ctx, int C_ImpExConnector_ID, String trxName)
+    {
+        super(ctx, C_ImpExConnector_ID, trxName);
+    }
 
-	public MImpExConnector(Properties ctx, ResultSet rs, String trxName)
-	{
-		super(ctx, rs, trxName);
-	}
+    public MImpExConnector(Properties ctx, ResultSet rs, String trxName)
+    {
+        super(ctx, rs, trxName);
+    }
 
-	private IConnector getConnector()
-	{
+    private IConnector getConnector()
+    {
+        final String className = getImpEx_ConnectorType().getClassname();
+        final IConnector connector = ConnectionPool.getInstance().getConnection(className);
+        return connector;
+    }
 
-		final String className = getImpEx_ConnectorType().getClassname();
-		final IConnector connector = Util.getInstance(IConnector.class, className);
-		return connector;
-	}
+    public CompletableFuture<IConnector> useConnectorAsync()
+    {
+        return CompletableFuture.supplyAsync(() -> {
+            final IConnector connector = getConnector();
 
-	public IConnector useConnector()
-	{
+            final List<MImpexConnectorParam> mParams = MImpexConnectorParam.retrieve(this);
+            final List<Parameter> connectorParams = new ArrayList<>(mParams.size());
 
-		final IConnector connector = getConnector();
+            for (final MImpexConnectorParam mParam : mParams)
+            {
+                final Parameter connectorParam = new Parameter(
+                        mParam.getName(),
+                        mParam.getParamName(),
+                        mParam.getDescription(),
+                        mParam.getAD_Reference_ID(),
+                        mParam.getSeqNo());
+                connectorParam.setValue(mParam.getParamValue());
+                connectorParams.add(connectorParam);
+            }
 
-		final List<MImpexConnectorParam> mParams = MImpexConnectorParam.retrieve(this);
+            connector.open(connectorParams);
 
-		final List<Parameter> connectorParams = new ArrayList<Parameter>(mParams.size());
+            return connector;
+        });
+    }
 
-		for (final MImpexConnectorParam mParam : mParams)
-		{
+    public CompletableFuture<Void> createParametersAsync()
+    {
+        return CompletableFuture.runAsync(() -> {
+            deleteParameters();
 
-			final Parameter connectorParam = new Parameter(
-					mParam.getName(),
-					mParam.getParamName(), mParam.getDescription(), mParam
-							.getAD_Reference_ID(), mParam.getSeqNo());
+            for (final Parameter param : getConnector().getParameters())
+            {
+                final MImpexConnectorParam mParam = new MImpexConnectorParam(
+                        getCtx(), 0, get_TrxName());
+                mParam.setParamName(param.displayName);
+                mParam.setDescription(param.description);
+                mParam.setAD_Reference_ID(param.displayType);
+                mParam.setName(param.name);
+                mParam.setSeqNo(param.seqNo);
+                mParam.setImpEx_Connector_ID(this.get_ID());
 
-			connectorParam.setValue(mParam.getParamValue());
-			connectorParams.add(connectorParam);
-		}
+                mParam.saveEx();
+            }
+        });
+    }
 
-		connector.open(connectorParams);
+    private void deleteParameters()
+    {
+        for (final MImpexConnectorParam mParam : MImpexConnectorParam.retrieve(this))
+        {
+            mParam.deleteEx(false);
+        }
+    }
 
-		return connector;
-	}
+    @Override
+    protected boolean beforeDelete()
+    {
+        deleteParameters();
+        return true;
+    }
 
-	public void createParameters()
-	{
-		deleteParameters();
+    @Override
+    protected boolean afterSave(boolean newRecord, boolean success)
+    {
+        if (success && (newRecord || is_ValueChanged(COLUMNNAME_ImpEx_ConnectorType_ID)))
+        {
+            createParametersAsync(); 
+        }
+        return success;
+    }
 
-		for (final Parameter param : getConnector().getParameters())
-		{
+    public static class ConnectionPool
+    {
+        private static final ConnectionPool instance = new ConnectionPool();
+        private ConnectionPool() {}
 
-			final MImpexConnectorParam mParam = new MImpexConnectorParam(
-					getCtx(), 0, get_TrxName());
+        public static ConnectionPool getInstance()
+        {
+            return instance;
+        }
 
-			mParam.setParamName(param.displayName);
-			mParam.setDescription(param.description);
-			mParam.setAD_Reference_ID(param.displayType);
-
-			mParam.setName(param.name);
-			mParam.setSeqNo(param.seqNo);
-			mParam.setImpEx_Connector_ID(this.get_ID());
-
-			mParam.saveEx();
-		}
-	}
-
-	private void deleteParameters()
-	{
-
-		for (final MImpexConnectorParam mParam : MImpexConnectorParam.retrieve(this))
-		{
-			mParam.deleteEx(false);
-		}
-	}
-
-	@Override
-	protected boolean beforeDelete()
-	{
-		deleteParameters();
-		return true;
-	}
-
-	@Override
-	protected boolean afterSave(boolean newRecord, boolean success)
-	{
-		if (success
-				&& (newRecord || is_ValueChanged(COLUMNNAME_ImpEx_ConnectorType_ID)))
-		{
-			createParameters();
-		}
-		return success;
-	}
+        public IConnector getConnection(String className)
+        {
+            try
+            {
+                return Util.getInstance(IConnector.class, className);
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException("Bağlantı alınırken hata oluştu", e);
+            }
+        }
+    }
 }

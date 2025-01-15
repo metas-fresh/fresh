@@ -1,9 +1,0 @@
-{
-  "destinationDetails": {
-    "tcpConnectionDetails": {
-    "tcpPort": 445,
-    "tcpHost": "Host"
-    }
-  },
-  "payload": "<?xml version=\"1.0\" encoding=\"Windows-1252\" standalone=\"yes\"?>\n<ri>\n    <recvPLU><PLU xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n    <longName>longName</longName>\n    <printObjects>\n        <printObject ID=\"1\" name=\"NAME-01\" xsi:type=\"textArea\">\n            <letterSpacing>0</letterSpacing>\n            <lineSpacing>0</lineSpacing>\n            <justify>No</justify>\n            <data>description test</data>\n            <format>0</format>\n            <width>0</width>\n        </printObject>\n        <printObject ID=\"101\" name=\"NAME-02\" xsi:type=\"textArea\">\n            <letterSpacing>0</letterSpacing>\n            <lineSpacing>0</lineSpacing>\n            <justify>No</justify>\n            <data>Hello Product name!!</data>\n            <format>0</format>\n            <width>0</width>\n        </printObject>\n        <printObject ID=\"117\" name=\"NAME-03\" xsi:type=\"numberField\">\n            <source>source</source>\n            <type>type</type>\n            <factor>3</factor>\n            <format digits=\"0\">12345</format>\n            <mode>1</mode>\n        </printObject>\n    </printObjects>\n    <parentTag>\n        <childTag>\n            content\n        </childTag>\n    </parentTag>\n</PLU></recvPLU>\n</ri>\n"
-}
