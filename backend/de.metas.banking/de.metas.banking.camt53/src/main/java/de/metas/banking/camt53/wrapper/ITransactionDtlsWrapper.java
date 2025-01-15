@@ -37,7 +37,7 @@ public interface ITransactionDtlsWrapper
 	@Nullable
 	String getCdtrNames();
 
-	@NonNull
+	@Nullable
 	String getUnstructuredRemittanceInfo();
 
 	@NonNull

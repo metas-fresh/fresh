@@ -24,12 +24,14 @@ package de.metas.banking.camt53.wrapper.v04;
 
 import de.metas.banking.camt53.jaxb.camt053_001_04.EntryTransaction4;
 import de.metas.banking.camt53.jaxb.camt053_001_04.PartyIdentification43;
+import de.metas.banking.camt53.jaxb.camt053_001_04.RemittanceInformation7;
 import de.metas.banking.camt53.jaxb.camt053_001_04.TransactionParties3;
 import de.metas.banking.camt53.wrapper.TransactionDtlsWrapper;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import lombok.Value;
+import org.jetbrains.annotations.Nullable;
 
 import static de.metas.banking.camt53.jaxb.camt053_001_04.CreditDebitCode.CRDT;
 
@@ -46,6 +48,7 @@ public class TransactionDtls4Wrapper extends TransactionDtlsWrapper
 		this.entryDtls = entryDtls;
 	}
 
+	@Nullable
 	@Override
 	public String getAcctSvcrRef()
 	{
@@ -79,9 +82,15 @@ public class TransactionDtls4Wrapper extends TransactionDtlsWrapper
 		return null;
 	}
 
+	@Nullable
 	@Override
-	protected @NonNull String getUnstructuredRemittanceInfo(final @NonNull String delimiter)
+	protected String getUnstructuredRemittanceInfo(final @NonNull String delimiter)
 	{
+		final RemittanceInformation7 rmtInf = entryDtls.getRmtInf();
+		if(rmtInf == null)
+		{
+			return null;
+		}
 		return String.join(delimiter, entryDtls.getRmtInf().getUstrd());
 	}
 
@@ -91,6 +100,7 @@ public class TransactionDtls4Wrapper extends TransactionDtlsWrapper
 		return entryDtls.getAddtlTxInf();
 	}
 
+	@Nullable
 	@Override
 	public String getCcy()
 	{

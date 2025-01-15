@@ -26,19 +26,20 @@ import lombok.NonNull;
 import lombok.Value;
 import lombok.experimental.NonFinal;
 
+import javax.annotation.Nullable;
+
 @NonFinal
 @Value
 public abstract class TransactionDtlsWrapper implements ITransactionDtlsWrapper
 {
 	@Override
-	@NonNull
+	@Nullable
 	public String getUnstructuredRemittanceInfo()
 	{
 		return getUnstructuredRemittanceInfo(" \n");
 	}
 
-
-	@NonNull
+	@Nullable
 	protected abstract String getUnstructuredRemittanceInfo(@NonNull final String delimiter);
 
 	@Override
