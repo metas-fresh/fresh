@@ -26,6 +26,7 @@ import de.metas.document.references.related_documents.RelatedDocumentsCountSuppl
 import de.metas.document.references.related_documents.RelatedDocumentsPermissions;
 import de.metas.lang.SOTrx;
 import de.metas.logging.LogManager;
+import lombok.NonNull;
 import lombok.ToString;
 import org.adempiere.ad.element.api.AdWindowId;
 import org.adempiere.ad.trx.api.ITrx;
@@ -39,39 +40,45 @@ class GenericRelatedDocumentsCountSupplier implements RelatedDocumentsCountSuppl
 {
 	private static final Logger logger = LogManager.getLogger(GenericRelatedDocumentsCountSupplier.class);
 
-	private final GenericRelatedDocumentDescriptor descriptor;
-	private final String sourceTableName;
+	private final DynamicReferencesCache dynamicReferencesCache;
+	private final GenericTargetWindowInfo targetWindow;
 	private final String targetTableName;
+	private final GenericTargetColumnInfo targetColumn;
+	private final String sourceTableName;
 
 	private final String sqlCount;
 
 	GenericRelatedDocumentsCountSupplier(
-			final MQuery query,
-			final GenericRelatedDocumentDescriptor descriptor,
-			final String sourceTableName)
+			@NonNull final DynamicReferencesCache dynamicReferencesCache,
+			@NonNull final GenericTargetWindowInfo targetWindow,
+			@NonNull final GenericTargetColumnInfo targetColumn,
+			@NonNull final MQuery query,
+			@NonNull final String sourceTableName)
 	{
-		this.descriptor = descriptor;
-		this.sourceTableName = sourceTableName;
+		this.dynamicReferencesCache = dynamicReferencesCache;
+		this.targetWindow = targetWindow;
 		this.targetTableName = query.getTableName();
+		this.targetColumn = targetColumn;
+		this.sourceTableName = sourceTableName;
 
-		this.sqlCount = buildCountSQL(query, descriptor, sourceTableName);
+		this.sqlCount = buildCountSQL(query, targetWindow, sourceTableName);
 	}
 
 	private static String buildCountSQL(
-			final MQuery query,
-			final GenericRelatedDocumentDescriptor descriptor,
-			final String sourceTableName)
+			@NonNull final MQuery query,
+			@NonNull final GenericTargetWindowInfo targetWindow,
+			@NonNull final String sourceTableName)
 	{
 		String sqlCount = "SELECT COUNT(1) FROM " + query.getTableName() + " WHERE " + query.getWhereClause(false);
 
-		SOTrx soTrx = descriptor.getSoTrx();
-		if (soTrx != null && descriptor.isTargetHasIsSOTrxColumn())
+		SOTrx soTrx = targetWindow.getSoTrx();
+		if (soTrx != null && targetWindow.isTargetHasIsSOTrxColumn())
 		{
 			//
 			// For RMA, Material Receipt window should be loaded for
 			// IsSOTrx=true and Shipment for IsSOTrx=false
 			// TODO: fetch the additional SQL from window's first tab where clause
-			final AdWindowId AD_Window_ID = descriptor.getTargetWindowId();
+			final AdWindowId AD_Window_ID = targetWindow.getTargetWindowId();
 			if (I_M_RMA.Table_Name.equals(sourceTableName) && (AD_Window_ID.getRepoId() == 169 || AD_Window_ID.getRepoId() == 184))
 			{
 				soTrx = soTrx.invert();
@@ -88,6 +95,12 @@ class GenericRelatedDocumentsCountSupplier implements RelatedDocumentsCountSuppl
 	@Override
 	public int getRecordsCount(final RelatedDocumentsPermissions permissions)
 	{
+		if (targetColumn.isDynamic()
+				&& dynamicReferencesCache.hasReferences(targetTableName, sourceTableName).isFalse())
+		{
+			return 0;
+		}
+
 		try
 		{
 			final String sqlCountWithPermissions = permissions.addAccessSQL(sqlCount, targetTableName);
@@ -95,7 +108,7 @@ class GenericRelatedDocumentsCountSupplier implements RelatedDocumentsCountSuppl
 		}
 		catch (final Exception ex)
 		{
-			logger.warn("Failed counting records in {} for {} using SQL: {}", sourceTableName, descriptor, sqlCount, ex);
+			logger.warn("Failed counting records in {} for {} using SQL: {}", sourceTableName, targetWindow, sqlCount, ex);
 			return 0;
 		}
 	}

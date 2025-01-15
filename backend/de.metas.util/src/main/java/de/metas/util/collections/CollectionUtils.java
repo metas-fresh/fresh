@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
+import com.google.common.collect.ListMultimap;
 import com.google.common.collect.SetMultimap;
 import de.metas.util.Check;
 import lombok.NonNull;
@@ -481,6 +482,13 @@ public final class CollectionUtils
 		return hasChanges ? result.build() : (ImmutableMap<K, W>)map;
 	}
 
+	public static <K, V, W> ImmutableMap<K, W> mapValues(
+			@NonNull final ImmutableMap<K, V> map,
+			@NonNull final Function<V, W> mappingFunction)
+	{
+		return mapValues(map, (k, v) -> mappingFunction.apply(v));
+	}
+
 	public static <K, V, K2> SetMultimap<K2, V> mapKeys(@NonNull final SetMultimap<K, V> multimap, @NonNull final Function<K, K2> keyMapper)
 	{
 		if (multimap.isEmpty())
@@ -511,13 +519,6 @@ public final class CollectionUtils
 			//noinspection unchecked
 			return (SetMultimap<K2, V>)multimap;
 		}
-	}
-
-	public static <K, V, W> ImmutableMap<K, W> mapValues(
-			@NonNull final ImmutableMap<K, V> map,
-			@NonNull final Function<V, W> mappingFunction)
-	{
-		return mapValues(map, (k, v) -> mappingFunction.apply(v));
 	}
 
 	/**
@@ -666,17 +667,16 @@ public final class CollectionUtils
 				.collect(ImmutableSet.toImmutableSet());
 	}
 
-	@Nullable
-	public static <T> T emptyOrSingleElement(@NonNull final Collection<T> collection)
+	public static <T> Optional<T> emptyOrSingleElement(@NonNull final Collection<T> collection)
 	{
 		final int size = collection.size();
 		if (size == 0)
 		{
-			return null;
+			return Optional.empty();
 		}
 		else if (size == 1)
 		{
-			return collection.iterator().next();
+			return Optional.of(collection.iterator().next());
 		}
 		else
 		{
@@ -791,6 +791,22 @@ public final class CollectionUtils
 	public static <T> Optional<T> firstOptional(@NonNull final Collection<T> collection)
 	{
 		return Optional.ofNullable(first(collection));
+	}
+
+
+	public static <K, V> ImmutableMap<K, ImmutableList<V>> toImmutableMap(final ListMultimap<K, V> multimap)
+	{
+		if (multimap.isEmpty())
+		{
+			return ImmutableMap.of();
+		}
+
+		final ImmutableMap.Builder<K, ImmutableList<V>> result = ImmutableMap.builder();
+		for (K key : multimap.keySet())
+		{
+			result.put(key, ImmutableList.copyOf(multimap.get(key)));
+		}
+		return result.build();
 	}
 
 

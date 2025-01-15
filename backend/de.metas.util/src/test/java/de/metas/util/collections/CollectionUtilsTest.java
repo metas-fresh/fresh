@@ -23,12 +23,17 @@
 package de.metas.util.collections;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
+import com.google.common.collect.Maps;
+import de.metas.util.ImmutableMapEntry;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import java.util.Arrays;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.*;
 
 class CollectionUtilsTest
 {
@@ -39,15 +44,13 @@ class CollectionUtilsTest
 		@Test
 		void empty()
 		{
-			final Object result = CollectionUtils.emptyOrSingleElement(ImmutableList.of());
-			assertThat(result).isNull();
+			assertThat(CollectionUtils.emptyOrSingleElement(ImmutableList.of())).isEmpty();
 		}
 
 		@Test
 		void oneElement()
 		{
-			final String result = CollectionUtils.emptyOrSingleElement(ImmutableList.of("1"));
-			assertThat(result).isEqualTo("1");
+			assertThat(CollectionUtils.emptyOrSingleElement(ImmutableList.of("1"))).contains("1");
 		}
 
 		@Test
@@ -65,6 +68,191 @@ class CollectionUtilsTest
 			assertThatThrownBy(() -> CollectionUtils.emptyOrSingleElement(ImmutableList.of("1", "2")))
 					.isInstanceOf(RuntimeException.class)
 					.hasMessageStartingWith("The given collection needs to have ZERO or ONE item");
+		}
+	}
+
+	@Nested
+	class singleElementOrEmpty
+	{
+		@Test
+		void empty()
+		{
+			ImmutableList<Integer> list = ImmutableList.of();
+			final Optional<Integer> result = CollectionUtils.singleElementOrEmpty(list, item -> true);
+			assertThat(result).isEmpty();
+		}
+
+		@Test
+		void oneElement()
+		{
+			ImmutableList<Integer> list = ImmutableList.of(1, 2, 3);
+			final Optional<Integer> result = CollectionUtils.singleElementOrEmpty(list, item -> item == 2);
+			assertThat(result).contains(2);
+		}
+
+		@Test
+		void twoIdenticalElements()
+		{
+			// NOTE: checking if elements are distinct is not the job of this method
+			ImmutableList<Integer> list = ImmutableList.of(1, 1);
+			final Optional<Integer> result = CollectionUtils.singleElementOrEmpty(list, item -> true);
+			assertThat(result).isEmpty();
+		}
+
+		@Test
+		void moreElements()
+		{
+			ImmutableList<Integer> list = ImmutableList.of(1, 2, 3);
+			final Optional<Integer> result = CollectionUtils.singleElementOrEmpty(list, item -> true);
+			assertThat(result).isEmpty();
+		}
+	}
+
+	@Nested
+	class singleElementOrEmptyIfNotFound
+	{
+		@Test
+		void empty()
+		{
+			ImmutableList<Integer> list = ImmutableList.of();
+			final Optional<Integer> result = CollectionUtils.singleElementOrEmptyIfNotFound(list, item -> true);
+			assertThat(result).isEmpty();
+		}
+
+		@Test
+		void oneElement()
+		{
+			ImmutableList<Integer> list = ImmutableList.of(1, 2, 3);
+			final Optional<Integer> result = CollectionUtils.singleElementOrEmptyIfNotFound(list, item -> item == 2);
+			assertThat(result).contains(2);
+		}
+
+		@Test
+		void twoIdenticalElements()
+		{
+			// NOTE: checking if elements are distinct is not the job of this method
+			ImmutableList<Integer> list = ImmutableList.of(1, 1);
+			assertThatThrownBy(() -> CollectionUtils.singleElementOrEmptyIfNotFound(list, item -> true))
+					.hasMessageStartingWith("Only one matching element was expected but we got more");
+		}
+
+		@Test
+		void moreElements()
+		{
+			ImmutableList<Integer> list = ImmutableList.of(1, 2, 3);
+			assertThatThrownBy(() -> CollectionUtils.singleElementOrEmptyIfNotFound(list, item -> true))
+					.hasMessageStartingWith("Only one matching element was expected but we got more");
+		}
+	}
+
+	@Nested
+	class mergeElementToMap
+	{
+		@SafeVarargs
+		private final ImmutableMap<String, ImmutableMapEntry<String, String>> mapOf(
+				final ImmutableMapEntry<String, String>... entries
+		)
+		{
+			return Maps.uniqueIndex(Arrays.asList(entries), ImmutableMapEntry::getKey);
+		}
+
+		@Test
+		void addNewElement()
+		{
+			assertThat(
+					CollectionUtils.mergeElementToMap(
+							mapOf(
+									ImmutableMapEntry.of("K1", "V1")
+							),
+							ImmutableMapEntry.of("K2", "V2"),
+							ImmutableMapEntry::getKey)
+			).isEqualTo(mapOf(
+					ImmutableMapEntry.of("K1", "V1"),
+					ImmutableMapEntry.of("K2", "V2")
+			));
+		}
+
+		@Test
+		void replaceExistingElement()
+		{
+			assertThat(
+					CollectionUtils.mergeElementToMap(
+							mapOf(
+									ImmutableMapEntry.of("K1", "V1")
+							),
+							ImmutableMapEntry.of("K1", "V1.1"),
+							ImmutableMapEntry::getKey)
+			).isEqualTo(mapOf(
+					ImmutableMapEntry.of("K1", "V1.1")
+			));
+		}
+
+		@Test
+		void addSameElement()
+		{
+			final ImmutableMap<String, ImmutableMapEntry<String, String>> map = mapOf(
+					ImmutableMapEntry.of("K1", "V1")
+			);
+			assertThat(
+					CollectionUtils.mergeElementToMap(
+							map,
+							ImmutableMapEntry.of("K1", "V1"),
+							ImmutableMapEntry::getKey)
+			).isSameAs(map);
+		}
+
+	}
+
+	@Nested
+	class filter
+	{
+		@Test
+		void acceptAll()
+		{
+			ImmutableList<Integer> list = ImmutableList.of(1, 2, 3, 4, 5, 6);
+			assertThat(CollectionUtils.filter(list, item -> true)).isSameAs(list);
+		}
+
+		@Test
+		void acceptAll_on_emptyList()
+		{
+			ImmutableList<Integer> list = ImmutableList.of();
+			assertThat(CollectionUtils.filter(list, item -> true)).isSameAs(list);
+		}
+
+		@Test
+		void acceptNone()
+		{
+			ImmutableList<Integer> list = ImmutableList.of(1, 2, 3, 4, 5, 6);
+			assertThat(CollectionUtils.filter(list, item -> false)).isEmpty();
+		}
+
+		@Test
+		void acceptNone_on_emptyList()
+		{
+			ImmutableList<Integer> list = ImmutableList.of();
+			assertThat(CollectionUtils.filter(list, item -> false)).isEmpty();
+		}
+
+		@Test
+		void acceptEvenNumbers()
+		{
+			ImmutableList<Integer> list = ImmutableList.of(1, 2, 3, 4, 5, 6);
+			assertThat(CollectionUtils.filter(list, item -> item % 2 == 0)).containsExactly(2, 4, 6);
+		}
+
+		@Test
+		void acceptFirst()
+		{
+			ImmutableList<Integer> list = ImmutableList.of(1, 2, 3, 4, 5, 6);
+			assertThat(CollectionUtils.filter(list, item -> item == 1)).containsExactly(1);
+		}
+
+		@Test
+		void acceptLast()
+		{
+			ImmutableList<Integer> list = ImmutableList.of(1, 2, 3, 4, 5, 6);
+			assertThat(CollectionUtils.filter(list, item -> item == 6)).containsExactly(6);
 		}
 	}
 

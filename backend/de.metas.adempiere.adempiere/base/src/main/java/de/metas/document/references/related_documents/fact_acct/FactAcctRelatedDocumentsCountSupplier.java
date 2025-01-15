@@ -46,8 +46,8 @@ class FactAcctRelatedDocumentsCountSupplier implements RelatedDocumentsCountSupp
 	public int getRecordsCount(final RelatedDocumentsPermissions permissions)
 	{
 		return queryBL.createQueryBuilder(I_Fact_Acct.class)
-				.addEqualsFilter(I_Fact_Acct.COLUMN_AD_Table_ID, adTableId)
-				.addEqualsFilter(I_Fact_Acct.COLUMN_Record_ID, recordId)
+				.addEqualsFilter(I_Fact_Acct.COLUMNNAME_AD_Table_ID, adTableId)
+				.addEqualsFilter(I_Fact_Acct.COLUMNNAME_Record_ID, recordId)
 				.create()
 				.count();
 	}

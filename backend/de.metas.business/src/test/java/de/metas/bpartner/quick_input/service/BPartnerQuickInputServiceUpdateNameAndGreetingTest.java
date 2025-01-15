@@ -35,6 +35,7 @@ import de.metas.bpartner.quick_input.BPartnerQuickInputId;
 import de.metas.bpartner.service.IBPartnerBL;
 import de.metas.bpartner.service.impl.BPartnerBL;
 import de.metas.bpartner.user.role.repository.UserRoleRepository;
+import de.metas.document.references.zoom_into.NullCustomizedWindowInfoMapRepository;
 import de.metas.greeting.GreetingRepository;
 import de.metas.greeting.GreetingStandardType;
 import de.metas.user.UserGroupRepository;
@@ -91,6 +92,7 @@ public class BPartnerQuickInputServiceUpdateNameAndGreetingTest
 				new BPartnerAttributesRepository(),
 				new BpartnerRelatedRecordsRepository(),
 				new BPartnerContactAttributesRepository(),
+				NullCustomizedWindowInfoMapRepository.instance,
 				new UserGroupRepository());
 
 		greeting_MR = createGreeting(GreetingStandardType.MR);
@@ -210,8 +212,8 @@ public class BPartnerQuickInputServiceUpdateNameAndGreetingTest
 		bPartnerQuickInputService.updateNameAndGreeting(BPartnerQuickInputId.ofRepoId(partner.getC_BPartner_QuickInput_ID()));
 
 		refresh(partner);
-		assertThat(partner.getBPartnerName()).isEqualTo(firstName+ " "
-														+ lastname+" And " + firstName2 + " "+ lastname2);
+		assertThat(partner.getBPartnerName()).isEqualTo(firstName + " "
+				+ lastname + " And " + firstName2 + " " + lastname2);
 		assertThat(partner.getC_Greeting_ID()).isEqualTo(greeting_MR_AND_MRS.getC_Greeting_ID());
 	}
 
@@ -237,10 +239,10 @@ public class BPartnerQuickInputServiceUpdateNameAndGreetingTest
 	}
 
 	private I_C_BPartner_Contact_QuickInput createUser(final I_C_BPartner_QuickInput partner,
-			final String firstName,
-			final String lastname,
-			final I_C_Greeting greeting,
-			final boolean isMembership)
+													   final String firstName,
+													   final String lastname,
+													   final I_C_Greeting greeting,
+													   final boolean isMembership)
 	{
 		final I_C_BPartner_Contact_QuickInput user = newInstance(I_C_BPartner_Contact_QuickInput.class);
 		user.setC_BPartner_QuickInput_ID(partner.getC_BPartner_QuickInput_ID());

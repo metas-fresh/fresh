@@ -27,13 +27,14 @@ import com.google.common.collect.ImmutableList;
 import de.metas.ad_reference.ADRefTable;
 import de.metas.ad_reference.ADReferenceService;
 import de.metas.ad_reference.ReferenceId;
-import de.metas.adempiere.service.IColumnBL;
+import de.metas.common.util.pair.IPair;
+import de.metas.common.util.pair.ImmutablePair;
 import de.metas.document.references.related_documents.IRelatedDocumentsProvider;
 import de.metas.document.references.related_documents.IZoomSource;
-import de.metas.document.references.related_documents.POZoomSource;
 import de.metas.document.references.related_documents.RelatedDocumentsCandidate;
 import de.metas.document.references.related_documents.RelatedDocumentsCandidateGroup;
 import de.metas.document.references.related_documents.RelatedDocumentsId;
+import de.metas.document.references.related_documents.RelatedDocumentsQuerySuppliers;
 import de.metas.document.references.related_documents.RelatedDocumentsTargetWindow;
 import de.metas.document.references.zoom_into.CustomizedWindowInfo;
 import de.metas.document.references.zoom_into.CustomizedWindowInfoMap;
@@ -53,17 +54,14 @@ import org.adempiere.ad.table.api.ITableRecordIdDAO;
 import org.adempiere.ad.window.api.IADWindowDAO;
 import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.exceptions.PORelationException;
-import org.adempiere.util.lang.IPair;
-import org.adempiere.util.lang.ImmutablePair;
 import org.compiere.model.MQuery;
-import org.compiere.model.PO;
+import org.compiere.model.POInfo;
 import org.compiere.model.Query;
 import org.compiere.util.Evaluatee;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Properties;
 
 /**
  * Related documents provider for one single relation type
@@ -180,7 +178,7 @@ public class SpecificRelationTypeRelatedDocumentsProvider implements IRelatedDoc
 												adWindowId,
 												getSource() != null ? getSource().getTableRefInfo().getKeyColumn() : null))
 								.priority(relatedDocumentsPriority)
-								.query(query)
+								.querySupplier(RelatedDocumentsQuerySuppliers.ofQuery(query))
 								.windowCaption(display)
 								.documentsCountSupplier(new RelationTypeRelatedDocumentsCountSupplier(query))
 								.build()));
@@ -274,7 +272,7 @@ public class SpecificRelationTypeRelatedDocumentsProvider implements IRelatedDoc
 
 			if (originRecordIdName != null)
 			{
-				final String tableIdColumnName = Services.get(IColumnBL.class).getTableIdColumnName(originTableName, originRecordIdName).orElse(null);
+				final String tableIdColumnName = POInfo.getPOInfoNotNull(originTableName).getTableIdColumnName(originRecordIdName).orElse(null);
 				Check.assumeNotEmpty(tableIdColumnName, "The table {} must have an AD_Table_ID column", originTableName);
 
 				queryWhereClause
@@ -351,23 +349,6 @@ public class SpecificRelationTypeRelatedDocumentsProvider implements IRelatedDoc
 		return whereParsed;
 	}
 
-	/**
-	 * Retrieve destinations for the zoom origin given as parameter.
-	 * NOTE: This is not suitable for TableRecordIdTarget relation types, only for the default kind!
-	 */
-	public <T> List<T> retrieveDestinations(final Properties ctx, final PO fromDocumentPO, final Class<T> clazz, final String trxName)
-	{
-		final IZoomSource fromDocument = POZoomSource.of(fromDocumentPO);
-
-		final MQuery query = mkZoomOriginQuery(fromDocument);
-
-		return new Query(ctx, query.getZoomTableName(), query.getWhereClause(false), trxName)
-				.setClient_ID()
-				.setOnlyActiveRecords(true)
-				.setOrderBy(query.getZoomColumnName())
-				.list(clazz);
-	}
-
 	@Value
 	private static class ZoomProviderDestination
 	{
@@ -406,8 +387,14 @@ public class SpecificRelationTypeRelatedDocumentsProvider implements IRelatedDoc
 			return windowName;
 		}
 
-		public boolean matchesAsSource(final IZoomSource zoomSource)
+		public boolean matchesAsSource(@NonNull final IZoomSource zoomSource)
 		{
+			if(!tableRefInfo.getTableName().equals(zoomSource.getTableName()))
+			{
+				logger.debug("matchesAsSource - return false because zoomSource.tableName={}; this={}", zoomSource.getTableName(), this);
+				return false;
+			}
+
 			if (tableRecordIdTarget)
 			{
 				// the source always matches if the target is ReferenceTarget
@@ -422,21 +409,21 @@ public class SpecificRelationTypeRelatedDocumentsProvider implements IRelatedDoc
 			}
 
 			final String keyColumnName = zoomSource.getKeyColumnNameOrNull();
-			if (Check.isEmpty(keyColumnName, true))
+			if (Check.isBlank(keyColumnName))
 			{
 				logger.warn("matchesAsSource - return false because zoomSource.getKeyColumnNameOrNull()==null; this={}; zoomSource={}", this, zoomSource);
 				return false;
 			}
-
+			
 			final String whereClause = tableRefInfo.getWhereClause();
-			if (Check.isEmpty(whereClause, true))
+			if (Check.isBlank(whereClause))
 			{
 				logger.debug("matchesAsSource - return true because tableRefInfo.whereClause is empty; this={}", this);
 				return true;
 			}
 
 			final String parsedWhere = parseWhereClause(zoomSource, whereClause, false);
-			if (Check.isEmpty(parsedWhere))
+			if (Check.isBlank(parsedWhere))
 			{
 				return false;
 			}
@@ -444,7 +431,7 @@ public class SpecificRelationTypeRelatedDocumentsProvider implements IRelatedDoc
 			final StringBuilder whereClauseEffective = new StringBuilder();
 			whereClauseEffective.append(parsedWhere);
 			whereClauseEffective.append(" AND ( ").append(keyColumnName).append("=").append(zoomSource.getRecord_ID()).append(" )");
-
+			
 			final boolean match = new Query(zoomSource.getCtx(), zoomSource.getTableName(), whereClauseEffective.toString(), zoomSource.getTrxName())
 					.anyMatch();
 

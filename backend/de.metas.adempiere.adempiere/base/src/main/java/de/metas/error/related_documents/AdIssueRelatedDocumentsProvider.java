@@ -30,6 +30,8 @@ import de.metas.document.references.related_documents.IZoomSource;
 import de.metas.document.references.related_documents.RelatedDocumentsCandidate;
 import de.metas.document.references.related_documents.RelatedDocumentsCandidateGroup;
 import de.metas.document.references.related_documents.RelatedDocumentsId;
+import de.metas.document.references.related_documents.RelatedDocumentsQuerySupplier;
+import de.metas.document.references.related_documents.RelatedDocumentsQuerySuppliers;
 import de.metas.document.references.related_documents.RelatedDocumentsTargetWindow;
 import de.metas.document.references.zoom_into.RecordWindowFinder;
 import de.metas.error.IErrorManager;
@@ -59,10 +61,7 @@ public class AdIssueRelatedDocumentsProvider implements IRelatedDocumentsProvide
 	private final Priority relatedDocumentsPriority = Priority.HIGHEST;
 	private final boolean onlyNotAcknowledged = true;
 
-	public AdIssueRelatedDocumentsProvider(@NonNull final ADReferenceService adReferenceService)
-	{
-		this.adReferenceService = adReferenceService;
-	}
+	public AdIssueRelatedDocumentsProvider(@NonNull final ADReferenceService adReferenceService) {this.adReferenceService = adReferenceService;}
 
 	@Override
 	public List<RelatedDocumentsCandidateGroup> retrieveRelatedDocumentsCandidates(
@@ -99,7 +98,7 @@ public class AdIssueRelatedDocumentsProvider implements IRelatedDocumentsProvide
 							.internalName(id.toJson())
 							.targetWindow(RelatedDocumentsTargetWindow.ofAdWindowIdAndCategory(issuesWindowId, issueCategory))
 							.priority(relatedDocumentsPriority)
-							.query(createMQuery(recordRef, issueCategory))
+							.querySupplier(createQuerySupplier(recordRef, issueCategory))
 							.windowCaption(issueCategoryDisplayName)
 							.filterByFieldCaption(issueCategoryDisplayName)
 							.documentsCountSupplier(new AdIssueRelatedDocumentsCountSupplier(issueCountersSupplier, issueCategory))
@@ -114,7 +113,7 @@ public class AdIssueRelatedDocumentsProvider implements IRelatedDocumentsProvide
 		return Suppliers.memoize(() -> errorManager.getIssueCountersByCategory(recordRef, onlyNotAcknowledged));
 	}
 
-	private MQuery createMQuery(@NonNull final TableRecordReference recordRef, @NonNull final IssueCategory issueCategory)
+	private RelatedDocumentsQuerySupplier createQuerySupplier(@NonNull final TableRecordReference recordRef, @NonNull final IssueCategory issueCategory)
 	{
 		final MQuery query = new MQuery(I_AD_Issue.Table_Name);
 		query.addRestriction(I_AD_Issue.COLUMNNAME_AD_Table_ID, Operator.EQUAL, recordRef.getAD_Table_ID());
@@ -125,6 +124,6 @@ public class AdIssueRelatedDocumentsProvider implements IRelatedDocumentsProvide
 			query.addRestriction(I_AD_Issue.COLUMNNAME_Processed, Operator.EQUAL, false);
 		}
 
-		return query;
+		return RelatedDocumentsQuerySuppliers.ofQuery(query);
 	}
 }

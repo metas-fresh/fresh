@@ -160,10 +160,8 @@ public final class POInfo implements Serializable, ColumnDisplayTypeProvider
 			.build();
 
 	@Getter
-	@NonNull
-	private final AdTableId adTableId;
-	@NonNull
-	private final String m_TableName;
+	@NonNull private final AdTableId adTableId;
+	@NonNull private final String m_TableName;
 	private final TableAccessLevel m_AccessLevel;
 	private final boolean m_isView;
 	private final ImmutableList<POInfoColumn> m_columns;
@@ -177,8 +175,7 @@ public final class POInfo implements Serializable, ColumnDisplayTypeProvider
 	 * <p>
 	 * If table has composed primary key, this variable will be set to null
 	 */
-	@Nullable
-	private final String m_keyColumnName;
+	@Nullable private final String m_keyColumnName;
 	private final int firstValidId;
 
 	/**
@@ -187,14 +184,10 @@ public final class POInfo implements Serializable, ColumnDisplayTypeProvider
 	private final boolean m_IsChangeLog;
 
 	private final boolean m_HasStaleableColumns;
-	@Getter
-	private final int webuiViewPageLength;
-	@Getter
-	private final TableCloningEnabled cloningEnabled;
-	@Getter
-	private final TableWhenChildCloningStrategy whenChildCloningStrategy;
-	@Getter
-	private final TableDownlineCloningStrategy downlineCloningStrategy;
+	@Getter private final int webuiViewPageLength;
+	@Getter private final TableCloningEnabled cloningEnabled;
+	@Getter private final TableWhenChildCloningStrategy whenChildCloningStrategy;
+	@Getter private final TableDownlineCloningStrategy downlineCloningStrategy;
 
 	private final String sqlWhereClauseByKeys;
 	private final String sqlSelectByKeys;
@@ -1489,6 +1482,14 @@ public final class POInfo implements Serializable, ColumnDisplayTypeProvider
 	{
 		return m_columns.stream()
 				.filter(poInfoColumnPredicate);
+	}
+
+	public Optional<String> getTableIdColumnName(@NonNull final String recordIdColumnName)
+	{
+		return tableAndRecordColumnNames.stream()
+				.filter(tableAndRecordColumnName -> tableAndRecordColumnName.equalsByColumnName(recordIdColumnName))
+				.map(TableAndColumnName::getTableNameAsString)
+				.findFirst();
 	}
 
 	@Value

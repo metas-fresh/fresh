@@ -27,21 +27,17 @@ import de.metas.util.Check;
 import de.metas.util.StringUtils;
 import lombok.Builder;
 import lombok.Value;
+import lombok.With;
 
 import javax.annotation.Nullable;
 
 @Value
-public class GenericTargetColumnInfo
+class GenericTargetColumnInfo
 {
-	@Nullable
-	ITranslatableString caption;
-	@Nullable
-	String columnName;
-
-	boolean isDynamic;
-
-	@Nullable
-	String virtualColumnSql;
+	@Nullable ITranslatableString caption;
+	@Nullable String columnName;
+	@With boolean isDynamic;
+	@Nullable String virtualColumnSql;
 
 	@Builder
 	private GenericTargetColumnInfo(
