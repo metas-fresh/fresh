@@ -31,16 +31,20 @@ export const Login2FAView = ({ onSubmit }) => {
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
 
-  const isSubmitEnabled = !pending && !!code;
+  const isSubmitEnabled = !pending && code.length === 6;
+
+  const handleFocus = () => {
+    inputRef.current.focus();
+    inputRef.current.select();
+  };
 
   useEffect(() => {
     if (!pending) {
-      inputRef.current.focus();
-      inputRef.current.select();
+      handleFocus();
     }
   }, [pending]);
 
-  const fireOnSubmit = (code) => {
+  const handleSubmit = () => {
     if (!isSubmitEnabled) return;
 
     setPending(true);
@@ -57,7 +61,7 @@ export const Login2FAView = ({ onSubmit }) => {
     <div
       onKeyUp={(e) => {
         if (!pending && e.key === 'Enter') {
-          fireOnSubmit(code);
+          handleSubmit();
         }
       }}
     >
@@ -71,12 +75,12 @@ export const Login2FAView = ({ onSubmit }) => {
           type="text"
           value={code}
           onChange={(e) => {
-            const code = e.target.value;
-            setCode(code);
+            const newCode = e.target.value;
+            setCode(newCode);
             setError('');
 
-            if (code && code.length === 6) {
-              fireOnSubmit(code);
+            if (newCode.length === 6) {
+              handleSubmit();
             }
           }}
           name="code2FA"
@@ -90,7 +94,7 @@ export const Login2FAView = ({ onSubmit }) => {
       <div className="mt-2">
         <button
           className="btn btn-sm btn-block btn-meta-success"
-          onClick={() => fireOnSubmit(code)}
+          onClick={handleSubmit}
           disabled={!isSubmitEnabled}
         >
           {counterpart.translate('login.send.caption')}
