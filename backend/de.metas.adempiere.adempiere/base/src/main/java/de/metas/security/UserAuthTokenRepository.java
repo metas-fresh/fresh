@@ -52,9 +52,15 @@ public class UserAuthTokenRepository
 
 	private final CCache<String, UserAuthToken> authTokensByToken = CCache.newCache(I_AD_User_AuthToken.Table_Name + "#by#token", 50, CCache.EXPIREMINUTES_Never);
 
-	public UserAuthToken getByToken(@NonNull final String token)
+	@NonNull
+	public UserAuthToken getByToken(@NonNull final String tokenString)
 	{
-		return authTokensByToken.getOrLoad(token, () -> retrieveByToken(token));
+		final UserAuthToken token = authTokensByToken.getOrLoad(tokenString, this::retrieveByToken);
+		if (token == null)
+		{
+			throw new AdempiereException("No token found by given token string"); // do not print the token because it might be a security issue
+		}
+		return token;
 	}
 
 	private UserAuthToken retrieveByToken(@NonNull final String token)

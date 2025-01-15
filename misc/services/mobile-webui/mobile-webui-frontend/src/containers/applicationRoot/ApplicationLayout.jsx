@@ -9,6 +9,8 @@ import { isWfProcessLoaded } from '../../reducers/wfProcesses';
 import { trl } from '../../utils/translations';
 import { useApplicationInfo } from '../../reducers/applications';
 import { isApplicationFullScreen } from '../../apps';
+import { useUITraceLocationChange } from '../../utils/ui_trace/useUITraceLocationChange';
+import * as uiTrace from '../../utils/ui_trace';
 
 export const ApplicationLayout = ({ applicationId, Component }) => {
   const history = useHistory();
@@ -32,6 +34,8 @@ export const ApplicationLayout = ({ applicationId, Component }) => {
   useEffect(() => {
     document.title = caption;
   }, [caption]);
+
+  useUITraceLocationChange();
 
   if (redirectToHome) {
     return null;
@@ -68,20 +72,14 @@ export const ApplicationLayout = ({ applicationId, Component }) => {
       <div className="app-footer">
         <div className="columns is-mobile">
           <div className="column is-half">
-            <button className="button is-fullwidth" onClick={() => history.goBack()}>
-              <span className="icon">
-                <i className="fas fa-chevron-left" />
-              </span>
-              <span>{trl('general.Back')}</span>
-            </button>
+            <BottomButton captionKey="general.Back" icon="fas fa-chevron-left" onClick={() => history.goBack()} />
           </div>
           <div className="column is-half">
-            <button className="button is-fullwidth" onClick={() => history.push(homeLocation.location)}>
-              <span className="icon">
-                <i className={homeLocation.iconClassName} />
-              </span>
-              <span>{trl('general.Home')}</span>
-            </button>
+            <BottomButton
+              captionKey="general.Home"
+              icon={homeLocation.iconClassName}
+              onClick={() => history.push(homeLocation.location)}
+            />
           </div>
         </div>
       </div>
@@ -92,6 +90,25 @@ export const ApplicationLayout = ({ applicationId, Component }) => {
 ApplicationLayout.propTypes = {
   applicationId: PropTypes.string,
   Component: PropTypes.any.isRequired,
+};
+
+const BottomButton = ({ captionKey, icon, onClick: onClickParam }) => {
+  const caption = trl(captionKey);
+  const onClick = uiTrace.traceFunction(onClickParam, { eventName: 'buttonClick', captionKey, caption, icon });
+
+  return (
+    <button className="button is-fullwidth" onClick={onClick}>
+      <span className="icon">
+        <i className={icon} />
+      </span>
+      <span>{caption}</span>
+    </button>
+  );
+};
+BottomButton.propTypes = {
+  captionKey: PropTypes.string.isRequired,
+  icon: PropTypes.string.isRequired,
+  onClick: PropTypes.func.isRequired,
 };
 
 const isWFProcessRequiredButNotLoaded = () => {

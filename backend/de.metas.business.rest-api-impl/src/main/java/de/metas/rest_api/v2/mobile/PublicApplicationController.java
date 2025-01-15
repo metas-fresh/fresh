@@ -26,6 +26,7 @@ import de.metas.mobile.MobileAuthMethod;
 import de.metas.mobile.MobileConfig;
 import de.metas.mobile.MobileConfigService;
 import de.metas.util.web.MetasfreshRestAPIConstants;
+import de.metas.util.web.security.AuthResolution;
 import de.metas.util.web.security.UserAuthTokenFilterConfiguration;
 import lombok.NonNull;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -46,7 +47,7 @@ public class PublicApplicationController
 	{
 		this.configService = configService;
 
-		userAuthTokenFilterConfiguration.excludePathContaining(ENDPOINT);
+		userAuthTokenFilterConfiguration.addAuthResolutionForPathsContaining(ENDPOINT, AuthResolution.AUTHENTICATE_IF_TOKEN_AVAILABLE);
 	}
 
 	@GetMapping("/config")

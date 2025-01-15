@@ -31,7 +31,7 @@ public class I18NRestController
 	public I18NRestController(
 			@NonNull final UserAuthTokenFilterConfiguration userAuthTokenFilterConfiguration)
 	{
-		userAuthTokenFilterConfiguration.excludePathContaining(ENDPOINT);
+		userAuthTokenFilterConfiguration.doNotAuthenticatePathsContaining(ENDPOINT);
 	}
 
 	@GetMapping("/messages")

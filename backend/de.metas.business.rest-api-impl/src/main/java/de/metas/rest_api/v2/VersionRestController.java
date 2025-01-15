@@ -23,7 +23,7 @@ public class VersionRestController
 	public VersionRestController(
 			@NonNull final UserAuthTokenFilterConfiguration userAuthTokenFilterConfiguration)
 	{
-		userAuthTokenFilterConfiguration.excludePathContaining(ENDPOINT);
+		userAuthTokenFilterConfiguration.doNotAuthenticatePathsContaining(ENDPOINT);
 	}
 
 	@GetMapping

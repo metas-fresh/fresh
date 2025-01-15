@@ -5,6 +5,7 @@ import cx from 'classnames';
 import * as CompleteStatus from '../../constants/CompleteStatus';
 import HazardIcon from '../HazardIcon';
 import AllergenIcon from '../AllergenIcon';
+import * as uiTrace from '../../utils/ui_trace';
 
 const SYMBOLS_SIZE_PX = 25;
 
@@ -31,11 +32,22 @@ const ButtonWithIndicator = ({
 
   const displayHazardsAndAllergens = displayHazards || displayAllergens;
 
+  const fireOnClick = uiTrace.traceFunction(onClick, {
+    eventName: 'buttonClick',
+    caption,
+    showWarningSign,
+    completeStatus,
+    typeFASIconName,
+    hazardSymbols,
+    allergens,
+    isDanger,
+  });
+
   return (
     <button
       className={cx('button is-outlined is-fullwidth complete-btn', { 'is-danger': isDanger }, additionalCssClass)}
       disabled={!!disabled}
-      onClick={onClick}
+      onClick={fireOnClick}
     >
       <div className="full-size-btn">
         <div className="left-btn-side">

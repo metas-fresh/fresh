@@ -9,6 +9,7 @@ import QrCodeAuth from './authMethods/QrCodeAuth';
 import { trl } from '../utils/translations';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useUITraceLocationChange } from '../utils/ui_trace/useUITraceLocationChange';
 
 const KNOWN_AUTH_METHODS = {
   QR_CODE: 'qrCode',
@@ -114,6 +115,8 @@ const LoginScreen = () => {
       setAvailableAuthMethods(authMethods);
     });
   }, []);
+
+  useUITraceLocationChange();
 
   return (
     <div className="login-view">

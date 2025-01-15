@@ -23,6 +23,8 @@
 import { trl } from '../../utils/translations';
 import React, { useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
+import Dialog from '../../components/dialogs/Dialog';
+import DialogButton from '../../components/dialogs/DialogButton';
 
 const computeIsValid = ({ documentNo }) => !!documentNo;
 
@@ -53,46 +55,43 @@ const GetDocumentNoDialog = ({ documentNo: documentNoInitial, onOK, onClear }) =
 
   return (
     <div>
-      <div className="prompt-dialog get-documentNo-dialog">
-        <article className="message is-dark">
-          <div className="message-body">
-            <>
-              <div className="table-container">
-                <table className="table">
-                  <tbody>
-                    <tr>
-                      <th>{trl('general.DocumentNo')}</th>
-                      <td>
-                        <div className="field">
-                          <div className="control">
-                            <input
-                              ref={inputRef}
-                              className="input"
-                              type="text"
-                              value={documentNo}
-                              tabIndex="1"
-                              onChange={handleDocumentNoChanged}
-                              onKeyUp={handleDocumentNoChanged}
-                            />
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <div className="buttons is-centered">
-                <button className="button is-success" disabled={!isValid} onClick={() => onOK(documentNo)}>
-                  {trl('general.OK')}
-                </button>
-                <button className="button is-danger" onClick={() => onClear()}>
-                  {trl('general.clearText')}
-                </button>
-              </div>
-            </>
+      <Dialog className="get-documentNo-dialog">
+        <>
+          <div className="table-container">
+            <table className="table">
+              <tbody>
+                <tr>
+                  <th>{trl('general.DocumentNo')}</th>
+                  <td>
+                    <div className="field">
+                      <div className="control">
+                        <input
+                          ref={inputRef}
+                          className="input"
+                          type="text"
+                          value={documentNo}
+                          tabIndex="1"
+                          onChange={handleDocumentNoChanged}
+                          onKeyUp={handleDocumentNoChanged}
+                        />
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-        </article>
-      </div>
+          <div className="buttons is-centered">
+            <DialogButton
+              captionKey="general.OK"
+              className="is-success"
+              disabled={!isValid}
+              onClick={() => onOK(documentNo)}
+            />
+            <DialogButton captionKey="general.clearText" className="button is-danger" onClick={() => onClear()} />
+          </div>
+        </>
+      </Dialog>
     </div>
   );
 };

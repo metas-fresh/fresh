@@ -7,9 +7,9 @@ import de.metas.security.UserNotAuthorizedException;
 import de.metas.util.StringUtils;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import org.adempiere.exceptions.AdempiereException;
 import org.compiere.util.Env;
 
+import javax.annotation.Nullable;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -32,7 +32,7 @@ public class UserAuthTokenFilter implements Filter
 	private final UserAuthTokenService userAuthTokenService;
 	private final UserAuthTokenFilterConfiguration configuration;
 	private final ILanguageDAO languageDAO;
-	
+
 	@Override
 	public void init(final FilterConfig filterConfig) throws ServletException
 	{
@@ -47,7 +47,8 @@ public class UserAuthTokenFilter implements Filter
 	public void doFilter(final ServletRequest request, final ServletResponse response, final FilterChain chain) throws IOException, ServletException
 	{
 		final HttpServletRequest httpRequest = (HttpServletRequest)request;
-		if (isExcludedFromSecurityChecking(httpRequest))
+		final AuthResolution authResolution = getAuthResolution(httpRequest);
+		if (authResolution.isDoNotAuthenticate())
 		{
 			chain.doFilter(request, response);
 		}
@@ -58,7 +59,8 @@ public class UserAuthTokenFilter implements Filter
 			try
 			{
 				userAuthTokenService.run(
-						() -> extractTokenString(httpRequest),
+						() -> extractTokenStringIfAvailable(httpRequest),
+						authResolution,
 						() -> {
 							extractAdLanguage(httpRequest).ifPresent(Env::setAD_Language);
 							chain.doFilter(httpRequest, httpResponse);
@@ -71,13 +73,19 @@ public class UserAuthTokenFilter implements Filter
 		}
 	}
 
-	private boolean isExcludedFromSecurityChecking(@NonNull final HttpServletRequest httpRequest)
+	private AuthResolution getAuthResolution(@NonNull final HttpServletRequest httpRequest)
 	{
-		return "OPTIONS".equals(httpRequest.getMethod()) // don't check auth for OPTIONS method calls because this causes troubles on chrome preflight checks
-				|| configuration.isExcludedFromSecurityChecking(httpRequest);
+		// don't check auth for OPTIONS method calls because this causes troubles on chrome preflight checks
+		if ("OPTIONS".equals(httpRequest.getMethod()))
+		{
+			return AuthResolution.DO_NOT_AUTHENTICATE;
+		}
+
+		return configuration.getAuthResolution(httpRequest).orElse(AuthResolution.AUTHENTICATION_REQUIRED);
 	}
 
-	private static String extractTokenString(final HttpServletRequest httpRequest)
+	@Nullable
+	private static String extractTokenStringIfAvailable(final HttpServletRequest httpRequest)
 	{
 		//
 		// Check Authorization header first
@@ -106,15 +114,8 @@ public class UserAuthTokenFilter implements Filter
 		//
 		// Check apiKey query parameter
 		{
-			final String apiKey = StringUtils.trimBlankToNull(httpRequest.getParameter(QUERY_PARAM_API_KEY));
-			if (apiKey != null)
-			{
-				return apiKey;
-			}
+			return StringUtils.trimBlankToNull(httpRequest.getParameter(QUERY_PARAM_API_KEY));
 		}
-
-		throw new AdempiereException("Provide token in `" + HEADER_Authorization + "` HTTP header"
-				+ " or `" + QUERY_PARAM_API_KEY + "` query parameter");
 	}
 
 	@VisibleForTesting

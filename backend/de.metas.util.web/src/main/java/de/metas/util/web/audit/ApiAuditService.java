@@ -50,6 +50,7 @@ import de.metas.notification.INotificationBL;
 import de.metas.notification.UserNotificationRequest;
 import de.metas.organization.OrgId;
 import de.metas.process.PInstanceId;
+import de.metas.ui_trace.UITraceExternalId;
 import de.metas.user.UserGroupId;
 import de.metas.user.UserGroupRepository;
 import de.metas.user.UserGroupUserAssignment;
@@ -110,6 +111,8 @@ public class ApiAuditService
 	 */
 	private static final String API_ASYNC_HEADER = "X-Api-Async";
 
+	private static final String API_UI_Trace_ID = "X-Ui-Trace-Id";
+
 	/**
 	 * If the Response is not wrapped in a {@link JsonApiResponse} with a dedicated property for the request audit, then this response header contains the respective {@code API_Request_Audit_ID}.
 	 */
@@ -163,10 +166,10 @@ public class ApiAuditService
 
 		// allow up to 50MB large results in API responses; thx to https://stackoverflow.com/a/62543241/1012103
 		this.webClient = WebClient.builder().exchangeStrategies(ExchangeStrategies.builder()
-																		.codecs(configurer -> configurer
-																				.defaultCodecs()
-																				.maxInMemorySize(50 * 1024 * 1024))
-																		.build())
+						.codecs(configurer -> configurer
+								.defaultCodecs()
+								.maxInMemorySize(50 * 1024 * 1024))
+						.build())
 				.build();
 		this.callerId2Scheduler = new ConcurrentHashMap<>();
 		this.objectMapper = JsonObjectMapperHolder.newJsonObjectMapper();
@@ -262,7 +265,6 @@ public class ApiAuditService
 				.map(HttpHeadersWrapper::streamHeaders)
 				.ifPresent(headers -> headers.forEach(headerEntry -> httpHeaders.add(headerEntry.getKey(), headerEntry.getValue())));
 
-
 		httpHeaders.add(API_REQUEST_HEADER_EXISTING_AUDIT_ID, String.valueOf(apiRequestAudit.getIdNotNull().getRepoId()));
 
 		httpHeaders.forEach((key, value) -> uriSpec.header(key, value.toArray(new String[0])));
@@ -285,9 +287,9 @@ public class ApiAuditService
 		try
 		{
 			return bodySpec.exchangeToMono(cr -> cr
-					.bodyToMono(String.class)
-					.map(body -> ApiResponseMapper.map(cr.rawStatusCode(), cr.headers().asHttpHeaders(), body))
-					.defaultIfEmpty(ApiResponseMapper.map(cr.rawStatusCode(), cr.headers().asHttpHeaders(), null)))
+							.bodyToMono(String.class)
+							.map(body -> ApiResponseMapper.map(cr.rawStatusCode(), cr.headers().asHttpHeaders(), body))
+							.defaultIfEmpty(ApiResponseMapper.map(cr.rawStatusCode(), cr.headers().asHttpHeaders(), null)))
 					.block();
 		}
 		catch (final RuntimeException rte)
@@ -338,8 +340,8 @@ public class ApiAuditService
 		if (!userGroupToNotify.isPresent())
 		{
 			Loggables.addLog("Notification skipped due to ApiAuditConfig! UserGroupInChargeId = {}, "
-									 + "ApiAuditConfigId = {}, NotifyUserInChargeTrigger = {}",
-							 apiAuditConfig.getUserGroupInChargeId(), apiAuditConfig.getApiAuditConfigId(), apiAuditConfig.getNotifyUserInCharge());
+							+ "ApiAuditConfigId = {}, NotifyUserInChargeTrigger = {}",
+					apiAuditConfig.getUserGroupInChargeId(), apiAuditConfig.getApiAuditConfigId(), apiAuditConfig.getNotifyUserInCharge());
 			return;
 		}
 
@@ -518,6 +520,7 @@ public class ApiAuditService
 					.time(Instant.now())
 					.httpHeaders(requestHeaders.toJson(objectMapper))
 					.requestURI(apiRequest.getRequestURI())
+					.uiTraceExternalId(UITraceExternalId.ofNullableString(requestHeaders.getHeaderSingleValue(API_UI_Trace_ID.toLowerCase())))
 					.build();
 
 			return apiRequestAuditRepository.save(apiRequestAudit);

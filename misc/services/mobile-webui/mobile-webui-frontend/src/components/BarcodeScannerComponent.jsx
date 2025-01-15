@@ -7,6 +7,7 @@ import { trl } from '../utils/translations';
 import { useBooleanSetting, useNumber, usePositiveNumberSetting } from '../reducers/settings';
 import { debounce } from 'lodash';
 import { beep } from '../utils/audio';
+import * as uiTrace from '../utils/ui_trace';
 
 const READER_HINTS = new Map().set(DecodeHintType.POSSIBLE_FORMATS, [
   BarcodeFormat.QR_CODE,
@@ -63,7 +64,7 @@ const BarcodeScannerComponent = ({
   const scanningStatusRef = useRef({ running: false, done: false });
   const [isProcessing, setProcessing] = useState(false);
 
-  const validateScannedBarcodeAndForward = async ({ scannedBarcode, controls = null }) => {
+  const validateScannedBarcodeAndForward0 = async ({ scannedBarcode, controls = null }) => {
     inputTextRef?.current?.select();
 
     const scanningStatus = scanningStatusRef.current;
@@ -116,6 +117,11 @@ const BarcodeScannerComponent = ({
       }
     }
   };
+
+  const validateScannedBarcodeAndForward = uiTrace.traceFunction(
+    validateScannedBarcodeAndForward0,
+    ({ scannedBarcode }) => ({ eventName: 'barcodeScanned', scannedBarcode })
+  );
 
   const mountedRef = useRef(true);
   useEffect(() => {

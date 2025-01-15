@@ -12,6 +12,7 @@ import BarcodeScannerComponent from '../../../components/BarcodeScannerComponent
 import { fireWFActivityCompleted } from '../../../apps';
 import { toastError } from '../../../utils/toast';
 import Spinner from '../../../components/Spinner';
+import * as uiTrace from '../../../utils/ui_trace';
 
 const ScanScreen = () => {
   const {
@@ -47,6 +48,8 @@ const ScanScreen = () => {
   const history = useHistory();
   const onBarcodeScanned = ({ scannedBarcode }) => {
     //console.log('onBarcodeScanned', { scannedBarcode });
+    uiTrace.trace({ eventName: 'barcodeScanned', scannedBarcode, wfProcessId, activityId });
+
     if (validOptionIndex != null && !validOptions?.length) {
       toastError({ messageKey: 'activities.mfg.validateSourceLocator.noValidOption' });
       history.goBack();

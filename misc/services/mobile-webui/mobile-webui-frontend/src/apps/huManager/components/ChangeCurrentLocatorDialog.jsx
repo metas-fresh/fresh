@@ -3,29 +3,25 @@ import React from 'react';
 import BarcodeScannerComponent from '../../../components/BarcodeScannerComponent';
 import { parseLocatorQRCodeString } from '../../../utils/qrCode/locator';
 import PropTypes from 'prop-types';
+import DialogButton from '../../../components/dialogs/DialogButton';
+import Dialog from '../../../components/dialogs/Dialog';
 
 const ChangeCurrentLocatorDialog = ({ onOK, onClose }) => {
   return (
     <div>
-      <div className="prompt-dialog screen">
-        <article className="message is-dark">
-          <BarcodeScannerComponent
-            continuousRunning={true}
-            inputPlaceholderText={trl('huManager.locator')}
-            onResolvedResult={({ scannedBarcode }) => {
-              const locatorQRCode = parseLocatorQRCodeString(scannedBarcode);
-              onOK(locatorQRCode);
-            }}
-          />
-          <div className="message-body">
-            <div className="buttons is-centered">
-              <button className="button is-danger" onClick={onClose}>
-                {trl('general.cancelText')}
-              </button>
-            </div>
-          </div>
-        </article>
-      </div>
+      <Dialog className="screen">
+        <BarcodeScannerComponent
+          continuousRunning={true}
+          inputPlaceholderText={trl('huManager.locator')}
+          onResolvedResult={({ scannedBarcode }) => {
+            const locatorQRCode = parseLocatorQRCodeString(scannedBarcode);
+            onOK(locatorQRCode);
+          }}
+        />
+        <div className="buttons is-centered">
+          <DialogButton captionKey="general.cancelText" className="is-danger" onClick={onClose} />
+        </div>
+      </Dialog>
     </div>
   );
 };

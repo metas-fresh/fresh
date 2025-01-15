@@ -27,8 +27,11 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.collect.Interner;
 import com.google.common.collect.Interners;
 import de.metas.util.Check;
+import de.metas.util.StringUtils;
 import lombok.EqualsAndHashCode;
 import lombok.NonNull;
+
+import javax.annotation.Nullable;
 
 @EqualsAndHashCode
 public final class MobileApplicationId
@@ -37,6 +40,13 @@ public final class MobileApplicationId
 	public static MobileApplicationId ofString(@NonNull final String value)
 	{
 		return interner.intern(new MobileApplicationId(value));
+	}
+
+	@Nullable
+	public static MobileApplicationId ofNullableString(@Nullable final String value)
+	{
+		final String valueNorm = StringUtils.trimBlankToNull(value);
+		return valueNorm != null ? ofString(valueNorm) : null;
 	}
 
 	private static final Interner<MobileApplicationId> interner = Interners.newStrongInterner();

@@ -3,6 +3,7 @@ import { trl } from './translations';
 import { isError } from 'lodash';
 import { Bounce, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import * as uiTrace from './ui_trace';
 
 export const toastErrorFromObj = (obj) => {
   console.log('toastErrorFromObj', { obj });
@@ -38,6 +39,12 @@ export const toastError = ({ axiosError, messageKey, fallbackMessageKey, plainMe
     position: 'bottom-center',
     transition: Bounce,
     bodyStyle: { overflow: 'auto' },
+  });
+
+  uiTrace.trace({
+    eventName: 'error',
+    message,
+    context,
   });
 };
 

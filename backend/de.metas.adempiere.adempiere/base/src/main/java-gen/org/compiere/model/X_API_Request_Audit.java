@@ -1,9 +1,9 @@
 // Generated Model - DO NOT CHANGE
 package org.compiere.model;
 
-import javax.annotation.Nullable;
 import java.sql.ResultSet;
 import java.util.Properties;
+import javax.annotation.Nullable;
 
 /** Generated Model for API_Request_Audit
  *  @author metasfresh (generated) 
@@ -12,7 +12,7 @@ import java.util.Properties;
 public class X_API_Request_Audit extends org.compiere.model.PO implements I_API_Request_Audit, org.compiere.model.I_Persistent 
 {
 
-	private static final long serialVersionUID = 55268684L;
+	private static final long serialVersionUID = 1142450493L;
 
     /** Standard Constructor */
     public X_API_Request_Audit (final Properties ctx, final int API_Request_Audit_ID, @Nullable final String trxName)
@@ -167,6 +167,16 @@ public class X_API_Request_Audit extends org.compiere.model.PO implements I_API_
 	public static final String METHOD_PUT = "PUT";
 	/** DELETE = DELETE */
 	public static final String METHOD_DELETE = "DELETE";
+	/** OPTIONS = OPTIONS */
+	public static final String METHOD_OPTIONS = "OPTIONS";
+	/** PATCH = PATCH */
+	public static final String METHOD_PATCH = "PATCH";
+	/** HEAD = HEAD */
+	public static final String METHOD_HEAD = "HEAD";
+	/** TRACE = TRACE */
+	public static final String METHOD_TRACE = "TRACE";
+	/** CONNECT = CONNECT */
+	public static final String METHOD_CONNECT = "CONNECT";
 	@Override
 	public void setMethod (final @Nullable java.lang.String Method)
 	{
@@ -260,5 +270,17 @@ public class X_API_Request_Audit extends org.compiere.model.PO implements I_API_
 	public java.sql.Timestamp getTime() 
 	{
 		return get_ValueAsTimestamp(COLUMNNAME_Time);
+	}
+
+	@Override
+	public void setUI_Trace_ExternalId (final @Nullable java.lang.String UI_Trace_ExternalId)
+	{
+		set_Value (COLUMNNAME_UI_Trace_ExternalId, UI_Trace_ExternalId);
+	}
+
+	@Override
+	public java.lang.String getUI_Trace_ExternalId() 
+	{
+		return get_ValueAsString(COLUMNNAME_UI_Trace_ExternalId);
 	}
 }

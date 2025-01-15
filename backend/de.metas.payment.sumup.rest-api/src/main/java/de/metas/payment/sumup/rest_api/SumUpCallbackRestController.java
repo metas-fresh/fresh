@@ -25,7 +25,7 @@ public class SumUpCallbackRestController
 	{
 		this.sumUpService = sumUpService;
 
-		userAuthTokenFilterConfiguration.excludePathContaining(SumUp.ENDPOINT_PaymentCheckoutCallback);
+		userAuthTokenFilterConfiguration.doNotAuthenticatePathsContaining(SumUp.ENDPOINT_PaymentCheckoutCallback);
 	}
 
 	@PostMapping

@@ -6,6 +6,9 @@ import { trl } from '../../utils/translations';
 import QtyInputField from '../QtyInputField';
 import { qtyInfos } from '../../utils/qtyInfos';
 import { toastError } from '../../utils/toast';
+import DialogButton from './DialogButton';
+import Dialog from './Dialog';
+import * as uiTrace from '../../utils/ui_trace';
 
 const ReadQtyDialog = ({
   qtyLabelTrlKey,
@@ -26,42 +29,46 @@ const ReadQtyDialog = ({
       return;
     }
 
-    onSubmit({
+    const submitRequest = {
       qty: qtyInfos.toNumberOrString(nrOfCopies),
-    });
+    };
+    uiTrace.putContext(submitRequest);
+    onSubmit(submitRequest);
   };
 
   return (
     <div>
-      <div className="prompt-dialog get-qty-dialog">
-        <article className="message is-dark">
-          <div className="message-body">
-            <table className="table">
-              <tbody>
-                <tr>
-                  <th>{trl(qtyLabelTrlKey || 'general.Qty')}</th>
-                  <td>
-                    <QtyInputField
-                      readonly={isReadOnly}
-                      qty={qtyInfos.toNumberOrString(nrOfCopies)}
-                      onQtyChange={onQtyEntered}
-                      isRequestFocus={true}
-                    />
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            <div className="buttons is-centered">
-              <button disabled={isReadOnly} className="button is-danger" onClick={onCloseDialog}>
-                {trl(cancelButtonTrlKey || 'general.cancelText')}
-              </button>
-              <button disabled={isReadOnly} className="button is-success" onClick={readQty}>
-                {trl(submitButtonTrlKey || 'general.okText')}
-              </button>
-            </div>
-          </div>
-        </article>
-      </div>
+      <Dialog className="get-qty-dialog">
+        <table className="table">
+          <tbody>
+            <tr>
+              <th>{trl(qtyLabelTrlKey || 'general.Qty')}</th>
+              <td>
+                <QtyInputField
+                  readonly={isReadOnly}
+                  qty={qtyInfos.toNumberOrString(nrOfCopies)}
+                  onQtyChange={onQtyEntered}
+                  isRequestFocus={true}
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div className="buttons is-centered">
+          <DialogButton
+            captionKey={cancelButtonTrlKey || 'general.cancelText'}
+            disabled={isReadOnly}
+            className="is-danger"
+            onClick={onCloseDialog}
+          />
+          <DialogButton
+            captionKey={submitButtonTrlKey || 'general.okText'}
+            disabled={isReadOnly}
+            className="is-success"
+            onClick={readQty}
+          />
+        </div>
+      </Dialog>
     </div>
   );
 };

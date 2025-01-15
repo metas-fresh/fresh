@@ -16,5 +16,6 @@ export const loginByQrCode = (qrCode) => {
 };
 
 export const logoutRequest = () => {
-  return axios.post(`${apiBasePath}/userWorkflows/logout`).then((response) => unboxAxiosResponse(response));
+  return axios.post(`${apiBasePath}/userWorkflows/logout`);
+  //.then((response) => unboxAxiosResponse(response)) // don't unbox it because there is no response
 };

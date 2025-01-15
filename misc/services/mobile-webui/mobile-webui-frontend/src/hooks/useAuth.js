@@ -9,6 +9,7 @@ import { COOKIE_EXPIRATION } from '../constants/Cookie';
 import { clearToken, setToken } from '../actions/TokenActions';
 import { setLanguage } from '../utils/translations';
 import { getIsLoggedInFromState, getTokenFromState } from '../reducers/appHandler';
+import * as uiTrace from '../utils/ui_trace/';
 
 const authContext = createContext();
 
@@ -73,11 +74,12 @@ function createAuthObject() {
 
   const login = (username, password) => {
     return loginRequest(username, password)
-      .then(async ({ error, token, language, userFullname }) => {
+      .then(async ({ error, token, language, userFullname, userId }) => {
         if (error) {
           return Promise.reject(error);
         } else {
           await loginByToken({ token, language, userFullname });
+          uiTrace.login({ userId, username, userFullname, language, method: 'password' });
           return Promise.resolve();
         }
       })
@@ -89,11 +91,12 @@ function createAuthObject() {
 
   const qrLogin = (qrCode) => {
     return loginByQrCode(qrCode)
-      .then(async ({ error, token, language, userFullname }) => {
+      .then(async ({ error, token, language, userFullname, userId, username }) => {
         if (error) {
           return Promise.reject(error);
         } else {
           await loginByToken({ token, language, userFullname });
+          uiTrace.login({ userId, username, userFullname, language, method: 'qrCode' });
           return Promise.resolve();
         }
       })
@@ -104,6 +107,8 @@ function createAuthObject() {
   };
 
   const logout = () => {
+    uiTrace.logout();
+
     logoutRequest().catch((error) => {
       console.error('logout error: ', error);
     });
@@ -113,7 +118,7 @@ function createAuthObject() {
     Cookies.remove('Token', { expires: COOKIE_EXPIRATION });
     Cookies.remove('UserFullname', { expires: COOKIE_EXPIRATION });
 
-    axios.defaults.headers.common['Authorization'] = null;
+    delete axios.defaults.headers.common['Authorization'];
 
     return Promise.resolve();
   };

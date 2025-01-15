@@ -62,7 +62,7 @@ public class AuthenticationRestController
 		this.userAuthTokenService = userAuthTokenService;
 		this.i18nRestController = i18nRestController;
 
-		userAuthTokenFilterConfiguration.excludePathContaining(ENDPOINT);
+		userAuthTokenFilterConfiguration.doNotAuthenticatePathsContaining(ENDPOINT);
 	}
 
 	@PostMapping
@@ -150,12 +150,14 @@ public class AuthenticationRestController
 	private ResponseEntity<JsonAuthResponse> getResponse(@NonNull final UserAuthToken tokenInfo)
 	{
 		final I_AD_User user = userBL.getById(tokenInfo.getUserId());
+		final String username = userBL.extractUserLogin(user);
 		final String adLanguage = userBL.getUserLanguage(user).getAD_Language();
 		final JsonMessages messages = i18nRestController.getMessages(null, adLanguage);
 
 		return ResponseEntity.ok(
 				JsonAuthResponse.ok(tokenInfo.getAuthToken())
 						.userId(tokenInfo.getUserId().getRepoId())
+						.username(username)
 						.userFullname(buildUserFullname(user))
 						.language(adLanguage)
 						.messages(messages.getMessages())

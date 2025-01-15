@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 
 import { trl } from '../../../utils/translations';
 import BarcodeScannerComponent from '../../../components/BarcodeScannerComponent';
+import DialogButton from '../../../components/dialogs/DialogButton';
+import Dialog from '../../../components/dialogs/Dialog';
 
 const UnpickDialog = ({ onSubmit, onCloseDialog }) => {
   const onResolvedQrCode = useCallback(
@@ -13,32 +15,24 @@ const UnpickDialog = ({ onSubmit, onCloseDialog }) => {
   );
 
   return (
-    <div className="prompt-dialog screen">
-      <article className="message is-dark">
-        <div className="message-body">
-          <table className="table">
-            <tbody>
-              <tr>
-                <td colSpan="2">
-                  <BarcodeScannerComponent
-                    inputPlaceholderText={trl('activities.picking.scanTargetHU')}
-                    onResolvedResult={onResolvedQrCode}
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          <div className="buttons is-centered">
-            <button className="button" onClick={onSubmit}>
-              {trl('activities.picking.skip')}
-            </button>
-            <button className="button is-danger" onClick={onCloseDialog}>
-              {trl('general.closeText')}
-            </button>
-          </div>
-        </div>
-      </article>
-    </div>
+    <Dialog className="screen">
+      <table className="table">
+        <tbody>
+          <tr>
+            <td colSpan="2">
+              <BarcodeScannerComponent
+                inputPlaceholderText={trl('activities.picking.scanTargetHU')}
+                onResolvedResult={onResolvedQrCode}
+              />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div className="buttons is-centered">
+        <DialogButton captionKey="activities.picking.skip" onClick={onSubmit} />
+        <DialogButton captionKey="general.closeText" className="is-danger" onClick={onCloseDialog} />
+      </div>
+    </Dialog>
   );
 };
 

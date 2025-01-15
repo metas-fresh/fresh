@@ -1,5 +1,6 @@
 package de.metas.security;
 
+import lombok.NonNull;
 import org.adempiere.exceptions.AdempiereException;
 
 import javax.annotation.Nullable;
@@ -28,9 +29,12 @@ import javax.annotation.Nullable;
 
 public class UserNotAuthorizedException extends AdempiereException
 {
-	public UserNotAuthorizedException(
-			@SuppressWarnings("unused") @Nullable final String authTokenString,
-			@Nullable final Throwable cause)
+	public UserNotAuthorizedException(@NonNull final String message)
+	{
+		super(message);
+	}
+
+	public UserNotAuthorizedException(@Nullable final Throwable cause)
 	{
 		super(buildMsg(cause), cause);
 		// setParameter("authTokenString", authTokenString); // NOTE: don't include token in message because it might be a security issue
@@ -44,7 +48,7 @@ public class UserNotAuthorizedException extends AdempiereException
 
 		if (cause != null)
 		{
-			msg.append("Cause: ").append(extractMessage(cause));
+			msg.append(" Cause: ").append(extractMessage(cause));
 		}
 		return msg.toString();
 	}

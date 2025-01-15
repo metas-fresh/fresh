@@ -28,6 +28,7 @@ import de.metas.audit.apirequest.HttpMethod;
 import de.metas.audit.apirequest.config.ApiAuditConfigId;
 import de.metas.organization.OrgId;
 import de.metas.security.RoleId;
+import de.metas.ui_trace.UITraceExternalId;
 import de.metas.user.UserId;
 import org.adempiere.test.AdempiereTestHelper;
 import org.junit.jupiter.api.BeforeEach;
@@ -68,6 +69,7 @@ public class ApiRequestAuditRepositoryTest
 				.time(Instant.ofEpochMilli(0))
 				.httpHeaders("httpHeaders")
 				.requestURI("request/uri")
+				.uiTraceExternalId(UITraceExternalId.ofString("myUITraceExternalId"))
 				.build();
 
 		//when

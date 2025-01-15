@@ -11,6 +11,7 @@ import { getApplicationStartFunction } from '../../apps';
 import { appLaunchersLocation } from '../../routes/launchers';
 import { useAuth } from '../../hooks/useAuth';
 import { trl } from '../../utils/translations';
+import { useUITraceLocationChange } from '../../utils/ui_trace/useUITraceLocationChange';
 
 const ApplicationsListScreen = () => {
   const applications = useSelector((state) => getAvailableApplicationsArray(state));
@@ -29,6 +30,8 @@ const ApplicationsListScreen = () => {
   useEffect(() => {
     document.title = 'mobile UI';
   }, []);
+
+  useUITraceLocationChange();
 
   const dispatch = useDispatch();
   const history = useHistory();

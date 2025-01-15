@@ -9,6 +9,7 @@ import { pushHeaderEntry } from '../../../../actions/HeaderActions';
 import QtyInputField from '../../../../components/QtyInputField';
 import { qtyInfos } from '../../../../utils/qtyInfos';
 import { trl } from '../../../../utils/translations';
+import * as uiTrace from '../../../../utils/ui_trace';
 
 const ConfirmOptionScreen = () => {
   const {
@@ -52,6 +53,8 @@ const ConfirmOptionScreen = () => {
 
   const history = useHistory();
   const onPrintClick = () => {
+    uiTrace.putContext({ numberOfHUs, numberOfCopies });
+
     postGenerateHUQRCodes({
       wfProcessId,
       finishedGoodsReceiveLineId: optionInfo.finishedGoodsReceiveLineId,

@@ -1,0 +1,59 @@
+{
+  "id": null,
+  "eventName": null,
+  "timestamp": 0,
+  "properties": {
+    "caption": "107.0",
+    "completeStatus": "COMPLETED",
+    "hazardSymbols": null,
+    "allergens": null,
+    "device": {
+      "deviceId": "dabbb790-9ae9-4a90-a752-c9439b5fdf6c",
+      "tabId": "6f848a12-5b69-44e7-9f21-db13a3943980",
+      "userAgent": "Mozilla/5.0 (Linux; Android 13; SM-G981B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36",
+      "platform": "Win32",
+      "language": "en-GB",
+      "screenSize": "412x915"
+    },
+    "user": {
+      "userId": 540116,
+      "username": "teo",
+      "userFullname": "teodor sarca",
+      "language": "en_US",
+      "method": "password"
+    },
+    "page": {
+      "url": "http://localhost:3001/mobile/picking/wf/picking-1000006/scan/A/A1/",
+      "title": "Picking",
+      "referrer": ""
+    },
+    "modalDialog": {},
+    "applicationId": "picking"
+  },
+  "caption": "107.0",
+  "completeStatus": "COMPLETED",
+  "hazardSymbols": null,
+  "allergens": null,
+  "device": {
+    "deviceId": "dabbb790-9ae9-4a90-a752-c9439b5fdf6c",
+    "tabId": "6f848a12-5b69-44e7-9f21-db13a3943980",
+    "userAgent": "Mozilla/5.0 (Linux; Android 13; SM-G981B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36",
+    "platform": "Win32",
+    "language": "en-GB",
+    "screenSize": "412x915"
+  },
+  "user": {
+    "userId": 540116,
+    "username": "teo",
+    "userFullname": "teodor sarca",
+    "language": "en_US",
+    "method": "password"
+  },
+  "page": {
+    "url": "http://localhost:3001/mobile/picking/wf/picking-1000006/scan/A/A1/",
+    "title": "Picking",
+    "referrer": ""
+  },
+  "modalDialog": {},
+  "applicationId": "picking"
+}

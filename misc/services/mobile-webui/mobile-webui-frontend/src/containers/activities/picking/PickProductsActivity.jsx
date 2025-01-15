@@ -161,10 +161,10 @@ const PickProductsActivity = ({ applicationId, wfProcessId, activityId, activity
           };
 
           return (
-            <>
+            <React.Fragment key={index}>
               {getDisplayLines(group)}
               {index !== groupedLines.length - 1 && <br />}
-            </>
+            </React.Fragment>
           );
         })}
     </div>

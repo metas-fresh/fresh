@@ -29,6 +29,7 @@ import de.metas.audit.apirequest.common.HttpHeadersWrapper;
 import de.metas.audit.apirequest.config.ApiAuditConfigId;
 import de.metas.organization.OrgId;
 import de.metas.security.RoleId;
+import de.metas.ui_trace.UITraceExternalId;
 import de.metas.user.UserId;
 import de.metas.util.Check;
 import lombok.Builder;
@@ -87,6 +88,8 @@ public class ApiRequestAudit
 
 	@Nullable
 	String requestURI;
+	
+	@Nullable UITraceExternalId uiTraceExternalId;
 
 	@NonNull
 	public ApiRequestAuditId getIdNotNull()

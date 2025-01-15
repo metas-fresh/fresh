@@ -46,13 +46,14 @@ import java.util.Set;
  * Miscellaneous descriptors building helpers.
  *
  * @author metas-dev <dev@metasfresh.com>
- *
  */
 public final class DescriptorsFactoryHelper
 {
 	private static final Logger logger = LogManager.getLogger(DescriptorsFactoryHelper.class);
 
-	/** Column names where we shall use {@link DocumentFieldWidgetType#Switch} instead of {@link DocumentFieldWidgetType#YesNo} */
+	/**
+	 * Column names where we shall use {@link DocumentFieldWidgetType#Switch} instead of {@link DocumentFieldWidgetType#YesNo}
+	 */
 	private static final Set<String> COLUMNNAMES_Switch = ImmutableSet.of(WindowConstants.FIELDNAME_IsActive); // FIXME: hardcoded
 
 	private DescriptorsFactoryHelper()
@@ -163,7 +164,8 @@ public final class DescriptorsFactoryHelper
 		else if (displayType == DisplayType.DateTime)
 		{
 			if (WindowConstants.FIELDNAME_Created.equals(columnName)
-					|| WindowConstants.FIELDNAME_Updated.equals(columnName))
+					|| WindowConstants.FIELDNAME_Updated.equals(columnName)
+					|| columnName.contains("Timestamp"))
 			{
 				return DocumentFieldWidgetType.Timestamp;
 			}
