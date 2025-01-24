@@ -26,6 +26,10 @@ import static org.adempiere.model.InterfaceWrapperHelper.saveRecord;
 
 import java.util.List;
 
+import de.metas.process.IProcessPrecondition;
+import de.metas.process.IProcessPreconditionsContext;
+import de.metas.process.ProcessPreconditionsResolution;
+import lombok.NonNull;
 import org.adempiere.exceptions.AdempiereException;
 
 import de.metas.edi.api.IEDIDocumentBL;
@@ -39,13 +43,23 @@ import de.metas.util.Services;
  * EDI-Exports a single EDI document. Locally and synchronously, i.e. without an async-workpackage.
  * If there is a validation error, then it updates the record with the error message(s) as well.
  */
-public class EDIExport extends JavaProcess
+public class EDIExport extends JavaProcess implements IProcessPrecondition
 {
 	private int recordId = -1;
 
 	// Services
 	private final IEDIDocumentBL ediDocumentBL = Services.get(IEDIDocumentBL.class);
 
+	@Override
+	public ProcessPreconditionsResolution checkPreconditionsApplicable(@NonNull final IProcessPreconditionsContext context)
+	{
+		if (!context.isSingleSelection())
+		{
+			return ProcessPreconditionsResolution.rejectBecauseNotSingleSelection();
+		}
+		return ProcessPreconditionsResolution.accept();
+	}
+	
 	@Override
 	protected void prepare()
 	{
@@ -79,10 +93,6 @@ public class EDIExport extends JavaProcess
 
 	private String buildAndTrlTitle(final String tableNameIdentifier, final I_EDI_Document document)
 	{
-		final StringBuilder titleBuilder = new StringBuilder();
-		titleBuilder.append("@").append(tableNameIdentifier).append("@ ").append(document.getDocumentNo());
-
-		final String tableNameIdentifierTrl = Services.get(IMsgBL.class).parseTranslation(getCtx(), titleBuilder.toString());
-		return tableNameIdentifierTrl;
+		return Services.get(IMsgBL.class).parseTranslation(getCtx(), "@" + tableNameIdentifier + "@ " + document.getDocumentNo());
 	}
 }
