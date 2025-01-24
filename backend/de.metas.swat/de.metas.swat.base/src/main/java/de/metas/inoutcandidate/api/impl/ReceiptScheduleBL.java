@@ -25,11 +25,16 @@ package de.metas.inoutcandidate.api.impl;
 import ch.qos.logback.classic.Level;
 import de.metas.bpartner.BPartnerContactId;
 import de.metas.bpartner.BPartnerId;
+import de.metas.bpartner.BPartnerLocationId;
 import de.metas.bpartner.service.IBPartnerDAO;
+import de.metas.deliveryplanning.DeliveryPlanningCreateRequest;
+import de.metas.deliveryplanning.DeliveryPlanningType;
 import de.metas.document.location.IDocumentLocationBL;
 import de.metas.document.location.adapter.IDocumentLocationAdapter;
+import de.metas.incoterms.IncotermsId;
 import de.metas.inout.IInOutBL;
 import de.metas.inout.model.I_M_InOutLine;
+import de.metas.inoutcandidate.ReceiptScheduleId;
 import de.metas.inoutcandidate.api.ApplyReceiptScheduleChangesRequest;
 import de.metas.inoutcandidate.api.IInOutProducer;
 import de.metas.inoutcandidate.api.IReceiptScheduleAllocBuilder;
@@ -44,10 +49,20 @@ import de.metas.inoutcandidate.modelvalidator.M_ReceiptSchedule;
 import de.metas.inoutcandidate.spi.IReceiptScheduleListener;
 import de.metas.inoutcandidate.spi.impl.CompositeReceiptScheduleListener;
 import de.metas.interfaces.I_C_BPartner;
+import de.metas.location.CountryId;
+import de.metas.location.ICountryDAO;
 import de.metas.logging.LogManager;
+import de.metas.order.IOrderDAO;
+import de.metas.order.OrderId;
+import de.metas.order.OrderLineId;
+import de.metas.organization.OrgId;
 import de.metas.process.PInstanceId;
 import de.metas.product.ProductId;
+import de.metas.quantity.Quantity;
 import de.metas.quantity.StockQtyAndUOMQty;
+import de.metas.sectionCode.SectionCodeId;
+import de.metas.shipping.ShipperId;
+import de.metas.uom.IUOMDAO;
 import de.metas.util.Check;
 import de.metas.util.Loggables;
 import de.metas.util.Services;
@@ -58,9 +73,11 @@ import org.adempiere.ad.trx.processor.api.ITrxItemProcessorExecutorService;
 import org.adempiere.ad.trx.processor.api.LoggableTrxItemExceptionHandler;
 import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.mm.attributes.AttributeSetInstanceId;
+import org.adempiere.mm.attributes.api.AttributeConstants;
 import org.adempiere.mm.attributes.api.IAttributeSetInstanceBL;
 import org.adempiere.mm.attributes.api.impl.AddAttributesRequest;
 import org.adempiere.model.InterfaceWrapperHelper;
+import org.adempiere.service.ClientId;
 import org.adempiere.service.ISysConfigBL;
 import org.adempiere.util.agg.key.IAggregationKeyBuilder;
 import org.adempiere.util.lang.IContextAware;
@@ -70,6 +87,8 @@ import org.adempiere.warehouse.api.IWarehouseBL;
 import org.compiere.SpringContextHolder;
 import org.compiere.model.I_C_BPartner_Location;
 import org.compiere.model.I_C_Order;
+import org.compiere.model.I_C_OrderLine;
+import org.compiere.model.I_C_UOM;
 import org.compiere.model.I_M_AttributeSetInstance;
 import org.compiere.model.I_M_Warehouse;
 import org.compiere.util.Env;
@@ -100,6 +119,12 @@ public class ReceiptScheduleBL implements IReceiptScheduleBL
 	private final IAttributeSetInstanceBL attributeSetInstanceBL = Services.get(IAttributeSetInstanceBL.class);
 	private final ISysConfigBL sysConfigBL = Services.get(ISysConfigBL.class);
 	private final IQueryBL queryBL = Services.get(IQueryBL.class);
+	private final IUOMDAO uomDAO = Services.get(IUOMDAO.class);
+
+	private final IOrderDAO orderDAO = Services.get(IOrderDAO.class);
+	private final IWarehouseBL warehouseBL = Services.get(IWarehouseBL.class);
+	final ICountryDAO countryDAO = Services.get(ICountryDAO.class);
+	private IReceiptScheduleQtysBL receiptScheduleQtysBL = Services.get(IReceiptScheduleQtysBL.class);
 
 	@Override
 	public void addReceiptScheduleListener(IReceiptScheduleListener listener)
@@ -731,5 +756,80 @@ public class ReceiptScheduleBL implements IReceiptScheduleBL
 		{
 			delegate.setBPartnerAddress_Override(address);
 		}
+	}
+
+	@Override
+	public DeliveryPlanningCreateRequest createDeliveryPlanningRequest(@NonNull final I_M_ReceiptSchedule receiptScheduleRecord)
+	{
+		final OrderId orderId = OrderId.ofRepoIdOrNull(receiptScheduleRecord.getC_Order_ID());
+		final OrderLineId orderLineId = OrderLineId.ofRepoIdOrNull(receiptScheduleRecord.getC_OrderLine_ID());
+
+		final I_C_UOM uom = uomDAO.getById(receiptScheduleRecord.getC_UOM_ID());
+
+		final Quantity qtyOrdered = Quantity.of(receiptScheduleQtysBL.getQtyOrdered(receiptScheduleRecord), uom);
+
+		final Quantity qtyMoved = Quantity.of(receiptScheduleQtysBL.getQtyMoved(receiptScheduleRecord), uom);
+
+		final AttributeSetInstanceId asiId = AttributeSetInstanceId.ofRepoIdOrNone(receiptScheduleRecord.getM_AttributeSetInstance_ID());
+
+		final CountryId originCountryId = getOriginCountryId(asiId);
+
+		final WarehouseId warehouseId = WarehouseId.ofRepoId(receiptScheduleRecord.getM_Warehouse_ID());
+		final BPartnerLocationId destinationBPLocationId = warehouseBL.getBPartnerLocationId(warehouseId);
+		final CountryId destinationCountryId = warehouseBL.getCountryId(warehouseId);
+
+		final String huBatchNo = attributeSetInstanceBL.getAttributeValueOrNull(AttributeConstants.HU_BatchNo, asiId);
+
+		final DeliveryPlanningCreateRequest.DeliveryPlanningCreateRequestBuilder requestBuilder = DeliveryPlanningCreateRequest.builder()
+				.orgId(OrgId.ofRepoId(receiptScheduleRecord.getAD_Org_ID()))
+				.clientId(ClientId.ofRepoId(receiptScheduleRecord.getAD_Client_ID()))
+				.receiptScheduleId(ReceiptScheduleId.ofRepoId(receiptScheduleRecord.getM_ReceiptSchedule_ID()))
+				.deliveryPlanningType(DeliveryPlanningType.Incoming)
+				.orderId(orderId)
+				.orderLineId(orderLineId)
+				.warehouseId(warehouseId)
+				.productId(ProductId.ofRepoId(receiptScheduleRecord.getM_Product_ID()))
+				.partnerId(BPartnerId.ofRepoId(receiptScheduleRecord.getC_BPartner_ID()))
+				.bPartnerLocationId(destinationBPLocationId)
+				.sectionCodeId(SectionCodeId.ofRepoIdOrNull(receiptScheduleRecord.getM_SectionCode_ID()))
+				.qtyOrdered(qtyOrdered)
+				.qtyTotalOpen(qtyOrdered.subtract(qtyMoved))
+				.actualLoadedQty(Quantity.zero(uom))
+				.actualDeliveredQty(Quantity.zero(uom))
+				.plannedLoadedQty(Quantity.zero(uom))
+				.plannedDischargeQty(Quantity.zero(uom))
+				.actualDischargeQty(Quantity.zero(uom))
+				.uom(uom)
+				.plannedDeliveryDate(TimeUtil.asInstant(receiptScheduleRecord.getMovementDate()))
+				.batch(huBatchNo)
+				.originCountryId(originCountryId)
+				.destinationCountryId(destinationCountryId);
+
+		if (orderId != null)
+		{
+			final I_C_Order order = orderDAO.getById(orderId);
+
+			requestBuilder.isB2B(order.isDropShip())
+					.incotermsId(IncotermsId.ofRepoIdOrNull(order.getC_Incoterms_ID()))
+					.incotermLocation(order.getIncotermLocation());
+		}
+
+		if (orderLineId != null)
+		{
+			final I_C_OrderLine orderLine = orderDAO.getOrderLineById(orderLineId);
+
+			requestBuilder.actualDeliveryDate(TimeUtil.asInstant(orderLine.getDateDelivered()));
+			requestBuilder.shipperId(ShipperId.ofRepoIdOrNull(orderLine.getM_Shipper_ID()));
+		}
+
+		return requestBuilder.build();
+	}
+
+	@Nullable
+	private CountryId getOriginCountryId(final AttributeSetInstanceId asiId)
+	{
+		final String originCountryCode = attributeSetInstanceBL.getAttributeValueOrNull(AttributeConstants.CountryOfOrigin, asiId);
+		final CountryId originCountryId = originCountryCode == null ? null : countryDAO.getCountryIdByCountryCode(originCountryCode);
+		return originCountryId;
 	}
 }

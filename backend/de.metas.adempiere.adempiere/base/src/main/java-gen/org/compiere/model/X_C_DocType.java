@@ -1,9 +1,9 @@
 // Generated Model - DO NOT CHANGE
 package org.compiere.model;
 
-import javax.annotation.Nullable;
 import java.sql.ResultSet;
 import java.util.Properties;
+import javax.annotation.Nullable;
 
 /** Generated Model for C_DocType
  *  @author metasfresh (generated) 
@@ -79,14 +79,14 @@ public class X_C_DocType extends org.compiere.model.PO implements I_C_DocType, o
 	@Override
 	public void setC_DocTypeDifference_ID (final int C_DocTypeDifference_ID)
 	{
-		if (C_DocTypeDifference_ID < 1) 
+		if (C_DocTypeDifference_ID < 1)
 			set_Value (COLUMNNAME_C_DocTypeDifference_ID, null);
-		else 
+		else
 			set_Value (COLUMNNAME_C_DocTypeDifference_ID, C_DocTypeDifference_ID);
 	}
 
 	@Override
-	public int getC_DocTypeDifference_ID() 
+	public int getC_DocTypeDifference_ID()
 	{
 		return get_ValueAsInt(COLUMNNAME_C_DocTypeDifference_ID);
 	}
@@ -94,14 +94,14 @@ public class X_C_DocType extends org.compiere.model.PO implements I_C_DocType, o
 	@Override
 	public void setC_DocType_ID (final int C_DocType_ID)
 	{
-		if (C_DocType_ID < 0) 
+		if (C_DocType_ID < 0)
 			set_ValueNoCheck (COLUMNNAME_C_DocType_ID, null);
-		else 
+		else
 			set_ValueNoCheck (COLUMNNAME_C_DocType_ID, C_DocType_ID);
 	}
 
 	@Override
-	public int getC_DocType_ID() 
+	public int getC_DocType_ID()
 	{
 		return get_ValueAsInt(COLUMNNAME_C_DocType_ID);
 	}
@@ -417,6 +417,8 @@ public class X_C_DocType extends org.compiere.model.PO implements I_C_DocType, o
 	public static final String DOCSUBTYPE_PaymentServiceProviderInvoice = "SI";
 	/** CallOrder = CAO */
 	public static final String DOCSUBTYPE_CallOrder = "CAO";
+	/** Delivery Instruction = DI */
+	public static final String DOCSUBTYPE_DeliveryInstruction = "DI";
 	@Override
 	public void setDocSubType (final @Nullable java.lang.String DocSubType)
 	{
@@ -704,14 +706,14 @@ public class X_C_DocType extends org.compiere.model.PO implements I_C_DocType, o
 	@Override
 	public void setLotNo_Sequence_ID (final int LotNo_Sequence_ID)
 	{
-		if (LotNo_Sequence_ID < 1) 
+		if (LotNo_Sequence_ID < 1)
 			set_Value (COLUMNNAME_LotNo_Sequence_ID, null);
-		else 
+		else
 			set_Value (COLUMNNAME_LotNo_Sequence_ID, LotNo_Sequence_ID);
 	}
 
 	@Override
-	public int getLotNo_Sequence_ID() 
+	public int getLotNo_Sequence_ID()
 	{
 		return get_ValueAsInt(COLUMNNAME_LotNo_Sequence_ID);
 	}
