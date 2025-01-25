@@ -988,9 +988,10 @@ public class MInvoice extends X_C_Invoice implements IDocument
 					final MInvoiceTax newITax = new MInvoiceTax(getCtx(), 0, trxName);
 					newITax.setClientOrg(this);
 					newITax.setC_Invoice(this);
-					newITax.setC_Tax(cTax);
+					newITax.setC_Tax_ID(cTax.getC_Tax_ID());
 					newITax.setPrecision(taxPrecision.toInt());
 					newITax.setIsTaxIncluded(taxIncluded);
+					newITax.setIsDocumentLevel(cTax.isDocumentLevel());
 					newITax.setTaxBaseAmt(taxBaseAmt);
 					newITax.setTaxAmt(taxAmt);
 					newITax.saveEx(trxName);

@@ -26,7 +26,6 @@ import de.metas.util.Services;
 import org.adempiere.exceptions.DBException;
 import org.compiere.util.DB;
 import org.compiere.util.DisplayType;
-import org.compiere.util.Env;
 import org.slf4j.Logger;
 
 import java.math.BigDecimal;
@@ -50,14 +49,14 @@ public class MOrderTax extends X_C_OrderTax
 	/**
 	 * Get Tax Line for Order Line
 	 *
-	 * @param line Order line
+	 * @param line      Order line
 	 * @param precision currency precision
-	 * @param oldTax get old tax
-	 * @param trxName transaction
+	 * @param oldTax    get old tax
+	 * @param trxName   transaction
 	 * @return existing or new tax
 	 */
 	public static MOrderTax get(MOrderLine line, int precision,
-			boolean oldTax, String trxName)
+								boolean oldTax, String trxName)
 	{
 		if (line == null || line.getC_Order_ID() == 0)
 		{
@@ -74,7 +73,7 @@ public class MOrderTax extends X_C_OrderTax
 				s_log.debug("No Old Tax");
 				return null;
 			}
-			C_Tax_ID = ((Integer)old).intValue();
+			C_Tax_ID = (Integer)old;
 		}
 		if (C_Tax_ID <= 0)
 		{
@@ -134,14 +133,17 @@ public class MOrderTax extends X_C_OrderTax
 		retValue.setC_Order_ID(line.getC_Order_ID());
 		retValue.setC_Tax_ID(tax.getTaxId().getRepoId());
 		retValue.setIsWholeTax(tax.isWholeTax());
+		retValue.setIsDocumentLevel(tax.isDocumentLevel());
 		retValue.setPrecision(precision);
 		retValue.setIsTaxIncluded(taxIncluded);
-		s_log.debug("(new) " + retValue);
+		s_log.debug("(new) {}", retValue);
 		return retValue;
-	}	// get
+	}    // get
 
-	/** Static Logger */
-	private static Logger s_log = LogManager.getLogger(MOrderTax.class);
+	/**
+	 * Static Logger
+	 */
+	private static final Logger s_log = LogManager.getLogger(MOrderTax.class);
 
 	/**************************************************************************
 	 * Persistence Constructor
@@ -157,48 +159,45 @@ public class MOrderTax extends X_C_OrderTax
 		setTaxAmt(BigDecimal.ZERO);
 		setTaxBaseAmt(BigDecimal.ZERO);
 		setIsTaxIncluded(false);
-	}	// MOrderTax
+	}    // MOrderTax
 
 	/**
 	 * Load Constructor. Set Precision and TaxIncluded for tax calculations!
 	 *
-	 * @param ctx context
-	 * @param rs result set
+	 * @param ctx     context
+	 * @param rs      result set
 	 * @param trxName transaction
 	 */
 	public MOrderTax(Properties ctx, ResultSet rs, String trxName)
 	{
 		super(ctx, rs, trxName);
-	}	// MOrderTax
+	}    // MOrderTax
 
-	/** Tax */
+	/**
+	 * Tax
+	 */
 	private MTax m_tax = null;
-	/** Cached Precision */
+	/**
+	 * Cached Precision
+	 */
 	private Integer m_precision = null;
 
 	/**
-	 * Get Precision
-	 *
 	 * @return Returns the precision or 2
 	 */
 	private int getPrecision()
 	{
-		if (m_precision == null)
-		{
-			return 2;
-		}
-		return m_precision.intValue();
-	}	// getPrecision
+		final Integer precision = this.m_precision;
+		return precision != null ? precision : 2;
+	}
 
 	/**
-	 * Set Precision
-	 *
 	 * @param precision The precision to set.
 	 */
 	protected void setPrecision(int precision)
 	{
-		m_precision = new Integer(precision);
-	}	// setPrecision
+		this.m_precision = precision;
+	}
 
 	/**
 	 * Get Tax
@@ -212,11 +211,10 @@ public class MOrderTax extends X_C_OrderTax
 			m_tax = MTax.get(getCtx(), getC_Tax_ID());
 		}
 		return m_tax;
-	}	// getTax
+	}    // getTax
 
 	/**************************************************************************
-	 * Calculate/Set Tax Amt from Order Lines
-	 *
+	 * Calculate/Set Tax Amt from Order Lines.
 	 * If there were no invoice lines found for this tax, this record will be inactivated. In this way, the caller method can know about this and it can decide if this record will be deleted.
 	 *
 	 * @return true if calculated
@@ -225,8 +223,8 @@ public class MOrderTax extends X_C_OrderTax
 	{
 		final ITaxBL taxBL = Services.get(ITaxBL.class);
 
-		BigDecimal taxBaseAmt = Env.ZERO;
-		BigDecimal taxAmt = Env.ZERO;
+		BigDecimal taxBaseAmt = BigDecimal.ZERO;
+		BigDecimal taxAmt = BigDecimal.ZERO;
 		boolean havePackingMaterialLines = false;
 		boolean haveNonPackingMaterialLines = false;
 		boolean foundInvoiceLines = false;
@@ -313,11 +311,9 @@ public class MOrderTax extends X_C_OrderTax
 		setIsPackagingTax(checkIsPackagingMaterialTax(havePackingMaterialLines, haveNonPackingMaterialLines));
 
 		return true;
-	}	// calculateTaxFromLines
+	}    // calculateTaxFromLines
 
 	/**
-	 * @param havePackingMaterialLines
-	 * @param haveNonPackingMaterialLines
 	 * @return true if there are no non packing material lines with the same tax as the packing material lines, false otherwise
 	 */
 	private boolean checkIsPackagingMaterialTax(final boolean havePackingMaterialLines, final boolean haveNonPackingMaterialLines)
@@ -338,21 +334,15 @@ public class MOrderTax extends X_C_OrderTax
 		}
 	}
 
-	/**
-	 * String Representation
-	 *
-	 * @return info
-	 */
 	@Override
 	public String toString()
 	{
-		StringBuffer sb = new StringBuffer("MOrderTax[")
-				.append("C_Order_ID=").append(getC_Order_ID())
-				.append(", C_Tax_ID=").append(getC_Tax_ID())
-				.append(", Base=").append(getTaxBaseAmt())
-				.append(", Tax=").append(getTaxAmt())
-				.append("]");
-		return sb.toString();
-	}	// toString
+		return "MOrderTax["
+				+ "C_Order_ID=" + getC_Order_ID()
+				+ ", C_Tax_ID=" + getC_Tax_ID()
+				+ ", Base=" + getTaxBaseAmt()
+				+ ", Tax=" + getTaxAmt()
+				+ "]";
+	}
 
-}	// MOrderTax
+}    // MOrderTax

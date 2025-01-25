@@ -26,7 +26,6 @@ import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.exceptions.DBException;
 import org.compiere.util.DB;
 import org.compiere.util.DisplayType;
-import org.compiere.util.Env;
 import org.slf4j.Logger;
 
 import java.math.BigDecimal;
@@ -76,7 +75,7 @@ public class MInvoiceTax extends X_C_InvoiceTax
 			{
 				return null;
 			}
-			C_Tax_ID = ((Integer)old).intValue();
+			C_Tax_ID = (Integer)old;
 		}
 
 		if (C_Tax_ID <= 0)
@@ -87,7 +86,7 @@ public class MInvoiceTax extends X_C_InvoiceTax
 		}
 
 		MInvoiceTax retValue = new Query(line.getCtx(), Table_Name, "C_Invoice_ID=? AND C_Tax_ID=?", trxName)
-				.setParameters(new Object[] { line.getC_Invoice_ID(), C_Tax_ID })
+				.setParameters(line.getC_Invoice_ID(), C_Tax_ID)
 				.firstOnly();
 		if (retValue != null)
 		{
@@ -119,14 +118,15 @@ public class MInvoiceTax extends X_C_InvoiceTax
 		retValue.setC_Invoice_ID(line.getC_Invoice_ID());
 		retValue.setC_Tax_ID(tax.getTaxId().getRepoId());
 		retValue.setIsWholeTax(tax.isWholeTax());
+		retValue.setIsDocumentLevel(tax.isDocumentLevel());
 		retValue.setPrecision(precision);
 		retValue.setIsTaxIncluded(taxIncluded);
-		s_log.debug("(new) " + retValue);
+		s_log.debug("(new) {}", retValue);
 		return retValue;
 	}	// get
 
 	/** Static Logger */
-	private static Logger s_log = LogManager.getLogger(MInvoiceTax.class);
+	private static final Logger s_log = LogManager.getLogger(MInvoiceTax.class);
 
 	/**************************************************************************
 	 * Persistency Constructor
@@ -134,24 +134,19 @@ public class MInvoiceTax extends X_C_InvoiceTax
 	public MInvoiceTax(Properties ctx, int id, String trxName)
 	{
 		super(ctx, id, trxName);
-
-		setTaxAmt(BigDecimal.ZERO);
-		setTaxBaseAmt(BigDecimal.ZERO);
-		setIsTaxIncluded(false);
+		if(id <= 0)
+		{
+			setTaxAmt(BigDecimal.ZERO);
+			setTaxBaseAmt(BigDecimal.ZERO);
+			setIsTaxIncluded(false);
+		}
 	}	// MInvoiceTax
 
-	/**
-	 * Load Constructor.
-	 * Set Precision and TaxIncluded for tax calculations!
-	 *
-	 * @param ctx context
-	 * @param rs result set
-	 * @param trxName transaction
-	 */
+	@SuppressWarnings("unused")
 	public MInvoiceTax(Properties ctx, ResultSet rs, String trxName)
 	{
 		super(ctx, rs, trxName);
-	}	// MInvoiceTax
+	}
 
 	/** Tax */
 	private MTax m_tax = null;
@@ -165,22 +160,17 @@ public class MInvoiceTax extends X_C_InvoiceTax
 	 */
 	private int getPrecision()
 	{
-		if (m_precision == null)
-		{
-			return 2;
-		}
-		return m_precision.intValue();
+		final Integer precision = this.m_precision;
+		return precision != null ? precision : 2;
 	}	// getPrecision
 
 	/**
-	 * Set Precision
-	 *
 	 * @param precision The precision to set.
 	 */
 	protected void setPrecision(int precision)
 	{
-		m_precision = new Integer(precision);
-	}	// setPrecision
+		m_precision = precision;
+	}
 
 	/**
 	 * Get Tax
@@ -198,17 +188,17 @@ public class MInvoiceTax extends X_C_InvoiceTax
 
 	/**************************************************************************
 	 * Calculate/Set Tax Base Amt from Invoice Lines.
-	 *
 	 * If there were no invoice lines found for this tax, this record will be inactivated. In this way, the caller method can know about this and it can decide if this record will be deleted.
 	 *
 	 * @return true if tax calculated
 	 */
+	@SuppressWarnings("BooleanMethodIsAlwaysInverted")
 	public boolean calculateTaxFromLines()
 	{
 		final ITaxBL taxBL = Services.get(ITaxBL.class);
 
-		BigDecimal taxBaseAmt = Env.ZERO;
-		BigDecimal taxAmt = Env.ZERO;
+		BigDecimal taxBaseAmt = BigDecimal.ZERO;
+		BigDecimal taxAmt = BigDecimal.ZERO;
 		boolean foundInvoiceLines = false;
 		//
 		final boolean documentLevel = getTax().isDocumentLevel();
@@ -248,7 +238,7 @@ public class MInvoiceTax extends X_C_InvoiceTax
 				BigDecimal amt = rs.getBigDecimal(2);
 				if (amt == null)
 				{
-					amt = Env.ZERO;
+					amt = BigDecimal.ZERO;
 				}
 				boolean isSOTrx = "Y".equals(rs.getString(3));
 				//
@@ -260,7 +250,7 @@ public class MInvoiceTax extends X_C_InvoiceTax
 				}
 				else if (documentLevel || baseAmt.signum() == 0)
 				{
-					amt = Env.ZERO;
+					amt = BigDecimal.ZERO;
 				}
 				else
 				{
@@ -287,8 +277,6 @@ public class MInvoiceTax extends X_C_InvoiceTax
 		finally
 		{
 			DB.close(rs, pstmt);
-			rs = null;
-			pstmt = null;
 		}
 
 		// Calculate Tax
@@ -317,25 +305,16 @@ public class MInvoiceTax extends X_C_InvoiceTax
 		return true;
 	}	// calculateTaxFromLines
 
-	/**
-	 * String Representation
-	 *
-	 * @return info
-	 */
 	@Override
 	public String toString()
 	{
-		StringBuffer sb = new StringBuffer("MInvoiceTax[");
-		sb.append("C_Invoice_ID=").append(getC_Invoice_ID())
-				.append(",C_Tax_ID=").append(getC_Tax_ID())
-				.append(", Base=").append(getTaxBaseAmt()).append(",Tax=").append(getTaxAmt())
-				.append("]");
-		return sb.toString();
-	}	// toString
+		return "MInvoiceTax[" + "C_Invoice_ID=" + getC_Invoice_ID()
+				+ ",C_Tax_ID=" + getC_Tax_ID()
+				+ ", Base=" + getTaxBaseAmt() + ",Tax=" + getTaxAmt()
+				+ "]";
+	}
 
 	/**
-	 * @param havePackingMaterialLines
-	 * @param haveNonPackingMaterialLines
 	 * @return true if there are no non packing material lines with the same tax as the packing material lines, false otherwise
 	 */
 	private boolean checkIsPackagingMaterialTax(final boolean havePackingMaterialLines, final boolean haveNonPackingMaterialLines)

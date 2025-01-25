@@ -36,6 +36,8 @@ import de.metas.invoice_gateway.spi.model.export.InvoiceToExport;
 import de.metas.lang.ExternalIdsUtil;
 import de.metas.logging.LogManager;
 import de.metas.money.CurrencyId;
+import de.metas.tax.api.ITaxDAO;
+import de.metas.tax.api.Tax;
 import de.metas.util.Check;
 import de.metas.util.Check.ExceptionWithOwnHeaderMessage;
 import de.metas.util.Loggables;
@@ -86,6 +88,7 @@ public class InvoiceToExportFactory
 {
 	private static final Logger logger = LogManager.getLogger(InvoiceToExportFactory.class);
 
+	private final ITaxDAO taxDAO = Services.get(ITaxDAO.class);
 	private final AttachmentEntryService attachmentEntryService;
 	private final ESRPaymentInfoProvider esrPaymentInfoProvider;
 	private final CurrencyRepository currenciesRepo;
@@ -200,9 +203,10 @@ public class InvoiceToExportFactory
 
 		for (final I_C_InvoiceTax invoiceTaxRecord : invoiceTaxRecords)
 		{
+			final Tax tax = taxDAO.getTaxById(invoiceTaxRecord.getC_Tax_ID());
 			final InvoiceTax invoiceTax = InvoiceTax.builder()
 					.baseAmount(invoiceTaxRecord.getTaxBaseAmt())
-					.ratePercent(invoiceTaxRecord.getC_Tax().getRate())
+					.ratePercent(tax.getRate())
 					.vatAmount(invoiceTaxRecord.getTaxAmt())
 					.build();
 			invoiceTaxes.add(invoiceTax);

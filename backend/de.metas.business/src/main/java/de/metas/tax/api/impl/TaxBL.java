@@ -134,14 +134,14 @@ public class TaxBL implements de.metas.tax.api.ITaxBL
 	}
 
 	private int getGermanTax(final Properties ctx,
-			final ProductId productId,
-			final int chargeId,
-			final Timestamp billDate,
-			final Timestamp shipDate,
-			@NonNull final OrgId orgId,
-			final WarehouseId warehouseId,
-			final BPartnerLocationAndCaptureId shipBPLocationId,
-			final boolean isSOTrx)
+							 final ProductId productId,
+							 final int chargeId,
+							 final Timestamp billDate,
+							 final Timestamp shipDate,
+							 @NonNull final OrgId orgId,
+							 final WarehouseId warehouseId,
+							 final BPartnerLocationAndCaptureId shipBPLocationId,
+							 final boolean isSOTrx)
 	{
 		//
 		// If organization is tax exempted then we will return the Tax Exempt for that organization (03871)
@@ -165,9 +165,9 @@ public class TaxBL implements de.metas.tax.api.ITaxBL
 		final CountryId shipToCountryId = Services.get(IBPartnerBL.class).getCountryId(shipBPLocationId);
 		final String shipToCountryCode = Services.get(ICountryDAO.class).retrieveCountryCode2ByCountryId(shipToCountryId);
 		final boolean isEULocation = countryAreaBL.isMemberOf(ctx,
-															  ICountryAreaBL.COUNTRYAREAKEY_EU,
-															  shipToCountryCode,
-															  billDate);
+				ICountryAreaBL.COUNTRYAREAKEY_EU,
+				shipToCountryCode,
+				billDate);
 
 		final CountryId shipFromCountryId;
 		if (warehouseId != null)
@@ -312,15 +312,15 @@ public class TaxBL implements de.metas.tax.api.ITaxBL
 	 */
 	@Override
 	public int get(final Properties ctx,
-			final int M_Product_ID,
-			final int C_Charge_ID,
-			final Timestamp billDate,
-			final Timestamp shipDate,
-			final int AD_Org_ID,
-			final int M_Warehouse_ID,
-			final BPartnerLocationAndCaptureId billBPLocationId,
-			final BPartnerLocationAndCaptureId shipBPLocationId,
-			final boolean IsSOTrx)
+				   final int M_Product_ID,
+				   final int C_Charge_ID,
+				   final Timestamp billDate,
+				   final Timestamp shipDate,
+				   final int AD_Org_ID,
+				   final int M_Warehouse_ID,
+				   final BPartnerLocationAndCaptureId billBPLocationId,
+				   final BPartnerLocationAndCaptureId shipBPLocationId,
+				   final boolean IsSOTrx)
 	{
 		if (M_Product_ID > 0 || C_Charge_ID > 0)
 		{
@@ -399,4 +399,11 @@ public class TaxBL implements de.metas.tax.api.ITaxBL
 				.map(I_C_TaxCategory::getC_TaxCategory_ID)
 				.map(TaxCategoryId::ofRepoId);
 	}
+
+	@Override
+	public Tax getDefaultTax(final TaxCategoryId taxCategoryId)
+	{
+		return taxDAO.getDefaultTax(taxCategoryId);
+	}
+
 }

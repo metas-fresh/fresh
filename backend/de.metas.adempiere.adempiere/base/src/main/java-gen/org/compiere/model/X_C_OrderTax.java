@@ -13,7 +13,7 @@ import javax.annotation.Nullable;
 public class X_C_OrderTax extends org.compiere.model.PO implements I_C_OrderTax, org.compiere.model.I_Persistent 
 {
 
-	private static final long serialVersionUID = 342384539L;
+	private static final long serialVersionUID = -743694283L;
 
     /** Standard Constructor */
     public X_C_OrderTax (final Properties ctx, final int C_OrderTax_ID, @Nullable final String trxName)
@@ -90,6 +90,18 @@ public class X_C_OrderTax extends org.compiere.model.PO implements I_C_OrderTax,
 	public int getC_Tax_ID() 
 	{
 		return get_ValueAsInt(COLUMNNAME_C_Tax_ID);
+	}
+
+	@Override
+	public void setIsDocumentLevel (final boolean IsDocumentLevel)
+	{
+		set_Value (COLUMNNAME_IsDocumentLevel, IsDocumentLevel);
+	}
+
+	@Override
+	public boolean isDocumentLevel() 
+	{
+		return get_ValueAsBoolean(COLUMNNAME_IsDocumentLevel);
 	}
 
 	@Override
