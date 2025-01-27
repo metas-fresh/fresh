@@ -682,4 +682,10 @@ public class ProductDAO implements IProductDAO
 						.anyMatch();
 	}
 
+	@Override
+	public void save(I_M_Product record)
+	{
+		InterfaceWrapperHelper.save(record);
+	}
+
 }

@@ -566,7 +566,7 @@ public class MProductImportTableSqlUpdater
 				.append(" SET " + COLUMNNAME_I_IsImported + "='E', " + COLUMNNAME_I_ErrorMsg + "=" + COLUMNNAME_I_ErrorMsg + "||'ERR=Value not unique,' ")
 				.append("WHERE " + COLUMNNAME_I_IsImported + "<>'Y'")
 				.append(" AND ").append(I_I_Product.COLUMNNAME_IsScalePrice).append(" <>'Y'")
-				.append(" AND Value IN (SELECT Value FROM I_Product ii WHERE i.AD_Client_ID=ii.AD_Client_ID GROUP BY Value HAVING COUNT(*) > 1)")
+				.append(" AND Value IN (SELECT Value FROM I_Product ii WHERE i.AD_Client_ID=ii.AD_Client_ID GROUP BY Value, m_pricelist_version_name HAVING COUNT(*) > 1)")
 				.append(selection.toSqlWhereClause("i"));
 		DB.executeUpdateEx(sql.toString(), ITrx.TRXNAME_ThreadInherited);
 
@@ -606,7 +606,7 @@ public class MProductImportTableSqlUpdater
 				.append(" SET " + COLUMNNAME_I_IsImported + "='E', " + COLUMNNAME_I_ErrorMsg + "=" + COLUMNNAME_I_ErrorMsg + "||'ERR=UPC not unique,' ")
 				.append("WHERE " + COLUMNNAME_I_IsImported + "<>'Y'")
 				.append(" AND ").append(I_I_Product.COLUMNNAME_IsScalePrice).append(" <>'Y'")
-				.append(" AND UPC IN (SELECT UPC FROM I_Product ii WHERE i.AD_Client_ID=ii.AD_Client_ID GROUP BY UPC HAVING COUNT(*) > 1)")
+				.append(" AND UPC IN (SELECT UPC FROM I_Product ii WHERE i.AD_Client_ID=ii.AD_Client_ID GROUP BY UPC, value, m_pricelist_version_name HAVING COUNT(*) > 1)")
 				.append(selection.toSqlWhereClause("i"));
 		DB.executeUpdateEx(sql.toString(), ITrx.TRXNAME_ThreadInherited);
 
@@ -618,13 +618,14 @@ public class MProductImportTableSqlUpdater
 				.append(selection.toSqlWhereClause("i"));
 		DB.executeUpdateEx(sql.toString(), ITrx.TRXNAME_ThreadInherited);
 
+
 		sql = new StringBuilder("UPDATE ")
 				.append(targetTableName + " i ")
 				.append(" SET " + COLUMNNAME_I_IsImported + "='E', " + COLUMNNAME_I_ErrorMsg + "=" + COLUMNNAME_I_ErrorMsg + "||'ERR=VendorProductNo not unique,' ")
 				.append("WHERE " + COLUMNNAME_I_IsImported + "<>'Y'")
 				.append(" AND C_BPartner_ID IS NOT NULL")
 				.append(" AND (C_BPartner_ID, VendorProductNo) IN ")
-				.append(" (SELECT C_BPartner_ID, VendorProductNo FROM I_Product ii WHERE i.AD_Client_ID=ii.AD_Client_ID GROUP BY C_BPartner_ID, VendorProductNo HAVING COUNT(*) > 1)")
+				.append(" (SELECT C_BPartner_ID, VendorProductNo FROM I_Product ii WHERE i.AD_Client_ID=ii.AD_Client_ID GROUP BY C_BPartner_ID, VendorProductNo, value, m_pricelist_version_name HAVING COUNT(*) > 1)")
 				.append(selection.toSqlWhereClause("i"));
 		DB.executeUpdateEx(sql.toString(), ITrx.TRXNAME_ThreadInherited);
 
