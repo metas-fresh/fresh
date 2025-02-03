@@ -24,7 +24,6 @@ package de.metas.ui.web.material.cockpit;
 
 import de.metas.handlingunits.IHUCapacityBL;
 import de.metas.handlingunits.IHUPIItemProductBL;
-import de.metas.handlingunits.model.I_M_HU_PI_Item_Product;
 import de.metas.organization.IOrgDAO;
 import de.metas.ui.web.material.cockpit.rowfactory.MainRowBucketId;
 import de.metas.uom.IUOMDAO;
@@ -32,8 +31,6 @@ import de.metas.uom.X12DE355;
 import de.metas.util.Services;
 import lombok.NonNull;
 import org.adempiere.service.ISysConfigBL;
-import org.compiere.util.Env;
-import org.compiere.util.TimeUtil;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
@@ -50,29 +47,16 @@ public class QtyConvertorService
 	private final ISysConfigBL sysConfigBL = Services.get(ISysConfigBL.class);
 
 	@Nullable
-	public QtyConvertor getQtyConvertorIfConfigured(@NonNull final MainRowBucketId productIdAndDate)
+	public QtyTUConvertor.QtyTUConvertorBuilder getQtyConvertorIfConfigured(@NonNull final MainRowBucketId productId)
 	{
 		if (!sysConfigBL.getBooleanValue(SYS_CONFIG_SHOW_QTY_IN_TU_UOM, false))
 		{
 			return null;
 		}
 
-		final I_M_HU_PI_Item_Product packingInstruction = itemProductBL
-				.getDefaultForProduct(productIdAndDate.getProductId(),
-									  TimeUtil.asZonedDateTime(productIdAndDate.getDate(), orgDAO.getTimeZone(Env.getOrgId())));
-
-		if (packingInstruction == null
-				|| packingInstruction.isInfiniteCapacity()
-				|| packingInstruction.getQty().signum() <= 0)
-		{
-			return null;
-		}
-
 		return QtyTUConvertor.builder()
 				.capacityBL(capacityBL)
-				.packingInstruction(packingInstruction)
-				.productId(productIdAndDate.getProductId())
-				.tuUOM(uomDao.getByX12DE355(X12DE355.TU))
-				.build();
+				.productId(productId.getProductId())
+				.tuUOM(uomDao.getByX12DE355(X12DE355.TU));
 	}
 }

@@ -40,7 +40,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Value
-@Builder
+@Builder(toBuilder = true)
 public class QtyTUConvertor implements QtyConvertor
 {
 	@NonNull IHUCapacityBL capacityBL;

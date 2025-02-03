@@ -77,7 +77,6 @@ public class MaterialCockpitRowFactory
 	{
 		final Map<MainRowBucketId, MainRowWithSubRows> emptyRowBuckets = createEmptyRowBuckets(
 				request.getProductIdsToListEvenIfEmpty(),
-				request.getDate(),
 				request.isIncludePerPlantDetailRows());
 
 		final DimensionSpec dimensionSpec = MaterialCockpitUtil.retrieveDimensionSpec();
@@ -96,7 +95,6 @@ public class MaterialCockpitRowFactory
 	@VisibleForTesting
 	Map<MainRowBucketId, MainRowWithSubRows> createEmptyRowBuckets(
 			@NonNull final ImmutableSet<ProductId> productIds,
-			@NonNull final LocalDate timestamp,
 			final boolean includePerPlantDetailRows)
 	{
 		final DimensionSpec dimensionSpec = MaterialCockpitUtil.retrieveDimensionSpec();
@@ -107,7 +105,7 @@ public class MaterialCockpitRowFactory
 		final Builder<MainRowBucketId, MainRowWithSubRows> result = ImmutableMap.builder();
 		for (final ProductId productId : productIds)
 		{
-			final MainRowBucketId key = MainRowBucketId.createPlainInstance(productId, timestamp);
+			final MainRowBucketId key = MainRowBucketId.createPlainInstance(productId);
 			final MainRowWithSubRows mainRowBucket = MainRowWithSubRows.create(key);
 
 			for (final I_S_Resource plant : plants)
