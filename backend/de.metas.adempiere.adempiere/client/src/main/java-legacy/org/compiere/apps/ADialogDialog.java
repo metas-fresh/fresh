@@ -16,26 +16,10 @@
  *****************************************************************************/
 package org.compiere.apps;
 
-import java.awt.BorderLayout;
-import java.awt.Dialog;
-import java.awt.Dimension;
-import java.awt.Event;
-import java.awt.Frame;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.WindowEvent;
-
-import javax.swing.Icon;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JOptionPane;
-import javax.swing.JRootPane;
-import javax.swing.KeyStroke;
-
+import de.metas.i18n.IMsgBL;
+import de.metas.logging.LogManager;
+import de.metas.util.Services;
+import de.metas.util.StringUtils;
 import org.adempiere.ad.service.IDeveloperModeBL;
 import org.adempiere.ad.trx.api.ITrxManager;
 import org.adempiere.ad.trx.api.OnTrxMissingPolicy;
@@ -50,10 +34,12 @@ import org.compiere.swing.CTextPane;
 import org.compiere.util.Env;
 import org.slf4j.Logger;
 
-import de.metas.i18n.IMsgBL;
-import de.metas.logging.LogManager;
-import de.metas.util.Services;
-import de.metas.util.StringUtils;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.WindowEvent;
 
 /**
  * Dialog Windows
@@ -228,7 +214,6 @@ public final class ADialogDialog extends CDialog implements ActionListener
 
 	private JMenuBar menuBar = new JMenuBar();
 	private JMenu mFile = AEnv.getMenu("File");
-	private CMenuItem mEMail = new CMenuItem();
 	private CMenuItem mEnd = new CMenuItem();
 	private CMenuItem mPreference = new CMenuItem();
 	private ConfirmPanel confirmPanel = ConfirmPanel.builder()
@@ -251,9 +236,6 @@ public final class ADialogDialog extends CDialog implements ActionListener
 		this.setJMenuBar(menuBar);
 		confirmPanel.setActionListener(this); // set it first just to know buttons are working in case something failed
 		//
-		mEMail.setIcon(Images.getImageIcon2("EMailSupport16"));
-		mEMail.setText(msgBL.getMsg(Env.getCtx(), "EMailSupport"));
-		mEMail.addActionListener(this);
 		mPreference.setIcon(Images.getImageIcon2("Preference16"));
 		mPreference.setText(msgBL.getMsg(Env.getCtx(), "Preference"));
 		mPreference.addActionListener(this);
@@ -277,7 +259,6 @@ public final class ADialogDialog extends CDialog implements ActionListener
 				, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(10, 10, 10, 10), 0, 0));
 		//
 		menuBar.add(mFile);
-		mFile.add(mEMail);
 		if (Env.getUserRolePermissions().isShowPreference())
 			mFile.add(mPreference);
 		mFile.addSeparator();
@@ -384,13 +365,6 @@ public final class ADialogDialog extends CDialog implements ActionListener
 			m_returnCode = A_CANCEL;
 			dispose();
 		}
-		else if (e.getSource() == mEMail)
-		{
-			String title = getTitle();
-			String text = info.getText();
-			dispose();                  // otherwise locking
-			ADialog.createSupportEMail(this, title, text);
-		}
 		else if (e.getSource() == mPreference)
 		{
 			if (Env.getUserRolePermissions().isShowPreference())
@@ -464,7 +438,7 @@ public final class ADialogDialog extends CDialog implements ActionListener
 	}
 
 	/**
-	 * Request focus on inital answer (see {@link #getInialAnswer()}) button.
+	 * Request focus on inital answer.
 	 */
 	private void focusInitialAnswerButton()
 	{

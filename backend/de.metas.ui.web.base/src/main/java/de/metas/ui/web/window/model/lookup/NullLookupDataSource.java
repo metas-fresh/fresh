@@ -65,13 +65,14 @@ public final class NullLookupDataSource implements LookupDataSource
 	}
 
 	@Override
-	public LookupValue findById(final Object id)
+	@Nullable
+	public LookupValue findById(@Nullable final Object id)
 	{
 		return toUnknownLookupValue(id);
 	}
 
 	@Nullable
-	private static LookupValue toUnknownLookupValue(final Object id)
+	private static LookupValue toUnknownLookupValue(@Nullable final Object id)
 	{
 		if (id == null)
 		{

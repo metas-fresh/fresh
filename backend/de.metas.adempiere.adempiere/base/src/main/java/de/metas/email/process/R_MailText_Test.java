@@ -1,21 +1,21 @@
 package de.metas.email.process;
 
-import org.adempiere.ad.table.api.IADTableDAO;
-import org.adempiere.model.InterfaceWrapperHelper;
-import org.compiere.Adempiere;
-import org.compiere.model.I_AD_User;
-import org.compiere.model.I_C_BPartner;
-import org.compiere.model.I_R_MailText;
-
 import de.metas.bpartner.service.IBPartnerDAO;
 import de.metas.email.MailService;
 import de.metas.email.templates.MailTemplateId;
+import de.metas.email.templates.MailText;
 import de.metas.email.templates.MailTextBuilder;
 import de.metas.process.JavaProcess;
 import de.metas.process.Param;
 import de.metas.user.UserId;
 import de.metas.user.api.IUserDAO;
 import de.metas.util.Services;
+import org.adempiere.ad.table.api.IADTableDAO;
+import org.adempiere.model.InterfaceWrapperHelper;
+import org.compiere.SpringContextHolder;
+import org.compiere.model.I_AD_User;
+import org.compiere.model.I_C_BPartner;
+import org.compiere.model.I_R_MailText;
 
 /*
  * #%L
@@ -49,9 +49,9 @@ public class R_MailText_Test extends JavaProcess
 {
 	// services
 	private final transient IADTableDAO tableDAO = Services.get(IADTableDAO.class);
-	private final transient IBPartnerDAO bpartnersRepo = Services.get(IBPartnerDAO.class);
-	private final transient IUserDAO usersRepo = Services.get(IUserDAO.class);
-	private final transient MailService mailService = Adempiere.getBean(MailService.class);
+	private final transient IBPartnerDAO bpartnerDAO = Services.get(IBPartnerDAO.class);
+	private final transient IUserDAO userDAO = Services.get(IUserDAO.class);
+	private final transient MailService mailService = SpringContextHolder.instance.getBean(MailService.class);
 
 	@Param(parameterName = "C_BPartner_ID")
 	private int p_C_BPartner_ID;
@@ -64,6 +64,18 @@ public class R_MailText_Test extends JavaProcess
 
 	@Override
 	protected String doIt()
+	{
+		final MailText mailText = createMailText();
+
+		addLog("@Result@ ---------------------------------");
+		addLog("Using @AD_Language@: {}", mailText.getAdLanguage());
+		addLog("@MailHeader@: {}", mailText.getMailHeader());
+		addLog("@MailText@ (full): {}", mailText.getFullMailText());
+
+		return MSG_OK;
+	}
+
+	private MailText createMailText()
 	{
 		final MailTemplateId mailTemplateId = MailTemplateId.ofRepoId(getRecord_ID());
 		final MailTextBuilder mailTextBuilder = mailService.newMailTextBuilder(mailTemplateId);
@@ -82,14 +94,14 @@ public class R_MailText_Test extends JavaProcess
 		I_C_BPartner bpartner = null;
 		if (p_C_BPartner_ID > 0)
 		{
-			bpartner = bpartnersRepo.getById(p_C_BPartner_ID);
+			bpartner = bpartnerDAO.getById(p_C_BPartner_ID);
 			mailTextBuilder.bpartner(bpartner);
 		}
 
 		I_AD_User contact = null;
 		if (p_AD_User_ID >= 0)
 		{
-			contact = usersRepo.getById(UserId.ofRepoId(p_AD_User_ID));
+			contact = userDAO.getById(UserId.ofRepoId(p_AD_User_ID));
 			mailTextBuilder.bpartnerContact(contact);
 		}
 
@@ -99,15 +111,8 @@ public class R_MailText_Test extends JavaProcess
 		addLog("Using @C_BPartner_ID@: {}", bpartner);
 		addLog("Using @AD_User_ID@: {}", contact);
 		addLog("Using @Record_ID@: {}", record);
-		addLog("Using @AD_Language@: {}", mailTextBuilder.getAdLanguage());
 
-		//
-		// Display results
-		addLog("@Result@ ---------------------------------");
-		addLog("@MailHeader@: {}", mailTextBuilder.getMailHeader());
-		addLog("@MailText@ (full): {}", mailTextBuilder.getFullMailText());
-
-		return MSG_OK;
+		return mailTextBuilder.build();
 	}
 
 }

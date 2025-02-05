@@ -35,6 +35,11 @@ services:
 
   cucumber:
     image: ${mfregistry:-metasfresh}/metas-cucumber:$mfversion
+    environment:
+      - TEST_SMTP_HOST=$TEST_SMTP_HOST
+      - TEST_SMTP_FROM=$TEST_SMTP_FROM
+      - TEST_SMTP_USER=$TEST_SMTP_USER
+      - TEST_SMTP_PASSWORD=$TEST_SMTP_PASSWORD
     depends_on:
       db:
         condition: service_healthy

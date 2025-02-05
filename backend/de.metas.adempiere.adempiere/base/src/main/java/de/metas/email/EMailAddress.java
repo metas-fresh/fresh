@@ -10,6 +10,7 @@ import de.metas.i18n.ITranslatableString;
 import de.metas.i18n.TranslatableStrings;
 import de.metas.logging.LogManager;
 import de.metas.util.Check;
+import de.metas.util.StringUtils;
 import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import org.adempiere.exceptions.AdempiereException;
@@ -20,6 +21,7 @@ import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /*
  * #%L
@@ -31,12 +33,12 @@ import java.util.Objects;
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 2 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program. If not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
@@ -50,9 +52,13 @@ public final class EMailAddress
 	@Nullable
 	public static EMailAddress ofNullableString(@Nullable final String emailStr)
 	{
-		return  emailStr != null && !Check.isBlank(emailStr)
-				? new EMailAddress(emailStr)
-				: null;
+		final String emailStrNorm = StringUtils.trimBlankToNull(emailStr);
+		return emailStrNorm != null ? new EMailAddress(emailStrNorm) : null;
+	}
+
+	public static Optional<EMailAddress> optionalOfNullable(@Nullable final String emailStr)
+	{
+		return Optional.ofNullable(ofNullableString(emailStr));
 	}
 
 	@JsonCreator
@@ -98,7 +104,7 @@ public final class EMailAddress
 		try
 		{
 			final InternetAddress ia = new InternetAddress(email, true);
-			ia.validate();	// throws AddressException
+			ia.validate();    // throws AddressException
 
 			if (ia.getAddress() == null)
 			{

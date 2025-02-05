@@ -1,5 +1,6 @@
 package de.metas.ui.web.mail;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.metas.ui.web.window.datatypes.DocumentPath;
 import de.metas.ui.web.window.datatypes.LookupValue;
 import de.metas.ui.web.window.datatypes.LookupValuesList;
@@ -50,4 +51,7 @@ public class WebuiEmail
 	boolean sent;
 
 	DocumentPath contextDocumentPath;
+
+	@JsonIgnore
+	public UserId getFromUserId() {return from.getIdAs(UserId::ofRepoId);}
 }

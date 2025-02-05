@@ -12,8 +12,7 @@ public class EmailValidator
 	/**
 	 * Validate email using apache commons validator
 	 *
-	 * @param email
-	 *            email address for validation
+	 * @param email email addresse for validation
 	 */
 	public static boolean validate(@Nullable final String email)
 	{
@@ -22,7 +21,7 @@ public class EmailValidator
 
 	/**
 	 * @param clazz optional, may be {@code null}. If a class is given and the given {@code email} is not valid,
-	 *            then this method instantiates and throws an exception with message {@code "@EmailNotValid@"}.
+	 *              then this method instantiates and throws an exception with message {@code "@EmailNotValid@"}.
 	 */
 	public static boolean validate(@Nullable final String email, @Nullable final Class<? extends RuntimeException> clazz)
 	{

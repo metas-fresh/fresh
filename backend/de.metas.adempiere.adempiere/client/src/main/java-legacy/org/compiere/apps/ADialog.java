@@ -16,32 +16,19 @@
  *****************************************************************************/
 package org.compiere.apps;
 
-import java.awt.Container;
-import java.awt.Dialog;
-import java.awt.Frame;
-import java.awt.Toolkit;
-import java.awt.Window;
-import java.util.Properties;
-
-import javax.swing.JDialog;
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-
-import org.compiere.Adempiere;
-import org.compiere.model.ModelValidationEngine;
+import de.metas.adempiere.form.swing.SwingAskDialogBuilder;
+import de.metas.i18n.IMsgBL;
+import de.metas.logging.LogManager;
+import de.metas.util.Check;
+import de.metas.util.Services;
 import org.compiere.util.Env;
-import org.compiere.util.SupportInfo;
 import org.compiere.util.SwingUtils;
 import org.compiere.util.Trace;
 import org.slf4j.Logger;
 
-import de.metas.adempiere.form.swing.SwingAskDialogBuilder;
-import de.metas.email.mailboxes.UserEMailConfig;
-import de.metas.i18n.IMsgBL;
-import de.metas.logging.LogManager;
-import de.metas.user.api.IUserBL;
-import de.metas.util.Check;
-import de.metas.util.Services;
+import javax.swing.*;
+import java.awt.*;
+import java.util.Properties;
 
 /**
  *  Info Dialog Management
@@ -343,67 +330,6 @@ public final class ADialog
 		return ask (WindowNo, c, AD_Message, null);
 	}	//	ask
 
-	/*************************************************************************
-
-	/**
-	 * Create Support EMail
-	 * @param owner owner
-	 * @param subject subject
-	 * @param message message
-	 */
-	public static void createSupportEMail(final Dialog owner, final String subject, final String message)
-	{
-		final String to = Adempiere.getSupportEMail();
-		final UserEMailConfig fromUserEmailConfig = getFromUserEmailConfig();
-		//
-		StringBuilder myMessage = new StringBuilder(message);
-		myMessage.append("\n");
-		SupportInfo.getInfo(myMessage);
-		SupportInfo.getInfoDetail(myMessage, Env.getCtx());
-		ModelValidationEngine.get().getInfoDetail(myMessage, Env.getCtx()); // teo_sarca - FR [ 1724662 ]
-
-		new EMailDialog(owner,
-			Services.get(IMsgBL.class).getMsg(Env.getCtx(), "EMailSupport"),
-			fromUserEmailConfig, 
-			to, 
-			"Support: " + subject, 
-			myMessage.toString(), 
-			null);
-	}	//	createEmail
-
-	/**
-	 *	Create Support EMail
-	 *	@param owner owner
-	 *  @param subject subject
-	 *  @param message message
-	 */
-	public static void createSupportEMail(final Frame owner, final String subject, final String message)
-	{
-		String to = Adempiere.getSupportEMail();
-		final UserEMailConfig fromUserEmailConfig = getFromUserEmailConfig();
-		
-		//
-		StringBuilder myMessage = new StringBuilder(message);
-		myMessage.append("\n");
-		SupportInfo.getInfo(myMessage);
-		SupportInfo.getInfoDetail(myMessage, Env.getCtx());
-		ModelValidationEngine.get().getInfoDetail(myMessage, Env.getCtx()); // teo_sarca - FR [ 1724662 ]
-
-		new EMailDialog(owner,
-			Services.get(IMsgBL.class).getMsg(Env.getCtx(), "EMailSupport"),
-			fromUserEmailConfig,
-			to, 
-			"Support: " + subject, 
-			myMessage.toString(), 
-			null);
-	}	//	createEmail
-
-	private static UserEMailConfig getFromUserEmailConfig()
-	{
-		return Services.get(IUserBL.class).getEmailConfigById(Env.getLoggedUserId());
-	}
-
-	
 	/**************************************************************************
 	 *	Beep
 	 */

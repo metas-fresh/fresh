@@ -1,16 +1,6 @@
 package de.metas.email.templates;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.annotation.Nullable;
-
-import org.adempiere.model.InterfaceWrapperHelper;
-import org.compiere.model.I_AD_User;
-import org.compiere.model.I_C_BPartner;
-
 import com.google.common.base.Joiner;
-
 import de.metas.adempiere.service.IVariableParserBL;
 import de.metas.bpartner.BPartnerContactId;
 import de.metas.bpartner.BPartnerId;
@@ -22,7 +12,15 @@ import de.metas.user.UserId;
 import de.metas.user.api.IUserDAO;
 import de.metas.util.Check;
 import de.metas.util.Services;
+import de.metas.util.StringUtils;
 import lombok.NonNull;
+import org.adempiere.model.InterfaceWrapperHelper;
+import org.compiere.model.I_AD_User;
+import org.compiere.model.I_C_BPartner;
+
+import javax.annotation.Nullable;
+import java.util.HashMap;
+import java.util.Map;
 
 /*
  * #%L
@@ -87,24 +85,29 @@ public final class MailTextBuilder
 	{
 		return _mailTemplate;
 	}
+	
+	public MailText build()
+	{
+		return MailText.builder()
+				.adLanguage(getAdLanguage())
+				.mailHeader(getMailHeader())
+				.fullMailText(getFullMailText())
+				.html(isHtml())
+				.build();
+	}
 
 	/**
 	 * @return true if the mail texts are HTMLs; false if they are plain text.
 	 */
-	public boolean isHtml()
+	private boolean isHtml()
 	{
 		return getMailTemplate().isHtml();
-	}
-
-	public MailTemplateId getMailTemplateId()
-	{
-		return getMailTemplate().getId();
 	}
 
 	/**
 	 * @return parsed/translated mail header
 	 */
-	public String getMailHeader()
+	private String getMailHeader()
 	{
 		final String mailHeader = getMailTemplate()
 				.getMailHeader()
@@ -115,7 +118,7 @@ public final class MailTextBuilder
 	/**
 	 * @return parsed/translated mail full content
 	 */
-	public String getFullMailText()
+	private String getFullMailText()
 	{
 		final MailTemplate mailTemplate = getMailTemplate();
 		final String adLanguage = getAdLanguage();
@@ -170,13 +173,6 @@ public final class MailTextBuilder
 		return textParsed;
 	}	// parse
 
-	/**
-	 * Parse text
-	 *
-	 * @param text text
-	 * @param context
-	 * @return parsed text
-	 */
 	private String parseTextUsingContext(@NonNull final String text, @Nullable final Object context)
 	{
 		if (context == null)
@@ -219,8 +215,6 @@ public final class MailTextBuilder
 	/**
 	 * Parse Variable
 	 *
-	 * @param variable variable
-	 * @param context
 	 * @return translated variable or if not found the original tag
 	 */
 	private String parseVariable(
@@ -281,7 +275,7 @@ public final class MailTextBuilder
 	}
 
 	@NonNull
-	public String getAdLanguage()
+	private String getAdLanguage()
 	{
 		String adLanguageEffective = _adLanguageEffective;
 		if (adLanguageEffective == null)
@@ -304,8 +298,8 @@ public final class MailTextBuilder
 		final I_AD_User user = getBPartnerContact();
 		if (user != null && !Check.isEmpty(user.getAD_Language(), true))
 		{
-			final String userAdLanguage = user.getAD_Language();
-			if (!Check.isEmpty(userAdLanguage, true))
+			final String userAdLanguage = StringUtils.trimBlankToNull(user.getAD_Language());
+			if (userAdLanguage != null)
 			{
 				return userAdLanguage;
 			}
@@ -316,8 +310,8 @@ public final class MailTextBuilder
 		final I_C_BPartner bpartner = getBPartner();
 		if (bpartner != null)
 		{
-			final String bpAdLanguage = bpartner.getAD_Language();
-			if (!Check.isEmpty(bpAdLanguage, true))
+			final String bpAdLanguage = StringUtils.trimBlankToNull(bpartner.getAD_Language());
+			if (bpAdLanguage != null)
 			{
 				return bpAdLanguage;
 			}
@@ -385,7 +379,7 @@ public final class MailTextBuilder
 			return null;
 		}
 
-		final int bpartnerRepoId = ((Integer)bpartnerIdObj).intValue();
+		final int bpartnerRepoId = (Integer)bpartnerIdObj;
 		return BPartnerId.ofRepoIdOrNull(bpartnerRepoId);
 	}
 

@@ -2,10 +2,13 @@ package de.metas.email.mailboxes;
 
 import de.metas.email.EMailAddress;
 import de.metas.user.UserId;
+import de.metas.util.StringUtils;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.ToString;
 import lombok.Value;
+
+import javax.annotation.Nullable;
 
 /*
  * #%L
@@ -30,13 +33,24 @@ import lombok.Value;
  */
 
 @Value
-@Builder
 @ToString(exclude = "password")
 public class UserEMailConfig
 {
-	@NonNull
-	UserId userId;
-	EMailAddress email;
-	String username;
-	String password;
+	@NonNull UserId userId;
+	@Nullable EMailAddress email;
+	@Nullable String username;
+	@Nullable String password;
+
+	@Builder
+	private UserEMailConfig(
+			@NonNull final UserId userId, 
+			@Nullable final EMailAddress email, 
+			@Nullable final String username, 
+			@Nullable final String password)
+	{
+		this.userId = userId;
+		this.email = email;
+		this.username = StringUtils.trimBlankToNull(username);
+		this.password = password;
+	}
 }

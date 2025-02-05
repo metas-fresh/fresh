@@ -1,9 +1,15 @@
 package org.adempiere.service.impl;
 
+import de.metas.cache.CCache;
 import de.metas.cache.annotation.CacheCtx;
 import de.metas.email.EMailAddress;
 import de.metas.email.mailboxes.ClientEMailConfig;
+import de.metas.email.mailboxes.Mailbox;
+import de.metas.email.mailboxes.MailboxType;
+import de.metas.email.mailboxes.SMTPConfig;
+import de.metas.email.templates.ClientMailTemplates;
 import de.metas.email.templates.MailTemplateId;
+import de.metas.i18n.ExplainedOptional;
 import de.metas.util.Services;
 import lombok.NonNull;
 import org.adempiere.ad.dao.IQueryBL;
@@ -25,6 +31,13 @@ import static org.adempiere.model.InterfaceWrapperHelper.loadOutOfTrx;
 
 public class ClientDAO implements IClientDAO
 {
+	private final CCache<ClientId, ClientEMailConfig> emailConfigCache = CCache.<ClientId, ClientEMailConfig>builder()
+			.tableName(I_AD_Client.Table_Name)
+			.build();
+	private final CCache<ClientId, ClientMailTemplates> emailTemplatesCache = CCache.<ClientId, ClientMailTemplates>builder()
+			.tableName(I_AD_Client.Table_Name)
+			.build();
+
 	@Override
 	public I_AD_Client getById(@NonNull final ClientId adClientId)
 	{
@@ -89,6 +102,11 @@ public class ClientDAO implements IClientDAO
 	@Override
 	public ClientEMailConfig getEMailConfigById(@NonNull final ClientId clientId)
 	{
+		return emailConfigCache.getOrLoad(clientId, this::retrieveEMailConfigById);
+	}
+
+	private ClientEMailConfig retrieveEMailConfigById(final @NonNull ClientId clientId)
+	{
 		final I_AD_Client record = getById(clientId);
 		return toClientEMailConfig(record);
 	}
@@ -97,18 +115,55 @@ public class ClientDAO implements IClientDAO
 	{
 		return ClientEMailConfig.builder()
 				.clientId(ClientId.ofRepoId(client.getAD_Client_ID()))
-				.sendEmailsFromServer(client.isServerEMail())
+				.mailbox(extractMailbox(client))
+				.build();
+	}
+
+	private static ExplainedOptional<Mailbox> extractMailbox(@NonNull final I_AD_Client client)
+	{
+		final EMailAddress email = EMailAddress.ofNullableString(client.getRequestEMail());
+		if (email == null)
+		{
+			return ExplainedOptional.emptyBecause("AD_Client.RequestEMail not set");
+		}
+
+		return ExplainedOptional.of(
+				Mailbox.builder()
+						.type(MailboxType.SMTP)
+						.email(email)
+						.smtpConfig(extractSMTPConfig(client))
+						.build()
+		);
+	}
+
+	private static SMTPConfig extractSMTPConfig(@NonNull final I_AD_Client client)
+	{
+		return SMTPConfig.builder()
 				.smtpHost(client.getSMTPHost())
 				.smtpPort(client.getSMTPPort())
-				.startTLS(client.isStartTLS())
-				//
-				.email(EMailAddress.ofNullableString(client.getRequestEMail()))
 				.smtpAuthorization(client.isSmtpAuthorization())
 				.username(client.getRequestUser())
 				.password(client.getRequestUserPW())
-				//
-				.passwordResetMailTemplateId(MailTemplateId.optionalOfRepoId(client.getPasswordReset_MailText_ID()))
-				//
+				.startTLS(client.isStartTLS())
+				.build();
+	}
+
+	@Override
+	public ClientMailTemplates getClientMailTemplatesById(final ClientId clientId)
+	{
+		return emailTemplatesCache.getOrLoad(clientId, this::retrieveClientMailTemplatesById);
+	}
+
+	private ClientMailTemplates retrieveClientMailTemplatesById(final ClientId clientId)
+	{
+		final I_AD_Client record = getById(clientId);
+		return toClientMailTemplates(record);
+	}
+
+	private static ClientMailTemplates toClientMailTemplates(@NonNull final I_AD_Client record)
+	{
+		return ClientMailTemplates.builder()
+				.passwordResetMailTemplateId(MailTemplateId.optionalOfRepoId(record.getPasswordReset_MailText_ID()))
 				.build();
 	}
 

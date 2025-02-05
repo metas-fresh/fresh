@@ -359,7 +359,7 @@ public class APanel extends CPanel
 	@SuppressWarnings("unused")
 	private AppsAction aEnd, aHome, aHelp,
 			aPreference,
-			aOnline, aMailSupport, aAbout, aExit,
+			aOnline, aAbout, aExit,
 			aDeleteSelection;
 	// private AppsAction aCalculator, aCalendar, aEditor, aScript;
 
@@ -469,7 +469,6 @@ public class APanel extends CPanel
 		menuBar.add(mHelp);
 		aHelp = addAction("Help", mHelp, KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0), false, false);
 		aOnline = addAction("Online", mHelp, null, false, false);
-		aMailSupport = addAction("EMailSupport", mHelp, null, false, false);
 		aAbout = addAction("About", mHelp, null, false, false);
 	}
 
@@ -518,7 +517,6 @@ public class APanel extends CPanel
 			addToolbarSeparator();
 			toolBar.add(AProcess.createAppsAction(this, isTabIncluded).getButton()); // metas: us1247
 			toolBar.add(aAttachment.getButton());
-			toolBar.add(AEMailLetter.createAppsAction(this, isTabIncluded).getButton()); // metas-2009_0017_AP1_G41
 			toolBar.add(aChat.getButton());
 		}
 

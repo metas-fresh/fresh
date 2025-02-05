@@ -1,18 +1,20 @@
 package de.metas.email;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import de.metas.JsonObjectMapperHolder;
+import de.metas.email.mailboxes.Mailbox;
+import de.metas.email.mailboxes.MailboxType;
+import de.metas.email.mailboxes.SMTPConfig;
+import org.adempiere.exceptions.AdempiereException;
+import org.compiere.Adempiere;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
 import java.net.URI;
 import java.util.Random;
 
-import org.compiere.Adempiere;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-
-import de.metas.JsonObjectMapperHolder;
-import de.metas.email.mailboxes.Mailbox;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /*
  * #%L
@@ -38,16 +40,15 @@ import de.metas.email.mailboxes.Mailbox;
 
 /**
  * Tests if {@link EMail} related objects are JSON serializable.
- * 
- * @author metas-dev <dev@metasfresh.com>
  *
+ * @author metas-dev <dev@metasfresh.com>
  */
 public class EMailJsonTest
 {
 	private ObjectMapper jsonObjectMapper;
 	private Random random;
 
-	@Before
+	@BeforeEach
 	public void init()
 	{
 		Adempiere.enableUnitTestMode(); // needed to display Mailbox passwords
@@ -63,8 +64,9 @@ public class EMailJsonTest
 	{
 		testSerializeDeserialize(EMailSentStatus.NOT_SENT);
 		testSerializeDeserialize(EMailSentStatus.ok("1234"));
-		testSerializeDeserialize(EMailSentStatus.error("some error"));
+		testSerializeDeserialize(EMailSentStatus.error(new AdempiereException("some error")));
 		testSerializeDeserialize(EMailSentStatus.invalid("some invalid error"));
+		testSerializeDeserialize(EMailSentStatus.invalid(new AdempiereException("some invalid error")));
 	}
 
 	@Test
@@ -77,29 +79,34 @@ public class EMailJsonTest
 	@Test
 	public void test_Mailbox() throws Exception
 	{
-		final Mailbox mailbox = Mailbox.builder()
-				.smtpHost("smtpHost")
-				.email(EMailAddress.ofString("from@email.com"))
-				.smtpAuthorization(true)
-				.username("username")
-				.password("password111")
-				.sendEmailsFromServer(true)
-				.userToColumnName("userToColumnName")
-				.build();
-		testJsonToStringEquals(mailbox);
+		testJsonToStringEquals(
+				Mailbox.builder()
+						.email(EMailAddress.ofString("from@email.com"))
+						.userToColumnName("userToColumnName")
+						.type(MailboxType.SMTP)
+						.smtpConfig(SMTPConfig.builder()
+								.smtpHost("smtpHost")
+								.smtpAuthorization(true)
+								.username("username")
+								.password("password111")
+								.build())
+						.build()
+		);
 	}
 
 	@Test
 	public void test_EMail() throws Exception
 	{
 		final Mailbox mailbox = Mailbox.builder()
-				.smtpHost("smtpHost")
 				.email(EMailAddress.ofString("from@email.com"))
-				.smtpAuthorization(true)
-				.username("username")
-				.password("password111")
-				.sendEmailsFromServer(true)
 				.userToColumnName("userToColumnName")
+				.type(MailboxType.SMTP)
+				.smtpConfig(SMTPConfig.builder()
+						.smtpHost("smtpHost")
+						.smtpAuthorization(true)
+						.username("username")
+						.password("password111")
+						.build())
 				.build();
 		final EMailAddress to = EMailAddress.ofString("to@email.com");
 		final String subject = "test email subject";
@@ -118,7 +125,7 @@ public class EMailJsonTest
 		testJsonToStringEquals(email);
 	}
 
-	private final byte[] generateBytes(final int size)
+	private byte[] generateBytes(final int size)
 	{
 		final byte[] bytes = new byte[size];
 		random.nextBytes(bytes);
@@ -129,21 +136,20 @@ public class EMailJsonTest
 	{
 		final T valueDeserialized = testSerializeDeserialize(value);
 
-		final String valueStr = value == null ? null : value.toString();
+		final String valueStr = value.toString();
 		final String valueDeserializedStr = valueDeserialized == null ? null : valueDeserialized.toString();
-		Assert.assertEquals(valueStr, valueDeserializedStr);
+		assertThat(valueDeserializedStr).isEqualTo(valueStr);
 	}
 
 	private <T> void testJsonEquals(final T value) throws Exception
 	{
 		final T valueDeserialized = testSerializeDeserialize(value);
-		Assert.assertEquals(value, valueDeserialized);
+		assertThat(valueDeserialized).isEqualTo(value);
 	}
 
 	private <T> T testSerializeDeserialize(final T value) throws Exception
 	{
-		@SuppressWarnings("unchecked")
-		final Class<T> type = (Class<T>)value.getClass();
+		@SuppressWarnings("unchecked") final Class<T> type = (Class<T>)value.getClass();
 
 		final String jsonStr = jsonObjectMapper.writeValueAsString(value);
 		System.out.println("\n\n-------------------------------------------------------------------------------------------");

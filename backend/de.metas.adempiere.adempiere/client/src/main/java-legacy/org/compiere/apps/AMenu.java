@@ -16,32 +16,15 @@
  *****************************************************************************/
 package org.compiere.apps;
 
-import java.awt.BorderLayout;
-import java.awt.Cursor;
-import java.awt.Dimension;
-import java.awt.Event;
-import java.awt.Frame;
-import java.awt.GridLayout;
-import java.awt.Insets;
-import java.awt.Point;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.util.Properties;
-
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.JComponent;
-import javax.swing.JFrame;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.KeyStroke;
-
+import de.metas.adempiere.model.I_AD_Form;
+import de.metas.i18n.IMsgBL;
+import de.metas.i18n.Language;
+import de.metas.logging.LogManager;
+import de.metas.security.IUserRolePermissions;
+import de.metas.security.permissions.Access;
+import de.metas.util.Services;
+import de.metas.workflow.WorkflowId;
+import de.metas.workflow.service.IADWorkflowBL;
 import org.adempiere.ad.dao.IQueryBL;
 import org.adempiere.ad.element.api.AdWindowId;
 import org.adempiere.ad.expression.api.IExpressionEvaluator.OnVariableNotFound;
@@ -77,17 +60,19 @@ import org.compiere.util.Env;
 import org.compiere.util.Evaluatees;
 import org.compiere.util.Ini;
 import org.compiere.util.Splash;
-import de.metas.workflow.WorkflowId;
-import de.metas.workflow.service.IADWorkflowBL;
 import org.slf4j.Logger;
 
-import de.metas.adempiere.model.I_AD_Form;
-import de.metas.i18n.IMsgBL;
-import de.metas.i18n.Language;
-import de.metas.logging.LogManager;
-import de.metas.security.IUserRolePermissions;
-import de.metas.security.permissions.Access;
-import de.metas.util.Services;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.util.Properties;
 
 /**
  * Application Menu Controller
@@ -477,7 +462,6 @@ public final class AMenu extends CFrame
 		JMenu mHelp = AEnv.getMenu("Help");
 		menuBar.add(mHelp);
 		AEnv.addMenuItem("Online", null, null, mHelp, this);
-		AEnv.addMenuItem("EMailSupport", null, null, mHelp, this);
 		AEnv.addMenuItem("About", null, null, mHelp, this);
 	} // createMenu
 

@@ -16,19 +16,11 @@
  *****************************************************************************/
 package org.compiere.apps.form;
 
-import java.awt.Cursor;
-import java.awt.Event;
-import java.awt.Image;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.util.Properties;
-
-import javax.swing.JFrame;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.KeyStroke;
-
+import de.metas.adempiere.form.IClientUI;
+import de.metas.logging.LogManager;
+import de.metas.process.ProcessInfo;
+import de.metas.util.Check;
+import de.metas.util.Services;
 import org.adempiere.ad.trx.api.ITrx;
 import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.images.Images;
@@ -47,11 +39,12 @@ import org.compiere.util.SwingUtils;
 import org.compiere.util.Util;
 import org.slf4j.Logger;
 
-import de.metas.adempiere.form.IClientUI;
-import de.metas.logging.LogManager;
-import de.metas.process.ProcessInfo;
-import de.metas.util.Check;
-import de.metas.util.Services;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.util.Properties;
 
 
 /**
@@ -185,7 +178,6 @@ public class FormFrame extends CFrame
 		menuBar.add(mHelp);
 		AEnv.addMenuItem("Help", null, KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0),	mHelp, this);
 		AEnv.addMenuItem("Online", null, null, mHelp, this);
-		AEnv.addMenuItem("EMailSupport", null, null, mHelp, this);
 		AEnv.addMenuItem("About", null, null, mHelp, this);
 	}   //  createMenu
 

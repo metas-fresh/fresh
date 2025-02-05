@@ -26,8 +26,6 @@ import de.metas.attachments.AttachmentEntryService;
 import de.metas.document.engine.IDocumentBL;
 import de.metas.document.references.zoom_into.NullCustomizedWindowInfoMapRepository;
 import de.metas.email.MailService;
-import de.metas.email.mailboxes.MailboxRepository;
-import de.metas.email.templates.MailTemplateRepository;
 import de.metas.i18n.AdMessageKey;
 import de.metas.i18n.IMsgBL;
 import de.metas.notification.impl.NotificationRepository;
@@ -52,7 +50,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import static de.metas.notification.NotificationMessageFormatter.MSG_EmailOrigin;
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class NotificationSenderTemplateTest
 {
@@ -79,7 +77,7 @@ public class NotificationSenderTemplateTest
 		final AttachmentEntryService attachmentEntryService = AttachmentEntryService.createInstanceForUnitTesting();
 		Services.registerService(INotificationRepository.class, new NotificationRepository(attachmentEntryService, NullCustomizedWindowInfoMapRepository.instance));
 
-		SpringContextHolder.registerJUnitBean(new MailService(new MailboxRepository(), new MailTemplateRepository()));
+		SpringContextHolder.registerJUnitBean(MailService.newInstanceForUnitTesting());
 		SpringContextHolder.registerJUnitBean(new UserGroupRepository());
 
 		sender = new NotificationSenderTemplate();

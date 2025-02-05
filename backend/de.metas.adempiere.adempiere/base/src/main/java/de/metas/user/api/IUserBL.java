@@ -1,7 +1,8 @@
 package de.metas.user.api;
 
+import de.metas.email.EMailAddress;
 import de.metas.email.mailboxes.UserEMailConfig;
-import de.metas.i18n.ITranslatableString;
+import de.metas.i18n.ExplainedOptional;
 import de.metas.i18n.Language;
 import de.metas.user.UserId;
 import de.metas.util.Check;
@@ -63,22 +64,16 @@ public interface IUserBL extends ISingletonService
 	 */
 	boolean isEMailValid(I_AD_User user);
 
-	/**
-	 * Could we send an email from this user
-	 *
-	 * @return <code>null</code> if OK, error message if not ok
-	 */
-	@Nullable
-	ITranslatableString checkCanSendEMail(UserEMailConfig userEmailConfig);
-
-	void assertCanSendEMail(@NonNull final UserId adUserId);
-
 	Language getUserLanguage(@NonNull UserId userId);
 
-	/** @return the user's language or fallbacks; never returns {@code null}. */
+	/**
+	 * @return the user's language or fallbacks; never returns {@code null}.
+	 */
 	Language getUserLanguage(I_AD_User userRecord);
 
 	UserEMailConfig getEmailConfigById(UserId userId);
+
+	ExplainedOptional<EMailAddress> getEMailAddressById(@NonNull UserId userId);
 
 	void deleteUserDependency(I_AD_User userRecord);
 }

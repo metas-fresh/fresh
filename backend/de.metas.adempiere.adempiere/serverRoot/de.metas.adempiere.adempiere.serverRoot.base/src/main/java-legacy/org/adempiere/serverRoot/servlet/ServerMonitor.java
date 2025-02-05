@@ -21,9 +21,7 @@ import de.metas.Profiles;
 import de.metas.cache.CacheMgt;
 import de.metas.logging.LogManager;
 import de.metas.util.Services;
-import org.adempiere.ad.service.ADSystemInfo;
 import org.adempiere.ad.service.IDeveloperModeBL;
-import org.adempiere.ad.service.ISystemBL;
 import org.adempiere.ad.trx.api.ITrx;
 import org.adempiere.ad.trx.api.ITrxManager;
 import org.adempiere.serverRoot.util.WebEnv;
@@ -482,37 +480,8 @@ public class ServerMonitor extends HttpServlet
 	private boolean processEMailParameter(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException
 	{
-		final String email = WebUtil.getParameter(request, "EMail");
-		if (email == null || email.length() == 0)
-		{
-			return false;
-		}
-
-		int AD_Client_ID = -1;
-		try
-		{
-			AD_Client_ID = Integer.parseInt(email);
-		}
-		catch (Exception e)
-		{
-			log.warn("Parsing: " + email + " - " + e.toString());
-		}
-		if (AD_Client_ID < 0)
-		{
-			m_message = new p();
-			m_message.addElement("No EMail: " + email);
-			return false;
-		}
-
-		// log.info("Test EMail: " + AD_Client_ID);
-		final Properties ctx = Env.newTemporaryCtx();
-		final MClient client = MClient.get(ctx, AD_Client_ID);
-		log.info("Test: " + client);
-
-		m_message = new p();
-		m_message.addElement(client.getName() + ": " + client.testEMail());
-		return false;
-	}	// processEMailParameter
+		throw new UnsupportedOperationException();
+	}
 
 	/**
 	 * Process Cache Parameter

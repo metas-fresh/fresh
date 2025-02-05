@@ -16,91 +16,66 @@
  *****************************************************************************/
 package org.compiere.model;
 
-import de.metas.email.EMail;
-import de.metas.email.EMailSentStatus;
-
 import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.util.Properties;
 
 /**
- *  Asset Delivery Model
+ * Asset Delivery Model
  *
- *  @author Jorg Janke
- *  @version $Id: MAssetDelivery.java,v 1.3 2006/07/30 00:51:03 jjanke Exp $
+ * @author Jorg Janke
+ * @version $Id: MAssetDelivery.java,v 1.3 2006/07/30 00:51:03 jjanke Exp $
  */
 public class MAssetDelivery extends X_A_Asset_Delivery
 {
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = -1731010685101745675L;
 
 	/**
-	 * 	Constructor
-	 * 	@param ctx context
-	 * 	@param A_Asset_Delivery_ID id or 0
-	 * 	@param trxName trx
+	 * Constructor
+	 *
+	 * @param ctx                 context
+	 * @param A_Asset_Delivery_ID id or 0
+	 * @param trxName             trx
 	 */
-	public MAssetDelivery (Properties ctx, int A_Asset_Delivery_ID, String trxName)
+	@SuppressWarnings("unused")
+	public MAssetDelivery(Properties ctx, int A_Asset_Delivery_ID, String trxName)
 	{
-		super (ctx, A_Asset_Delivery_ID, trxName);
+		super(ctx, A_Asset_Delivery_ID, trxName);
 		if (A_Asset_Delivery_ID == 0)
 		{
-			setMovementDate (new Timestamp (System.currentTimeMillis ()));
+			setMovementDate(new Timestamp(System.currentTimeMillis()));
 		}
-	}	//	MAssetDelivery
+	}    //	MAssetDelivery
 
 	/**
-	 *  Load Constructor
-	 *  @param ctx context
-	 *  @param rs result set record
-	 *	@param trxName transaction
+	 * Load Constructor
+	 *
+	 * @param ctx     context
+	 * @param rs      result set record
+	 * @param trxName transaction
 	 */
-	public MAssetDelivery (Properties ctx, ResultSet rs, String trxName)
+	public MAssetDelivery(Properties ctx, ResultSet rs, String trxName)
 	{
 		super(ctx, rs, trxName);
-	}	//	MAssetDelivery
+	}    //	MAssetDelivery
 
 	/**
-	 * 	Create Asset Delivery for EMail
-	 * 	@param asset asset
-	 * 	@param email email
-	 * 	@param AD_User_ID BP Contact
-	 */
-	public MAssetDelivery (MAsset asset, EMail email, int AD_User_ID)
-	{
-		super (asset.getCtx(), 0, asset.get_TrxName());
-		//	Asset Info
-		setA_Asset_ID (asset.getA_Asset_ID());
-		setVersionNo(asset.getVersionNo());
-		//
-		setMovementDate (new Timestamp (System.currentTimeMillis ()));
-		//	EMail
-		setEMail(email.getTo().toString());
-		
-		final EMailSentStatus emailSentStatus = email.getLastSentStatus();
-		setMessageID(emailSentStatus.getMessageId());
-		//	Who
-		setAD_User_ID(AD_User_ID);
-		//
-		save();
-	}	//	MAssetDelivery
-
-	/**
-	 * 	String representation
-	 *	@return info
+	 * String representation
+	 *
+	 * @return info
 	 */
 	@Override
-	public String toString ()
+	public String toString()
 	{
-		StringBuffer sb = new StringBuffer ("MAssetDelivery[")
-			.append (get_ID ())
-			.append(",A_Asset_ID=").append(getA_Asset_ID())
-			.append(",MovementDate=").append(getMovementDate())
-			.append ("]");
-		return sb.toString ();
-	}	//	toString
+		return "MAssetDelivery["
+				+ get_ID()
+				+ ",A_Asset_ID=" + getA_Asset_ID()
+				+ ",MovementDate=" + getMovementDate()
+				+ "]";
+	}    //	toString
 
-}	//	MAssetDelivery
+}    //	MAssetDelivery
 

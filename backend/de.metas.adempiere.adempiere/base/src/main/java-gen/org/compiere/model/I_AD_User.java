@@ -361,6 +361,26 @@ public interface I_AD_User
 	String COLUMNNAME_C_Flatrate_Conditions_Default_ID = "C_Flatrate_Conditions_Default_ID";
 
 	/**
+	 * Set CC User.
+	 *
+	 * <br>Type: Search
+	 * <br>Mandatory: false
+	 * <br>Virtual Column: false
+	 */
+	void setCC_User_ID (int CC_User_ID);
+
+	/**
+	 * Get CC User.
+	 *
+	 * <br>Type: Search
+	 * <br>Mandatory: false
+	 * <br>Virtual Column: false
+	 */
+	int getCC_User_ID();
+
+	String COLUMNNAME_CC_User_ID = "CC_User_ID";
+
+	/**
 	 * Set Greeting (ID).
 	 * Greeting to print on correspondence
 	 *

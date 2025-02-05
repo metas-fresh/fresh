@@ -21,7 +21,7 @@ import org.adempiere.ad.dao.ConstantQueryFilter;
 import org.adempiere.ad.dao.IQueryBL;
 import org.adempiere.ad.dao.IQueryFilter;
 import org.adempiere.exceptions.AdempiereException;
-import org.adempiere.util.lang.Mutable;
+import org.adempiere.util.lang.MutableInt;
 
 import java.util.Iterator;
 import java.util.Objects;
@@ -88,7 +88,7 @@ public abstract class AbstractMailDocumentsForSelection extends JavaProcess
 		// Enqueue selected archives as workpackages
 		final Stream<I_C_Doc_Outbound_Log_Line> docOutboundLines = getPDFArchiveDocOutboundLinesForSelection(pinstanceId);
 
-		final Mutable<Integer> counter = new Mutable<>(0);
+		final MutableInt counter = MutableInt.zero();
 
 		final IWorkPackageQueue queue = workPackageQueueFactory.getQueueForEnqueuing(getCtx(), MailWorkpackageProcessor.class);
 
@@ -100,13 +100,13 @@ public abstract class AbstractMailDocumentsForSelection extends JavaProcess
 					.addElement(docOutboundLogLine)
 					.buildAndEnqueue();
 
-			counter.setValue(counter.getValue() + 1);
+			counter.incrementAndGet();
 		});
 
 		return msgBL.getMsg(getCtx(), Async_Constants.MSG_WORKPACKAGES_CREATED, new Object[] { counter.getValue() });
 	}
 
-	private final Stream<I_C_Doc_Outbound_Log_Line> getPDFArchiveDocOutboundLinesForSelection(final PInstanceId pinstanceId)
+	private Stream<I_C_Doc_Outbound_Log_Line> getPDFArchiveDocOutboundLinesForSelection(final PInstanceId pinstanceId)
 	{
 		final Stream<I_C_Doc_Outbound_Log> logsIterator = retrieveSelectedDocOutboundLogs(pinstanceId);
 
@@ -118,7 +118,7 @@ public abstract class AbstractMailDocumentsForSelection extends JavaProcess
 				.filter(docOutboundLogLine -> isEmailSendable(docOutboundLogLine, collector));
 	}
 
-	private final Stream<I_C_Doc_Outbound_Log> retrieveSelectedDocOutboundLogs(final PInstanceId pinstanceId)
+	private Stream<I_C_Doc_Outbound_Log> retrieveSelectedDocOutboundLogs(final PInstanceId pinstanceId)
 	{
 		final Iterator<I_C_Doc_Outbound_Log> iterator = queryBL
 				.createQueryBuilder(I_C_Doc_Outbound_Log.class)
@@ -133,17 +133,14 @@ public abstract class AbstractMailDocumentsForSelection extends JavaProcess
 	/**
 	 * To be overridden where necessary
 	 *
-	 * @param log
 	 * @return document log line
 	 */
 	protected I_C_Doc_Outbound_Log_Line retrieveDocumentLogLine(final I_C_Doc_Outbound_Log log)
 	{
-
-		final I_C_Doc_Outbound_Log_Line logLine = docOutboundDAO.retrieveCurrentPDFArchiveLogLineOrNull(log);
-		return logLine;
+		return docOutboundDAO.retrieveCurrentPDFArchiveLogLineOrNull(log);
 	}
 
-	private final boolean isEmailSendable(
+	private boolean isEmailSendable(
 			@NonNull final I_C_Doc_Outbound_Log_Line logLine,
 			@NonNull final ProblemCollector collector)
 	{

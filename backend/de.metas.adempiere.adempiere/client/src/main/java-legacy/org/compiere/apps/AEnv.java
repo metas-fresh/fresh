@@ -16,36 +16,17 @@
  *****************************************************************************/
 package org.compiere.apps;
 
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Dialog;
-import java.awt.Dimension;
-import java.awt.EventQueue;
-import java.awt.Frame;
-import java.awt.GraphicsConfiguration;
-import java.awt.Insets;
-import java.awt.Rectangle;
-import java.awt.Toolkit;
-import java.awt.Window;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.util.Enumeration;
-import java.util.Set;
-
-import javax.annotation.Nullable;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JComponent;
-import javax.swing.JDialog;
-import javax.swing.JFrame;
-import javax.swing.JMenu;
-import javax.swing.JMenuItem;
-import javax.swing.KeyStroke;
-import javax.swing.RepaintManager;
-import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
-
+import de.metas.acct.api.IPostingRequestBuilder.PostImmediate;
+import de.metas.acct.api.IPostingService;
+import de.metas.adempiere.form.IClientUIInvoker.OnFail;
+import de.metas.cache.CCache;
+import de.metas.document.references.zoom_into.RecordWindowFinder;
+import de.metas.i18n.IMsgBL;
+import de.metas.logging.LogManager;
+import de.metas.security.IUserRolePermissions;
+import de.metas.security.permissions.Access;
+import de.metas.util.Check;
+import de.metas.util.Services;
 import org.adempiere.ad.element.api.AdWindowId;
 import org.adempiere.ad.table.api.IADTableDAO;
 import org.adempiere.ad.trx.api.ITrx;
@@ -68,17 +49,14 @@ import org.compiere.util.Ini;
 import org.compiere.util.SwingUtils;
 import org.slf4j.Logger;
 
-import de.metas.acct.api.IPostingRequestBuilder.PostImmediate;
-import de.metas.acct.api.IPostingService;
-import de.metas.adempiere.form.IClientUIInvoker.OnFail;
-import de.metas.cache.CCache;
-import de.metas.document.references.zoom_into.RecordWindowFinder;
-import de.metas.i18n.IMsgBL;
-import de.metas.logging.LogManager;
-import de.metas.security.IUserRolePermissions;
-import de.metas.security.permissions.Access;
-import de.metas.util.Check;
-import de.metas.util.Services;
+import javax.annotation.Nullable;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.util.Enumeration;
+import java.util.Set;
 
 /**
  * Windows Application Environment and utilities
@@ -555,10 +533,6 @@ public final class AEnv
 		else if (actionCommand.equals("Online"))
 		{
 			OnlineHelp.openInDefaultBrowser();
-		}
-		else if (actionCommand.equals("EMailSupport"))
-		{
-			ADialog.createSupportEMail(SwingUtils.getFrame(c), SwingUtils.getFrame(c).getTitle(), "\n\n");
 		}
 		else if (actionCommand.equals("About"))
 		{

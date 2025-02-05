@@ -674,6 +674,10 @@ jobs:
         env:
           mfversion: ${{ needs.init.outputs.tag-fixed }}
           cucumberparams: ${{ matrix.params }}
+          TEST_SMTP_HOST: ${{ secrets.TEST_SMTP_HOST }}
+          TEST_SMTP_FROM: ${{ secrets.TEST_SMTP_FROM }}
+          TEST_SMTP_USER: ${{ secrets.TEST_SMTP_USER }}
+          TEST_SMTP_PASSWORD: ${{ secrets.TEST_SMTP_PASSWORD }}
         timeout-minutes: 120
         run: |
           mkdir cucumber

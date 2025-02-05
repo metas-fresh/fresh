@@ -22,8 +22,8 @@
 
 package de.metas.util.web.audit.dto;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import de.metas.JsonObjectMapperHolder;
+import de.metas.util.StringUtils;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 import org.adempiere.exceptions.AdempiereException;
@@ -33,9 +33,10 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import java.util.Collection;
 
 @UtilityClass
 public class ApiResponseMapper
@@ -43,13 +44,24 @@ public class ApiResponseMapper
 	@NonNull
 	public ApiResponse map(@NonNull final ContentCachingResponseWrapper responseWrapper)
 	{
-		return new ApiResponse(responseWrapper.getStatus(), getHeaders(responseWrapper), getBody(responseWrapper));
+		return ApiResponse.builder()
+				.statusCode(responseWrapper.getStatus())
+				.httpHeaders(getHeaders(responseWrapper))
+				.contentType(getContentType(responseWrapper))
+				.charset(getCharset(responseWrapper))
+				.body(getBody(responseWrapper))
+				.build();
 	}
 
 	@NonNull
 	public ApiResponse map(final int statusCode, @Nullable final HttpHeaders httpHeaders, @Nullable final String bodyCandidate)
 	{
-		return new ApiResponse(statusCode, httpHeaders, getBody(httpHeaders, bodyCandidate));
+		return ApiResponse.builder()
+				.statusCode(statusCode)
+				.httpHeaders(httpHeaders)
+				.contentType(getContentType(httpHeaders))
+				.body(getBody(httpHeaders, bodyCandidate))
+				.build();
 	}
 
 	@NonNull
@@ -57,57 +69,102 @@ public class ApiResponseMapper
 	{
 		final HttpHeaders responseHeaders = new HttpHeaders();
 
-		if (responseWrapper.getHeaderNames() == null || responseWrapper.getHeaderNames().isEmpty())
+		final Collection<String> headerNames = responseWrapper.getHeaderNames();
+		if (headerNames == null || headerNames.isEmpty())
 		{
 			return responseHeaders;
 		}
 
-		responseWrapper.getHeaderNames()
-				.forEach(headerName -> responseHeaders.addAll(headerName, new ArrayList<>(responseWrapper.getHeaders(headerName))));
+		headerNames.forEach(headerName -> responseHeaders.addAll(headerName, new ArrayList<>(responseWrapper.getHeaders(headerName))));
 
 		return responseHeaders;
 	}
 
 	@Nullable
+	private static MediaType getContentType(final @NonNull ContentCachingResponseWrapper responseWrapper)
+	{
+		final String contentType = StringUtils.trimBlankToNull(responseWrapper.getContentType());
+		return contentType != null ? MediaType.parseMediaType(contentType) : null;
+	}
+
+	@Nullable
+	private static MediaType getContentType(final @Nullable HttpHeaders httpHeaders)
+	{
+		return httpHeaders != null ? httpHeaders.getContentType() : null;
+	}
+
+	@NonNull
+	private static Charset getCharset(final @NonNull ContentCachingResponseWrapper responseWrapper)
+	{
+		final String charset = StringUtils.trimBlankToNull(responseWrapper.getCharacterEncoding());
+		return charset != null ? Charset.forName(charset) : StandardCharsets.UTF_8;
+	}
+
+	@Nullable
 	private Object getBody(@NonNull final ContentCachingResponseWrapper responseWrapper)
 	{
-		if (responseWrapper.getContentSize() <= 0 || !responseWrapper.getContentType().contains(APPLICATION_JSON_VALUE))
+		if (responseWrapper.getContentSize() <= 0)
 		{
 			return null;
 		}
 
-		try
+		final MediaType contentType = getContentType(responseWrapper);
+		if (contentType == null)
 		{
-			return JsonObjectMapperHolder.sharedJsonObjectMapper()
-					.readValue(responseWrapper.getContentAsByteArray(), Object.class);
+			return null;
 		}
-		catch (final IOException e)
+		else if (contentType.includes(MediaType.TEXT_PLAIN))
 		{
-			throw AdempiereException.wrapIfNeeded(e);
+			return new String(responseWrapper.getContentAsByteArray());
+		}
+		else if (contentType.includes(MediaType.APPLICATION_JSON))
+		{
+			try
+			{
+				return JsonObjectMapperHolder.sharedJsonObjectMapper().readValue(responseWrapper.getContentAsByteArray(), Object.class);
+			}
+			catch (final IOException e)
+			{
+				throw AdempiereException.wrapIfNeeded(e);
+			}
+		}
+		else
+		{
+			return responseWrapper.getContentAsByteArray();
 		}
 	}
 
 	@Nullable
 	private Object getBody(@Nullable final HttpHeaders httpHeaders, @Nullable final String bodyCandidate)
 	{
-		final boolean isJsonBody = bodyCandidate != null
-				&& httpHeaders != null
-				&& httpHeaders.getContentType() != null
-				&& httpHeaders.getContentType().includes(MediaType.APPLICATION_JSON);
-
-		if (!isJsonBody)
+		if (bodyCandidate == null)
 		{
 			return null;
 		}
 
-		try
+		final MediaType contentType = getContentType(httpHeaders);
+		if (contentType == null)
 		{
-			return JsonObjectMapperHolder.sharedJsonObjectMapper()
-					.readValue(bodyCandidate, Object.class);
+			return null;
 		}
-		catch (final JsonProcessingException e)
+		else if (contentType.includes(MediaType.TEXT_PLAIN))
 		{
-			throw AdempiereException.wrapIfNeeded(e);
+			return bodyCandidate;
+		}
+		else if (contentType.includes(MediaType.APPLICATION_JSON))
+		{
+			try
+			{
+				return JsonObjectMapperHolder.sharedJsonObjectMapper().readValue(bodyCandidate, Object.class);
+			}
+			catch (final IOException e)
+			{
+				throw AdempiereException.wrapIfNeeded(e);
+			}
+		}
+		else
+		{
+			return bodyCandidate;
 		}
 	}
 }

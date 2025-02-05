@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 
 package de.metas.letters.report;
@@ -14,12 +14,12 @@ package de.metas.letters.report;
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 2 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program. If not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
@@ -28,9 +28,9 @@ package de.metas.letters.report;
 
 import de.metas.email.EMail;
 import de.metas.email.EMailAddress;
-import de.metas.email.EMailSentStatus;
-import de.metas.email.impl.EMailSendException;
-import de.metas.email.mailboxes.UserEMailConfig;
+import de.metas.email.EMailRequest;
+import de.metas.email.MailService;
+import de.metas.email.mailboxes.MailboxQuery;
 import de.metas.i18n.AdMessageId;
 import de.metas.i18n.AdMessageKey;
 import de.metas.i18n.IMsgBL;
@@ -41,36 +41,36 @@ import de.metas.logging.LogManager;
 import de.metas.process.JavaProcess;
 import de.metas.process.ProcessInfoParameter;
 import de.metas.user.UserId;
-import de.metas.user.api.IUserBL;
 import de.metas.util.Services;
 import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.exceptions.FillMandatoryException;
 import org.adempiere.model.InterfaceWrapperHelper;
+import org.compiere.SpringContextHolder;
 import org.compiere.model.I_AD_User;
-import org.compiere.model.MClient;
 import org.compiere.model.MNote;
 import org.compiere.model.Query;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 
 /**
  * Send BoilerPlate to selected contacts
- * 
- * @author teo_sarca
  *
+ * @author teo_sarca
  */
 public class AD_BoilderPlate_SendToUsers extends JavaProcess
 {
+	private final MailService mailService = SpringContextHolder.instance.getBean(MailService.class);
 	private static final AdMessageKey AD_Message_UserNotifyError = AdMessageKey.of("de.metas.letters.UserNotifyError");
 
-	/** From User (sender) */
+	/**
+	 * From User (sender)
+	 */
 	private UserId p_AD_User_ID;
 	private int p_AD_BoilerPlate_ID = -1;
 	private String p_WhereClause = null;
 	private int p_SMTPRetriesNo = 3;
-
-	private UserEMailConfig fromUserEmailConfig = null;
 
 	private int m_count_notes = 0;
 
@@ -103,20 +103,13 @@ public class AD_BoilderPlate_SendToUsers extends JavaProcess
 		}
 	}
 
-	private UserEMailConfig getFromUserEMailConfig()
+	private UserId getFromUserId()
 	{
-		UserEMailConfig fromUserEmailConfig = this.fromUserEmailConfig;
-		if (fromUserEmailConfig == null)
+		if (p_AD_User_ID == null)
 		{
-			if (p_AD_User_ID == null)
-			{
-				throw new FillMandatoryException("AD_User_ID");
-			}
-
-			fromUserEmailConfig = this.fromUserEmailConfig = Services.get(IUserBL.class).getEmailConfigById(p_AD_User_ID);
+			throw new FillMandatoryException("AD_User_ID");
 		}
-
-		return fromUserEmailConfig;
+		return p_AD_User_ID;
 	}
 
 	@Override
@@ -200,54 +193,20 @@ public class AD_BoilderPlate_SendToUsers extends JavaProcess
 			@Override
 			public EMail sendEMail(I_AD_User from, String toEmail, String subject, final BoilerPlateContext attributes)
 			{
-				String message = text.getTextSnippetParsed(attributes);
-				//
-				final StringTokenizer st = new StringTokenizer(toEmail, " ,;", false);
-				final EMailAddress to = EMailAddress.ofString(st.nextToken());
-				final MClient client = MClient.get(getCtx(), getAD_Client_ID());
-				final EMail email = client.createEMail(
-						getFromUserEMailConfig(),
-						to,
-						text.getName(),
-						message,
-						true);
-				if (email == null)
-				{
-					throw new AdempiereException("Cannot create email. Check log.");
-				}
-				while (st.hasMoreTokens())
-				{
-					email.addTo(EMailAddress.ofString(st.nextToken()));
-				}
-				send(email);
-				return email;
+				return mailService.sendEMail(EMailRequest.builder()
+						.mailboxQuery(MailboxQuery.builder()
+								.clientId(getClientId())
+								.orgId(getOrgId())
+								.adProcessId(getProcessInfo().getAdProcessId())
+								.fromUserId(getFromUserId())
+								.build())
+						.toList(toEMailAddresses(toEmail))
+						.subject(text.getSubject())
+						.message(text.getTextSnippetParsed(attributes))
+						.html(true)
+						.build());
 			}
 		});
-	}
-
-	private void send(EMail email)
-	{
-		int maxRetries = p_SMTPRetriesNo > 0 ? p_SMTPRetriesNo : 0;
-		int count = 0;
-		do
-		{
-			final EMailSentStatus emailSentStatus = email.send();
-			count++;
-			if (emailSentStatus.isSentOK())
-			{
-				return;
-			}
-			// Timeout => retry
-			if (emailSentStatus.isSentConnectionError() && maxRetries > 0 && count < maxRetries)
-			{
-				log.warn("SMTP error: " + emailSentStatus + " [ Retry " + count + " ]");
-			}
-			else
-			{
-				throw new EMailSendException(emailSentStatus);
-			}
-		}
-		while (true);
 	}
 
 	private void createNote(MADBoilerPlate text, I_AD_User user, Exception e)
@@ -259,11 +218,11 @@ public class AD_BoilderPlate_SendToUsers extends JavaProcess
 		final IMsgBL msgBL = Services.get(IMsgBL.class);
 		final String reference = msgBL.parseTranslation(getCtx(), "@AD_BoilerPlate_ID@: " + text.get_Translation(MADBoilerPlate.COLUMNNAME_Name))
 				+ ", " + msgBL.parseTranslation(getCtx(), "@AD_User_ID@: " + user.getName())
-		// +", "+Msg.parseTranslation(getCtx(), "@AD_PInstance_ID@: "+getAD_PInstance_ID())
-		;
+				// +", "+Msg.parseTranslation(getCtx(), "@AD_PInstance_ID@: "+getAD_PInstance_ID())
+				;
 		final MNote note = new MNote(getCtx(),
 				adMessageId.getRepoId(),
-				getFromUserEMailConfig().getUserId().getRepoId(),
+				getFromUserId().getRepoId(),
 				InterfaceWrapperHelper.getModelTableId(user), user.getAD_User_ID(),
 				reference,
 				e.getLocalizedMessage(),
@@ -272,4 +231,16 @@ public class AD_BoilderPlate_SendToUsers extends JavaProcess
 		note.saveEx();
 		m_count_notes++;
 	}
+
+	static List<EMailAddress> toEMailAddresses(final String string)
+	{
+		final StringTokenizer st = new StringTokenizer(string, " ,;", false);
+		final ArrayList<EMailAddress> result = new ArrayList<>();
+		while (st.hasMoreTokens())
+		{
+			result.add(EMailAddress.ofString(st.nextToken()));
+		}
+		return result;
+	}
+
 }

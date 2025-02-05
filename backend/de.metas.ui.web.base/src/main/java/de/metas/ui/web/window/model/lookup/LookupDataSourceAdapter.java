@@ -11,6 +11,7 @@ import de.metas.util.Check;
 import lombok.NonNull;
 import org.compiere.util.Evaluatee;
 
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -101,7 +102,8 @@ final class LookupDataSourceAdapter implements LookupDataSource
 	}
 
 	@Override
-	public LookupValue findById(final Object idObj)
+	@Nullable
+	public LookupValue findById(@Nullable final Object idObj)
 	{
 		if (idObj == null)
 		{

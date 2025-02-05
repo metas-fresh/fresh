@@ -1,10 +1,11 @@
 package de.metas.email;
 
-import javax.annotation.Nullable;
-
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
+
+import javax.annotation.Nullable;
+import java.util.Objects;
 
 /*
  * #%L
@@ -16,20 +17,21 @@ import lombok.NonNull;
  * it under the terms of the GNU General Public License as
  * published by the Free Software Foundation, either version 2 of the
  * License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program. If not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>.
  * #L%
  */
 
+@Getter
 @EqualsAndHashCode
-public final class EMailCustomType
+public final class EMailCustomType implements Comparable<EMailCustomType>
 {
 	public static EMailCustomType ofNullableCode(@Nullable final String code)
 	{
@@ -41,7 +43,6 @@ public final class EMailCustomType
 		return new EMailCustomType(code);
 	}
 
-	@Getter
 	private final String code;
 
 	private EMailCustomType(@NonNull final String code)
@@ -55,4 +56,9 @@ public final class EMailCustomType
 	{
 		return getCode();
 	}
+
+	public static boolean equals(EMailCustomType t1, EMailCustomType t2) {return Objects.equals(t1, t2);}
+
+	@Override
+	public int compareTo(final EMailCustomType other) {return this.code.compareTo(other.code);}
 }

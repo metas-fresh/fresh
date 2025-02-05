@@ -1,30 +1,13 @@
 package de.metas.payment.paypal;
 
-import static org.adempiere.model.InterfaceWrapperHelper.newInstanceOutOfTrx;
-import static org.adempiere.model.InterfaceWrapperHelper.saveRecord;
-
-import java.time.LocalDate;
-import java.util.Optional;
-
-import org.adempiere.ad.wrapper.POJOLookupMap;
-import org.adempiere.service.ClientId;
-import org.adempiere.test.AdempiereTestHelper;
-import org.compiere.model.I_AD_Client;
-import org.compiere.model.I_AD_User;
-import org.compiere.model.I_C_BPartner;
-import org.compiere.model.I_R_MailText;
-
 import com.google.common.collect.ImmutableList;
-
 import de.metas.bpartner.BPartnerContactId;
 import de.metas.currency.CurrencyCode;
 import de.metas.currency.CurrencyRepository;
 import de.metas.currency.impl.PlainCurrencyDAO;
 import de.metas.email.EMailAddress;
 import de.metas.email.MailService;
-import de.metas.email.mailboxes.MailboxRepository;
 import de.metas.email.templates.MailTemplateId;
-import de.metas.email.templates.MailTemplateRepository;
 import de.metas.invoice.InvoiceId;
 import de.metas.money.CurrencyId;
 import de.metas.money.Money;
@@ -48,6 +31,19 @@ import de.metas.payment.reservation.PaymentReservationId;
 import de.metas.payment.reservation.PaymentReservationRepository;
 import de.metas.payment.reservation.PaymentReservationService;
 import lombok.NonNull;
+import org.adempiere.ad.wrapper.POJOLookupMap;
+import org.adempiere.service.ClientId;
+import org.adempiere.test.AdempiereTestHelper;
+import org.compiere.model.I_AD_Client;
+import org.compiere.model.I_AD_User;
+import org.compiere.model.I_C_BPartner;
+import org.compiere.model.I_R_MailText;
+
+import java.time.LocalDate;
+import java.util.Optional;
+
+import static org.adempiere.model.InterfaceWrapperHelper.newInstanceOutOfTrx;
+import static org.adempiere.model.InterfaceWrapperHelper.saveRecord;
 
 /*
  * #%L
@@ -129,9 +125,7 @@ public class PayPalCheckoutManualTest2
 		final MoneyService moneyService = new MoneyService(
 				new CurrencyRepository());
 
-		final MailService mailService = new MailService(
-				new MailboxRepository(),
-				new MailTemplateRepository());
+		final MailService mailService = MailService.newInstanceForUnitTesting();
 
 		final PaymentReservationRepository paymentReservationRepo = new PaymentReservationRepository();
 		final PaymentReservationCaptureRepository paymentReservationCaptureRepo = new PaymentReservationCaptureRepository();
@@ -194,7 +188,7 @@ public class PayPalCheckoutManualTest2
 					.orgId(orgId)
 					.amount(money(100))
 					.payerContactId(createPayerBPartnerContact())
-					.payerEmail(EMailAddress.ofNullableString("from@example.com"))
+					.payerEmail(EMailAddress.ofString("from@example.com"))
 					.salesOrderId(salesOrderId)
 					.dateTrx(LocalDate.now())
 					.paymentRule(PaymentRule.PayPal)

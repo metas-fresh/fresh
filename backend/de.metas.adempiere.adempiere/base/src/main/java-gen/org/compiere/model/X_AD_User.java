@@ -252,6 +252,21 @@ public class X_AD_User extends org.compiere.model.PO implements I_AD_User, org.c
 	}
 
 	@Override
+	public void setCC_User_ID (final int CC_User_ID)
+	{
+		if (CC_User_ID < 1)
+			set_Value (COLUMNNAME_CC_User_ID, null);
+		else
+			set_Value (COLUMNNAME_CC_User_ID, CC_User_ID);
+	}
+
+	@Override
+	public int getCC_User_ID()
+	{
+		return get_ValueAsInt(COLUMNNAME_CC_User_ID);
+	}
+
+	@Override
 	public void setC_Greeting_ID (final int C_Greeting_ID)
 	{
 		if (C_Greeting_ID < 1)
@@ -308,14 +323,14 @@ public class X_AD_User extends org.compiere.model.PO implements I_AD_User, org.c
 	@Override
 	public void setC_Title_ID (final int C_Title_ID)
 	{
-		if (C_Title_ID < 1) 
+		if (C_Title_ID < 1)
 			set_Value (COLUMNNAME_C_Title_ID, null);
-		else 
+		else
 			set_Value (COLUMNNAME_C_Title_ID, C_Title_ID);
 	}
 
 	@Override
-	public int getC_Title_ID() 
+	public int getC_Title_ID()
 	{
 		return get_ValueAsInt(COLUMNNAME_C_Title_ID);
 	}

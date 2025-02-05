@@ -85,17 +85,10 @@ public final class ExplainedOptional<T>
 
 	public T orElseThrow()
 	{
-		if (value != null)
-		{
-			return value;
-		}
-		else
-		{
-			throw new AdempiereException(explanation);
-		}
+		return orElseThrow(AdempiereException::new);
 	}
 
-	public <E extends RuntimeException> T orElseThrow(@NonNull final Function<ITranslatableString, E> exceptionFactory)
+	public T orElseThrow(@NonNull final Function<ITranslatableString, RuntimeException> exceptionFactory)
 	{
 		if (value != null)
 		{

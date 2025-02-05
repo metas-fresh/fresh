@@ -23,6 +23,7 @@ package org.adempiere.service;
  */
 
 import de.metas.email.mailboxes.ClientEMailConfig;
+import de.metas.email.templates.ClientMailTemplates;
 import de.metas.util.ISingletonService;
 import lombok.NonNull;
 import org.compiere.model.I_AD_Client;
@@ -69,6 +70,8 @@ public interface IClientDAO extends ISingletonService
 	I_AD_ClientInfo retrieveClientInfo(Properties ctx, int adClientId);
 
 	ClientEMailConfig getEMailConfigById(ClientId clientId);
+
+	ClientMailTemplates getClientMailTemplatesById(ClientId clientId);
 
 	boolean isMultilingualDocumentsEnabled(ClientId adClientId);
 

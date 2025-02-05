@@ -15,19 +15,20 @@ import de.metas.document.archive.mailrecipient.DocOutBoundRecipientId;
 import de.metas.document.archive.mailrecipient.DocOutBoundRecipientRepository;
 import de.metas.document.archive.model.I_C_Doc_Outbound_Log;
 import de.metas.document.archive.model.I_C_Doc_Outbound_Log_Line;
-import de.metas.email.EMail;
 import de.metas.email.EMailAddress;
-import de.metas.email.EMailCustomType;
+import de.metas.email.EMailAttachment;
+import de.metas.email.EMailRequest;
+import de.metas.email.EMailSentStatus;
 import de.metas.email.MailService;
-import de.metas.email.mailboxes.ClientEMailConfig;
 import de.metas.email.mailboxes.Mailbox;
-import de.metas.email.mailboxes.UserEMailConfig;
+import de.metas.email.mailboxes.MailboxQuery;
 import de.metas.i18n.AdMessageKey;
 import de.metas.i18n.IMsgBL;
 import de.metas.i18n.Language;
 import de.metas.letter.BoilerPlate;
 import de.metas.letter.BoilerPlateId;
 import de.metas.letter.BoilerPlateRepository;
+import de.metas.logging.LogManager;
 import de.metas.organization.OrgId;
 import de.metas.process.AdProcessId;
 import de.metas.process.ProcessExecutor;
@@ -47,7 +48,6 @@ import org.adempiere.archive.api.IArchiveEventManager;
 import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.model.InterfaceWrapperHelper;
 import org.adempiere.service.ClientId;
-import org.adempiere.service.IClientDAO;
 import org.adempiere.util.lang.impl.TableRecordReference;
 import org.compiere.SpringContextHolder;
 import org.compiere.model.I_AD_Archive;
@@ -56,17 +56,20 @@ import org.compiere.model.I_C_DocType;
 import org.compiere.util.Env;
 import org.compiere.util.Evaluatee;
 import org.compiere.util.Evaluatees;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import static de.metas.attachments.AttachmentTags.TAGNAME_SEND_VIA_EMAIL;
 
 /**
  * Async processor that sends the PDFs of {@link I_C_Doc_Outbound_Log_Line}s' {@link I_AD_Archive}s as Email.
  * The recipient's email address is taken from {@link I_C_Doc_Outbound_Log#getCurrentEMailAddress()}.
- * Where this column is empty, no mail is send.
+ * Where this column is empty, no mail is sent.
  *
  * @author metas-dev <dev@metasfresh.com>
  */
@@ -74,8 +77,8 @@ public class MailWorkpackageProcessor implements IWorkpackageProcessor
 {
 	//
 	// Services
+	private static final Logger logger = LogManager.getLogger(MailWorkpackageProcessor.class);
 	private final transient IQueueDAO queueDAO = Services.get(IQueueDAO.class);
-	private final transient IClientDAO clientsDAO = Services.get(IClientDAO.class);
 	private final transient IMsgBL msgBL = Services.get(IMsgBL.class);
 	private final transient IArchiveEventManager archiveEventManager = Services.get(IArchiveEventManager.class);
 	private final transient IArchiveBL archiveBL = Services.get(IArchiveBL.class);
@@ -93,7 +96,7 @@ public class MailWorkpackageProcessor implements IWorkpackageProcessor
 	private static final AdMessageKey MSG_EmailMessage = AdMessageKey.of("MailWorkpackageProcessor.EmailMessage");
 
 	@Override
-	public Result processWorkPackage(final I_C_Queue_WorkPackage workpackage, final String localTrxName)
+	public Result processWorkPackage(final @NonNull I_C_Queue_WorkPackage workpackage, final String localTrxName)
 	{
 		final List<I_C_Doc_Outbound_Log_Line> logLines = queueDAO.retrieveAllItems(workpackage, I_C_Doc_Outbound_Log_Line.class);
 		for (final I_C_Doc_Outbound_Log_Line logLine : logLines)
@@ -127,11 +130,15 @@ public class MailWorkpackageProcessor implements IWorkpackageProcessor
 		}
 		catch (final Exception e)
 		{
-			if (mailService.isConnectionError(e))
+			if (EMailSentStatus.isConnectionError(e))
 			{
 				throw WorkpackageSkipRequestException.createWithTimeoutAndThrowable(e.getLocalizedMessage(), DEFAULT_SkipTimeoutOnConnectionError, e);
 			}
-			throw AdempiereException.wrapIfNeeded(e);
+			else
+			{
+				//noinspection DataFlowIssue
+				throw AdempiereException.wrapIfNeeded(e);
+			}
 		}
 	}
 
@@ -150,57 +157,38 @@ public class MailWorkpackageProcessor implements IWorkpackageProcessor
 			ctx.setProperty(Env.CTXNAME_AD_Language, archiveLanguage);
 		}
 
-		final AdProcessId processId = pInstance != null
-				? AdProcessId.ofRepoIdOrNull(pInstance.getAD_Process_ID())
-				: ProcessExecutor.getCurrentProcessIdOrNull();
-
-		final ClientId adClientId = ClientId.ofRepoId(docOutboundLogRecord.getAD_Client_ID());
-		final ClientEMailConfig tenantEmailConfig = clientsDAO.getEMailConfigById(adClientId);
-		final DocBaseAndSubType docBaseAndSubType = extractDocBaseAndSubType(docOutboundLogRecord);
-		final Mailbox mailbox = mailService.findMailBox(
-				tenantEmailConfig,
-				OrgId.ofRepoId(docOutboundLogRecord.getAD_Org_ID()),
-				processId,
-				docBaseAndSubType,
-				(EMailCustomType)null); // mailCustomType
+		final Mailbox mailbox = mailService.findMailbox(MailboxQuery.builder()
+				.clientId(ClientId.ofRepoId(docOutboundLogRecord.getAD_Client_ID()))
+				.orgId(OrgId.ofRepoId(docOutboundLogRecord.getAD_Org_ID()))
+				.adProcessId(pInstance != null ? AdProcessId.ofRepoIdOrNull(pInstance.getAD_Process_ID()) : ProcessExecutor.getCurrentProcessIdOrNull())
+				.docBaseAndSubType(extractDocBaseAndSubType(docOutboundLogRecord))
+				.build());
 
 		// note that we verified this earlier
-		final EMailAddress mailTo = EMailAddress.ofNullableString(docOutboundLogRecord.getCurrentEMailAddress());
-		Check.assumeNotNull(
-				docOutboundLogRecord.getCurrentEMailAddress(),
-				"C_Doc_Outbound_Log needs to have a non-empty CurrentEMailAddress value; C_Doc_Outbound_Log={}", docOutboundLogRecord);
+		final EMailAddress mailTo = EMailAddress.optionalOfNullable(docOutboundLogRecord.getCurrentEMailAddress())
+				.orElseThrow(() -> new AdempiereException("C_Doc_Outbound_Log needs to have a non-empty CurrentEMailAddress value; C_Doc_Outbound_Log=" + docOutboundLogRecord));
 
 		// Create and send email
 		final ArchiveEmailSentStatus status;
 		{
-			final EmailParams emailParams = extractEmailParams(docOutboundLogRecord);
-
-			final EMail email = mailService.createEMail(
-					mailbox,
-					mailTo,
-					emailParams.getSubject(),
-					emailParams.getMessage(),
-					isHTMLMessage(emailParams.getMessage()));
-
-			final TableRecordReference recordRef = TableRecordReference.ofReferenced(docOutboundLogRecord);
-
-			final long addedAttachments = attachmentEntryService.streamEmailAttachments(recordRef, TAGNAME_SEND_VIA_EMAIL)
-					.map(attachment -> email.addAttachment(attachment.getFilename(), attachment.getAttachmentDataSupplier().get()))
-					.filter(Boolean::booleanValue)
-					.count();
-
-			final byte[] attachment = archiveBL.getBinaryData(archive);
-			if (attachment == null && addedAttachments <= 0)
+			final ArrayList<EMailAttachment> emailAttachments = extractAttachments(docOutboundLogRecord, archive);
+			if (emailAttachments.isEmpty())
 			{
 				status = ArchiveEmailSentStatus.MESSAGE_NOT_SENT;
 				Loggables.addLog("No documents to attach on email for C_Doc_Outbound_Log_ID={}; -> not sending mail", docOutboundLogRecord.getC_Doc_Outbound_Log_ID());
 			}
 			else
 			{
-				final String pdfFileName = archiveFileNameService.computePdfFileName(docOutboundLogRecord);
-				email.addAttachment(pdfFileName, attachment);
+				final EmailParams emailParams = extractEmailParams(docOutboundLogRecord);
+				mailService.sendEMail(EMailRequest.builder()
+						.mailbox(mailbox)
+						.to(mailTo)
+						.subject(emailParams.getSubject())
+						.message(emailParams.getMessage())
+						.html(emailParams.isHtml())
+						.attachments(emailAttachments)
+						.build());
 
-				mailService.send(email);
 				status = ArchiveEmailSentStatus.MESSAGE_SENT;
 			}
 		}
@@ -208,19 +196,49 @@ public class MailWorkpackageProcessor implements IWorkpackageProcessor
 		//
 		// Create doc outbound log entry
 		{
-			final EMailAddress from = mailbox.getEmail();
-			final EMailAddress cc = null;
-			final EMailAddress bcc = null;
 
 			archiveEventManager.fireEmailSent(
 					archive,
-					(UserEMailConfig)null,
-					from,
+					null,
+					mailbox.getEmail(),
 					mailTo,
-					cc,
-					bcc,
+					null,
+					null,
 					status);
 		}
+	}
+
+	private ArrayList<EMailAttachment> extractAttachments(@NonNull final I_C_Doc_Outbound_Log docOutboundLogRecord, @NonNull final I_AD_Archive archive)
+	{
+		final TableRecordReference recordRef = TableRecordReference.ofReferenced(docOutboundLogRecord);
+		final ArrayList<EMailAttachment> result = attachmentEntryService.streamEmailAttachments(recordRef, TAGNAME_SEND_VIA_EMAIL)
+				.map(MailWorkpackageProcessor::toEmailAttachment)
+				.collect(Collectors.toCollection(ArrayList::new));
+
+		final byte[] archiveData = archiveBL.getBinaryData(archive);
+		if (archiveData != null && archiveData.length > 0)
+		{
+			final String pdfFileName = archiveFileNameService.computePdfFileName(docOutboundLogRecord);
+			final EMailAttachment attachment = EMailAttachment.ofNullable(pdfFileName, archiveData);
+			if (attachment != null)
+			{
+				result.add(attachment);
+			}
+		}
+
+		return result;
+	}
+
+	private static EMailAttachment toEmailAttachment(@NonNull de.metas.attachments.EmailAttachment attachment)
+	{
+		final String filename = attachment.getFilename();
+		final EMailAttachment emailAttachment = EMailAttachment.ofNullable(filename, attachment.getAttachmentDataSupplier().get());
+		if (emailAttachment == null)
+		{
+			logger.warn("Skip adding byte attachment because the content is empty for {}", filename);
+			return null;
+		}
+		return emailAttachment;
 	}
 
 	@Nullable
@@ -234,17 +252,6 @@ public class MailWorkpackageProcessor implements IWorkpackageProcessor
 
 		final I_C_DocType docType = Services.get(IDocTypeDAO.class).getById(docTypeId);
 		return DocBaseAndSubType.of(docType.getDocBaseType(), docType.getDocSubType());
-	}
-
-	private boolean isHTMLMessage(final String message)
-	{
-		if (Check.isEmpty(message))
-		{
-			// no message => no html
-			return false;
-		}
-
-		return message.toLowerCase().indexOf("<html>") >= 0;
 	}
 
 	private EmailParams extractEmailParams(@NonNull final I_C_Doc_Outbound_Log docOutboundLogRecord)
@@ -342,5 +349,16 @@ public class MailWorkpackageProcessor implements IWorkpackageProcessor
 	{
 		String subject;
 		String message;
+
+		private boolean isHtml()
+		{
+			if (Check.isEmpty(message))
+			{
+				// no message => no html
+				return false;
+			}
+
+			return message.toLowerCase().contains("<html>");
+		}
 	}
 }

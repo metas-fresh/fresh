@@ -22,19 +22,17 @@
 
 package de.metas.util.web.audit;
 
-import de.metas.JsonObjectMapperHolder;
 import de.metas.audit.apirequest.config.ApiAuditConfig;
 import de.metas.audit.apirequest.request.ApiRequestAudit;
 import de.metas.common.rest_api.common.JsonMetasfreshId;
 import de.metas.common.rest_api.v2.JsonApiResponse;
-import de.metas.common.rest_api.v2.JsonErrorItem;
-import de.metas.rest_api.utils.v2.JsonErrors;
 import de.metas.util.Loggables;
 import de.metas.util.web.audit.dto.ApiResponse;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 import org.compiere.util.Env;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletResponse;
@@ -43,7 +41,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static de.metas.util.web.audit.ApiAuditService.API_RESPONSE_HEADER_REQUEST_AUDIT_ID;
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @UtilityClass
 public class ResponseHandler
@@ -54,19 +51,15 @@ public class ResponseHandler
 			@NonNull final ApiRequestAudit apiRequestAudit,
 			@NonNull final HttpServletResponse httpServletResponse) throws IOException
 	{
-		if (!resetServletResponse(httpServletResponse))
+		if (!isResetServletResponse(httpServletResponse))
 		{
 			//dev-note: it basically means the response was already written and committed
 			return;
 		}
 
-		forwardSomeResponseHttpHeaders(httpServletResponse, apiResponse.getHttpHeaders());
+		final ApiResponse apiResponseWrapped = wrapBodyIfNeeded(apiAuditConfig, apiRequestAudit, apiResponse);
 
-		addCustomHeaders(httpServletResponse, apiAuditConfig, apiRequestAudit);
-
-		final Object responseBody = wrapBodyIfNeeded(apiAuditConfig, apiRequestAudit, apiResponse.getBody());
-
-		writeResponse(httpServletResponse, responseBody, apiResponse.getStatusCode());
+		writeResponse(httpServletResponse, apiResponseWrapped);
 	}
 
 	public void writeErrorResponse(
@@ -75,51 +68,32 @@ public class ResponseHandler
 			@Nullable final ApiRequestAudit apiRequestAudit,
 			@Nullable final ApiAuditConfig apiAuditConfig) throws IOException
 	{
-		if (!resetServletResponse(httpServletResponse))
+		if (!isResetServletResponse(httpServletResponse))
 		{
 			//dev-note: it basically means the response was already written and committed
 			return;
 		}
 
-		final String language = Env.getADLanguageOrBaseLanguage();
-		final JsonErrorItem error = JsonErrors.ofThrowable(throwable, language);
+		final ApiResponse apiResponse = ApiResponse.ofException(throwable, Env.getADLanguageOrBaseLanguage());
+		final ApiResponse apiResponseWrapped = wrapBodyIfNeeded(apiAuditConfig, apiRequestAudit, apiResponse);
 
-		addCustomHeaders(httpServletResponse, apiAuditConfig, apiRequestAudit);
-
-		final Object responseBody = wrapBodyIfNeeded(apiAuditConfig, apiRequestAudit, error);
-
-		writeResponse(httpServletResponse, responseBody, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-	}
-
-	private void addCustomHeaders(
-			@NonNull final HttpServletResponse httpServletResponse,
-			@Nullable final ApiAuditConfig apiAuditConfig,
-			@Nullable final ApiRequestAudit apiRequestAudit)
-	{
-		if (apiAuditConfig == null || apiRequestAudit == null)
-		{
-			return;
-		}
-
-		if (!apiAuditConfig.isWrapApiResponse())
-		{
-			httpServletResponse.addHeader(API_RESPONSE_HEADER_REQUEST_AUDIT_ID, String.valueOf(apiRequestAudit.getIdNotNull().getRepoId()));
-		}
+		writeResponse(httpServletResponse, apiResponseWrapped);
 	}
 
 	private void writeResponse(
 			@NonNull final HttpServletResponse httpServletResponse,
-			@Nullable final Object apiResponse,
-			final int statusCode) throws IOException
+			@NonNull final ApiResponse apiResponse) throws IOException
 	{
-		httpServletResponse.setContentType(APPLICATION_JSON_VALUE);
-		httpServletResponse.setCharacterEncoding(StandardCharsets.UTF_8.name());
-		httpServletResponse.setStatus(statusCode);
+		forwardSomeResponseHttpHeaders(httpServletResponse, apiResponse.getHttpHeaders());
 
-		if (apiResponse != null)
+		httpServletResponse.setStatus(apiResponse.getStatusCode());
+		httpServletResponse.setContentType(apiResponse.getContentType() != null ? apiResponse.getContentType().toString() : null);
+		httpServletResponse.setCharacterEncoding(apiResponse.getCharset().name());
+
+		final String body = apiResponse.getBodyAsString();
+		if (body != null)
 		{
-			final String stringToForward = JsonObjectMapperHolder.sharedJsonObjectMapper().writeValueAsString(apiResponse);
-			httpServletResponse.getWriter().write(stringToForward);
+			httpServletResponse.getWriter().write(body);
 		}
 
 		httpServletResponse.flushBuffer();
@@ -127,7 +101,7 @@ public class ResponseHandler
 
 	private void forwardSomeResponseHttpHeaders(@NonNull final HttpServletResponse servletResponse, @Nullable final HttpHeaders httpHeaders)
 	{
-		if (httpHeaders == null)
+		if (httpHeaders == null || httpHeaders.isEmpty())
 		{
 			return;
 		}
@@ -147,24 +121,37 @@ public class ResponseHandler
 				});
 	}
 
-	@Nullable
-	private Object wrapBodyIfNeeded(
+	@NonNull
+	private ApiResponse wrapBodyIfNeeded(
 			@Nullable final ApiAuditConfig apiAuditConfig,
 			@Nullable final ApiRequestAudit apiRequestAudit,
-			@Nullable final Object unwrappedResponse)
+			@NonNull final ApiResponse apiResponse)
 	{
-		if (apiAuditConfig == null || apiRequestAudit == null || !apiAuditConfig.isWrapApiResponse())
+		if (apiAuditConfig != null && apiRequestAudit != null && apiAuditConfig.isWrapApiResponse() && apiResponse.isJson())
 		{
-			return unwrappedResponse;
+			return apiResponse.toBuilder()
+					.contentType(MediaType.APPLICATION_JSON)
+					.charset(StandardCharsets.UTF_8)
+					.body(JsonApiResponse.builder()
+							.requestId(JsonMetasfreshId.of(apiRequestAudit.getIdNotNull().getRepoId()))
+							.endpointResponse(apiResponse.getBody())
+							.build())
+					.build();
 		}
+		else
+		{
+			final HttpHeaders httpHeaders = apiResponse.getHttpHeaders() != null ? new HttpHeaders(apiResponse.getHttpHeaders()) : new HttpHeaders();
+			if (apiRequestAudit != null)
+			{
+				httpHeaders.add(API_RESPONSE_HEADER_REQUEST_AUDIT_ID, String.valueOf(apiRequestAudit.getIdNotNull().getRepoId()));
+			}
 
-		return JsonApiResponse.builder()
-				.requestId(JsonMetasfreshId.of(apiRequestAudit.getIdNotNull().getRepoId()))
-				.endpointResponse(unwrappedResponse)
-				.build();
+			return apiResponse.toBuilder().httpHeaders(httpHeaders).build();
+		}
 	}
 
-	private boolean resetServletResponse(@NonNull final HttpServletResponse response)
+	@SuppressWarnings("BooleanMethodIsAlwaysInverted")
+	private boolean isResetServletResponse(@NonNull final HttpServletResponse response)
 	{
 		if (!response.isCommitted())
 		{

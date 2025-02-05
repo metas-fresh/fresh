@@ -3,8 +3,8 @@ package de.metas.ui.web.window.model.lookup;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import de.metas.cache.CCache;
-import de.metas.cache.CCacheStats;
 import de.metas.cache.CCache.CacheMapType;
+import de.metas.cache.CCacheStats;
 import de.metas.ui.web.window.datatypes.LookupValue;
 import de.metas.ui.web.window.datatypes.LookupValuesList;
 import de.metas.ui.web.window.datatypes.LookupValuesPage;
@@ -16,6 +16,7 @@ import org.compiere.model.I_AD_SysConfig;
 import org.compiere.util.Evaluatee;
 import org.compiere.util.Evaluatees;
 
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -127,7 +128,8 @@ class FullyCachedLookupDataSource implements LookupDataSource
 	}
 
 	@Override
-	public LookupValue findById(final Object idObj)
+	@Nullable
+	public LookupValue findById(@Nullable final Object idObj)
 	{
 		final Object idNormalized = LookupValue.normalizeId(idObj, fetcher.isNumericKey());
 		if (idNormalized == null)

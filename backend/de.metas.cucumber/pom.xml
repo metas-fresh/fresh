@@ -73,6 +73,20 @@
             <artifactId>de.metas.business</artifactId>
             <version>${metasfresh.version}</version>
             <scope>test</scope>
+
+            <exclusions>
+                <!-- exclude azure-identity because it's bringging in a different/wrong version of netty-common which is causing cucumber to not start -->
+                <exclusion>
+                    <groupId>com.azure</groupId>
+                    <artifactId>azure-identity</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>de.metas.business</groupId>
+            <artifactId>de.metas.business</artifactId>
+            <version>${metasfresh.version}</version>
+            <scope>test</scope>
             <classifier>tests</classifier>
         </dependency>
 

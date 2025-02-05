@@ -1,20 +1,16 @@
 package de.metas.shipper.gateway.derkurier.misc;
 
-import static org.adempiere.model.InterfaceWrapperHelper.loadOutOfTrx;
-
-import java.util.Optional;
-
-import org.adempiere.ad.dao.IQueryBL;
-import org.compiere.model.I_AD_MailBox;
-import org.compiere.util.TimeUtil;
-import org.springframework.stereotype.Repository;
-
 import de.metas.cache.CCache;
 import de.metas.email.EMailAddress;
-import de.metas.email.mailboxes.Mailbox;
+import de.metas.email.mailboxes.MailboxId;
 import de.metas.shipper.gateway.derkurier.model.I_DerKurier_Shipper_Config;
 import de.metas.util.Check;
 import de.metas.util.Services;
+import org.adempiere.ad.dao.IQueryBL;
+import org.compiere.util.TimeUtil;
+import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
 
 /*
  * #%L
@@ -41,7 +37,7 @@ import de.metas.util.Services;
 @Repository
 public class DerKurierShipperConfigRepository
 {
-	private static CCache<Integer, Optional<DerKurierShipperConfig>> cache = CCache.newCache(
+	private static final CCache<Integer, Optional<DerKurierShipperConfig>> cache = CCache.newCache(
 			I_DerKurier_Shipper_Config.Table_Name + "#by#" + I_DerKurier_Shipper_Config.COLUMNNAME_M_Shipper_ID,
 			10,
 			CCache.EXPIREMINUTES_Never);
@@ -78,7 +74,7 @@ public class DerKurierShipperConfigRepository
 				.restApiBaseUrl(shipperConfigRecord.getAPIServerBaseURL())
 				.customerNumber(shipperConfigRecord.getDK_CustomerNumber())
 				.parcelNumberAdSequenceId(shipperConfigRecord.getAD_Sequence_ID())
-				.deliveryOrderMailBoxOrNull(loadMailboxOrNull(shipperConfigRecord.getAD_MailBox_ID()))
+				.deliveryOrderMailBoxId(MailboxId.ofRepoIdOrNull(shipperConfigRecord.getAD_MailBox_ID()))
 				.deliveryOrderRecipientEmailOrNull(EMailAddress.ofNullableString(shipperConfigRecord.getEMail_To()))
 				.collectorCode(shipperConfigRecord.getCollectorCode())
 				.customerCode(shipperConfigRecord.getCustomerCode())
@@ -87,26 +83,5 @@ public class DerKurierShipperConfigRepository
 				.build();
 
 		return Optional.of(shipperConfig);
-	}
-
-	private Mailbox loadMailboxOrNull(final int mailBoxId)
-	{
-		if (mailBoxId <= 0)
-		{
-			// nothing to do
-			return null;
-		}
-		final I_AD_MailBox shipperConfigMailBox = loadOutOfTrx(mailBoxId, I_AD_MailBox.class);
-
-		final Mailbox mailbox = Mailbox.builder()
-				.smtpHost(shipperConfigMailBox.getSMTPHost())
-				.smtpPort(shipperConfigMailBox.getSMTPPort())
-				.startTLS(shipperConfigMailBox.isStartTLS())
-				.email(EMailAddress.ofString(shipperConfigMailBox.getEMail()))
-				.username(shipperConfigMailBox.getUserName())
-				.password(shipperConfigMailBox.getPassword())
-				.smtpAuthorization(shipperConfigMailBox.isSmtpAuthorization())
-				.build();
-		return mailbox;
 	}
 }

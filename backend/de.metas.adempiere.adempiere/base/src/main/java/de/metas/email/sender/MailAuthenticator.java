@@ -1,17 +1,15 @@
-package de.metas.email;
-
-import java.io.Serializable;
-
-import javax.annotation.concurrent.Immutable;
-import javax.mail.Authenticator;
-import javax.mail.PasswordAuthentication;
+package de.metas.email.sender;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
-
 import de.metas.util.Check;
+
+import javax.annotation.concurrent.Immutable;
+import javax.mail.Authenticator;
+import javax.mail.PasswordAuthentication;
+import java.io.Serializable;
 
 /*
  * #%L
@@ -43,11 +41,10 @@ import de.metas.util.Check;
  * @author metas-dev <dev@metasfresh.com>
  *
  */
-@SuppressWarnings("serial")
 @Immutable
 final class MailAuthenticator extends Authenticator implements Serializable
 {
-	public static final MailAuthenticator of(final String username, final String password)
+	public static MailAuthenticator of(final String username, final String password)
 	{
 		return new MailAuthenticator(username, password);
 	}
