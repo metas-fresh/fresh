@@ -19,6 +19,7 @@ import de.metas.uom.UomId;
 import de.metas.util.Services;
 import lombok.NonNull;
 import org.adempiere.ad.dao.IQueryBL;
+import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.service.ClientId;
 import org.adempiere.warehouse.WarehouseId;
 import org.compiere.SpringContextHolder;
@@ -54,7 +55,6 @@ import static java.math.BigDecimal.ZERO;
  * May be run in parallel to "normal" production stock changes.
  *
  * @author metas-dev <dev@metasfresh.com>
- *
  */
 public class MD_Stock_Update_From_M_HUs extends JavaProcess
 {
@@ -121,12 +121,25 @@ public class MD_Stock_Update_From_M_HUs extends JavaProcess
 
 	private static StockDataRecordIdentifier toStockDataRecordIdentifier(@NonNull final I_MD_Stock_From_HUs_V huBasedDataRecord)
 	{
-		return StockDataRecordIdentifier.builder()
-				.clientId(ClientId.ofRepoId(huBasedDataRecord.getAD_Client_ID()))
-				.orgId(OrgId.ofRepoId(huBasedDataRecord.getAD_Org_ID()))
-				.warehouseId(WarehouseId.ofRepoId(huBasedDataRecord.getM_Warehouse_ID()))
-				.productId(ProductId.ofRepoId(huBasedDataRecord.getM_Product_ID()))
-				.storageAttributesKey(AttributesKey.ofString(huBasedDataRecord.getAttributesKey()))
-				.build();
+		try
+		{
+			return StockDataRecordIdentifier.builder()
+					.clientId(ClientId.ofRepoId(huBasedDataRecord.getAD_Client_ID()))
+					.orgId(OrgId.ofRepoId(huBasedDataRecord.getAD_Org_ID()))
+					.warehouseId(WarehouseId.ofRepoId(huBasedDataRecord.getM_Warehouse_ID()))
+					.productId(ProductId.ofRepoId(huBasedDataRecord.getM_Product_ID()))
+					.storageAttributesKey(AttributesKey.ofString(huBasedDataRecord.getAttributesKey()))
+					.build();
+		}
+		catch (final RuntimeException e)
+		{
+			throw new AdempiereException("Can't create StockDataRecordIdentifier for invalid MD_Stock_From_HUs_V record", e)
+					.appendParametersToMessage()
+					.setParameter("AD_Client_ID", huBasedDataRecord.getAD_Client_ID())
+					.setParameter("AD_Org_ID", huBasedDataRecord.getAD_Org_ID())
+					.setParameter("M_Product_ID", huBasedDataRecord.getM_Product_ID())
+					.setParameter("M_Warehouse_ID", huBasedDataRecord.getM_Warehouse_ID())
+					.setParameter("StorageAttributesKey", huBasedDataRecord.getAttributesKey());
+		}
 	}
 }
