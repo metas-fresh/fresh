@@ -35,5 +35,5 @@ import org.w3c.dom.Document;
  */
 public interface IExportProcessor2 extends IExportProcessor
 {
-	public void process(MEXPProcessor expProcessor, Document document, PO po) throws ExportProcessorException;
+	void process(MEXPProcessor expProcessor, Document document, PO po) throws ExportProcessorException;
 }
