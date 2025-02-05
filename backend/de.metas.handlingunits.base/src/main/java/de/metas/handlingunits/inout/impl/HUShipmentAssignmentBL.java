@@ -143,9 +143,8 @@ public class HUShipmentAssignmentBL implements IHUShipmentAssignmentBL
 	}
 
 	@Override
-	public void removeHUAssignments(final I_M_InOutLine shipmentLine)
+	public void removeHUAssignments(@NonNull final I_M_InOutLine shipmentLine)
 	{
-		Check.assumeNotNull(shipmentLine, "shipmentLine not null");
 		Check.assume(shipmentLine.getM_InOutLine_ID() > 0, "shipment line is saved");
 		//
 		// Remove HU Assignments and update HU Status

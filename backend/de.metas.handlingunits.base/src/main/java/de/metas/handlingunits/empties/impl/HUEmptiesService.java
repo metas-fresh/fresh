@@ -11,6 +11,7 @@ import de.metas.handlingunits.spi.impl.HUPackingMaterialDocumentLineCandidate;
 import de.metas.inout.IInOutDAO;
 import de.metas.inoutcandidate.api.IReceiptScheduleBL;
 import de.metas.inoutcandidate.model.I_M_ReceiptSchedule;
+import de.metas.material.MovementType;
 import de.metas.material.planning.ddorder.DistributionNetwork;
 import de.metas.material.planning.ddorder.DistributionNetworkLine;
 import de.metas.material.planning.ddorder.DistributionNetworkRepository;
@@ -108,10 +109,16 @@ public class HUEmptiesService implements IHUEmptiesService
 						line.getMovementQty().intValueExact()))
 				.collect(GuavaCollectors.toImmutableList());
 
+		// TODO 1/3 verify that we need to know this
+		final boolean emptiesIncoming = !MovementType.ofCode(emptiesInOut.getMovementType()).isOutboundTransaction();
+
 		//
 		// Generate the empties movement
 		newEmptiesMovementProducer()
+				// TODO 2/3 this line seems to me to be at odds with the interface-method's javadoc. If isSOTrx=Y then we generally think of an outgoing empties-InOut, don't we? So the movement-direction should be *from* the emptiesWarehouse..
 				.setEmptiesMovementDirection(emptiesInOut.isSOTrx() ? EmptiesMovementDirection.ToEmptiesWarehouse : EmptiesMovementDirection.FromEmptiesWarehouse)
+				// TODO 3/3 ..so it should rather be as follows, right?
+				// .setEmptiesMovementDirection(emptiesIncoming ? EmptiesMovementDirection.ToEmptiesWarehouse : EmptiesMovementDirection.FromEmptiesWarehouse)
 				.setReferencedInOutId(emptiesInOut.getM_InOut_ID())
 				.addCandidates(lines)
 				.createMovements();

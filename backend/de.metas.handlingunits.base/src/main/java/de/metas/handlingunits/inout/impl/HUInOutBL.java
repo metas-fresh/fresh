@@ -57,6 +57,7 @@ import de.metas.inout.IInOutDAO;
 import de.metas.inout.InOutId;
 import de.metas.inout.InOutLineId;
 import de.metas.logging.LogManager;
+import de.metas.material.MovementType;
 import de.metas.materialtracking.IMaterialTrackingAttributeBL;
 import de.metas.materialtracking.model.I_M_Material_Tracking;
 import de.metas.product.ProductId;
@@ -233,7 +234,7 @@ public class HUInOutBL implements IHUInOutBL
 		final IContextAware context = InterfaceWrapperHelper.getContextAware(inout);
 		final IHUContext huContext = huContextFactory.createMutableHUContextForProcessing(context);
 		// If we deal with a receipt, we shall collect (and move back to Gebinde lager), only those packing materials that we own.
-		if (!inout.isSOTrx())
+		if (!MovementType.ofCode(inout.getMovementType()).isOutboundTransaction())
 		{
 			huContext.getHUPackingMaterialsCollector().setCollectIfOwnPackingMaterialsOnly(true);
 		}
@@ -244,7 +245,7 @@ public class HUInOutBL implements IHUInOutBL
 	}
 
 	@Override
-	public void updateEffectiveValues(final I_M_InOutLine shipmentLine)
+	public void updateEffectiveValues(@NonNull final I_M_InOutLine shipmentLine)
 	{
 		// avoid a huge development mistake
 		Check.assume(shipmentLine.getM_InOut().isSOTrx(), "{} is a shipment line and not a receipt line", shipmentLine);

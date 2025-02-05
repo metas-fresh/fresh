@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import org.compiere.model.X_M_InOut;
 
+@Getter
 @AllArgsConstructor
 public enum MovementType implements ReferenceListAwareEnum
 {
@@ -24,8 +25,8 @@ public enum MovementType implements ReferenceListAwareEnum
 	WorkOrderMinus(X_M_InOut.MOVEMENTTYPE_WorkOrderMinus, true),
 	;
 
-	@Getter @NonNull private final String code;
-	@Getter final boolean isOutboundTransaction;
+	@NonNull private final String code;
+	final boolean isOutboundTransaction;
 
 	private static final ReferenceListAwareEnums.ValuesIndex<MovementType> index = ReferenceListAwareEnums.index(values());
 

@@ -12,6 +12,7 @@ import de.metas.inoutcandidate.api.IShipmentScheduleAllocBL;
 import de.metas.inoutcandidate.api.IShipmentScheduleAllocDAO;
 import de.metas.inoutcandidate.invalidation.IShipmentScheduleInvalidateBL;
 import de.metas.inoutcandidate.model.I_M_ShipmentSchedule;
+import de.metas.material.MovementType;
 import de.metas.product.ProductId;
 import de.metas.quantity.StockQtyAndUOMQty;
 import de.metas.quantity.StockQtyAndUOMQtys;
@@ -70,10 +71,11 @@ public class M_InOutLine
 	public void removeHUAssignments(final I_M_InOutLine inoutLine)
 	{
 		final I_M_InOut inout = inoutLine.getM_InOut();
+		final MovementType movementType = MovementType.ofCode(inout.getMovementType());
 
 		//
 		// Shipment
-		if (inout.isSOTrx())
+		if (movementType.isOutboundTransaction())
 		{
 			// NOTE: instead of deleting the assignments, it's better to fail
 			// because if we delete the assignment which is for an HU which is also assigned on other shipment,
