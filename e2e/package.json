@@ -60,7 +60,7 @@
     "mochaComment2": "mocha 6.0.0 and 6.0.1 don't work; thx to https://github.com/cypress-io/cypress/issues/3537"
   },
   "dependencies": {
-    "axios": "0.24.0",
+    "axios": "0.28.0",
     "cypress-localstorage-commands": "1.6.0",
     "cypress-skip-and-only-ui": "^1.2.12",
     "immutable": "^4.0.0",
