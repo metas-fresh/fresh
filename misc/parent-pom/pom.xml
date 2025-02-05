@@ -58,7 +58,7 @@
             see http://docs.spring.io/spring-boot/docs/1.2.3.RELEASE/reference/htmlsingle/#howto-customize-dependency-versions-with-maven
         -->
         <assertj.version>3.23.1</assertj.version>
-        <xmlunit.version>2.6.4</xmlunit.version>
+        <xmlunit.version>2.10.0</xmlunit.version>
 
         <mockito.version>5.2.0</mockito.version>
         <byte-buddy.version>1.12.20</byte-buddy.version>
