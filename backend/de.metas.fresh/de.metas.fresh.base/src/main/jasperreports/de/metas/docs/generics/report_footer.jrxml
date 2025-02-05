@@ -171,6 +171,16 @@ FROM de_metas_endcustomer_fresh_reports.Docs_Generics_Footer_Report($P{org_id})
 				</textElement>
 				<textFieldExpression><![CDATA[$R{orgphone} + " " + $F{phone} + " | " + $R{orgfax} + " " + $F{fax} + " | " + $F{email}]]></textFieldExpression>
 			</textField>
+			<image scaleImage="RetainShape" hAlign="Center" onErrorType="Blank">
+				<reportElement key="image-1" x="20" y="2" width="553" height="58" isRemoveLineWhenBlank="true" uuid="d0e5fac0-9f73-4fd2-92e0-a88d9ed6498d"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<imageExpression><![CDATA["de/metas/org/images/ReportBottom_Logo_ID.png"]]></imageExpression>
+			</image>
 		</band>
 	</title>
 	<pageHeader>

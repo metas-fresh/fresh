@@ -1,2 +1,2 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<jdbcDataAdapter class="net.sf.jasperreports.data.jdbc.JdbcDataAdapterImpl"><name>dev</name><driver>org.postgresql.Driver</driver><username>metasfresh</username><password></password><savePassword>true</savePassword><url>jdbc:postgresql://localhost:2004/metasfresh</url><database></database><serverAddress></serverAddress></jdbcDataAdapter>
+<jdbcDataAdapter class="net.sf.jasperreports.data.jdbc.JdbcDataAdapterImpl"><name>dev</name><driver>org.postgresql.Driver</driver><username>metasfresh</username><password>metasfresh</password><savePassword>true</savePassword><url>jdbc:postgresql://localhost:2004/metasfresh</url><database></database><serverAddress></serverAddress></jdbcDataAdapter>

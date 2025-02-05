@@ -8,7 +8,7 @@
 	<property name="ireport.y" value="0"/>
 	<property name="net.sf.jasperreports.governor.max.pages.enabled" value="true"/>
 	<property name="net.sf.jasperreports.governor.max.pages" value="2"/>
-	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="jasperreports\dev.xml"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="mf15"/>
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
 	<import value="net.sf.jasperreports.engine.*"/>
 	<import value="java.util.*"/>

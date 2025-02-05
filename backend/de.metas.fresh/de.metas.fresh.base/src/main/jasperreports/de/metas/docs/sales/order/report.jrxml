@@ -193,6 +193,9 @@
 				<subreportParameter name="c_order_id">
 					<subreportParameterExpression><![CDATA[$P{RECORD_ID}]]></subreportParameterExpression>
 				</subreportParameter>
+				<subreportParameter name="PRINTER_OPTS_IsPrintTotals">
+					<subreportParameterExpression><![CDATA[$P{PRINTER_OPTS_IsPrintTotals}]]></subreportParameterExpression>
+				</subreportParameter>
 				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
 				<subreportExpression><![CDATA["de/metas/docs/sales/order/report_details.jasper"]]></subreportExpression>
 			</subreport>
@@ -211,6 +214,9 @@
 				<subreportParameter name="displayhu">
 					<subreportParameterExpression><![CDATA[$F{displayhu}]]></subreportParameterExpression>
 				</subreportParameter>
+				<subreportParameter name="PRINTER_OPTS_IsPrintTotals">
+					<subreportParameterExpression><![CDATA[$P{PRINTER_OPTS_IsPrintTotals}]]></subreportParameterExpression>
+				</subreportParameter>
 				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
 				<subreportExpression><![CDATA["de/metas/docs/sales/order/report_details_v2.jasper"]]></subreportExpression>
 			</subreport>
@@ -227,6 +233,9 @@
 				<subreportParameter name="c_order_id">
 					<subreportParameterExpression><![CDATA[$P{RECORD_ID}]]></subreportParameterExpression>
 				</subreportParameter>
+				<subreportParameter name="PRINTER_OPTS_IsPrintTotals">
+					<subreportParameterExpression><![CDATA[$P{PRINTER_OPTS_IsPrintTotals}]]></subreportParameterExpression>
+				</subreportParameter>
 				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
 				<subreportExpression><![CDATA["de/metas/docs/sales/order/report_details_hu.jasper"]]></subreportExpression>
 			</subreport>
@@ -241,6 +250,9 @@
 				</subreportParameter>
 				<subreportParameter name="c_order_id">
 					<subreportParameterExpression><![CDATA[$P{RECORD_ID}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="PRINTER_OPTS_IsPrintTotals">
+					<subreportParameterExpression><![CDATA[$P{PRINTER_OPTS_IsPrintTotals}]]></subreportParameterExpression>
 				</subreportParameter>
 				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
 				<subreportExpression><![CDATA["de/metas/docs/sales/order/report_details_hu_v2.jasper"]]></subreportExpression>
