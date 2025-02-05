@@ -66,8 +66,12 @@ public class FactAcctLogDBTableWatcher implements Runnable
 			}
 			catch (final InterruptedException e)
 			{
-				logger.info("Got interrupt request. Exiting.");
-				return;
+
+				LOGGER.log(Level.WARN, "Thread interrupted", e);
+				Thread.currentThread().interrupt();
+			} catch (Exception e) {
+				LOGGER.log(Level.ERROR, "An error occurred", e);
+			}
 			}
 
 			try
